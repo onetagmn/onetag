@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OneTag — Staff Dashboard</title>
+<style>
+  :root {
+    --ink: #0E2A32; --steppe: #0F4C5C; --steppe-light: #16687D;
+    --sun: #E8A33D; --paper: #FAF8F4; --card: #FFFFFF; --line: #DCE4E6;
+    --ok: #2E7D5B; --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--paper); color: var(--ink); }
+  .topbar { background: var(--steppe); color: white; padding: 16px 24px; }
+  .topbar h1 { margin: 0; font-size: 18px; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 24px; }
+  table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: var(--radius); overflow: hidden; }
+  th, td { text-align: left; padding: 10px 14px; font-size: 13px; border-bottom: 1px solid var(--line); }
+  th { background: #F0F4F5; color: var(--steppe); font-weight: 700; }
+  tr:last-child td { border-bottom: none; }
+  .no-loc { color: #9fb3b8; font-style: italic; }
+  .map-link { color: var(--steppe-light); text-decoration: none; font-weight: 600; }
+  .empty { text-align: center; padding: 40px; color: #6B7A7D; }
+  .refresh-note { font-size: 12px; color: #6B7A7D; margin-bottom: 12px; }
+  .filters { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .filters select, .filters input {
+    padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; background: white;
+  }
+  .filters input { min-width: 180px; }
+  section { margin-bottom: 36px; }
+  h2 { font-size: 15px; color: var(--steppe); margin: 0 0 4px; }
+</style>
+</head>
+<body>
+  <div class="topbar" style="display:flex;justify-content:space-between;align-items:center;">
+    <h1>OneTag — Recent Activity</h1>
+    <div style="display:flex;align-items:center;gap:14px;font-size:13px;">
+      <span id="whoami"></span>
+      <a href="admin-panel.html" id="managementLink" style="color:white;text-decoration:underline;display:none;">Manage schools & admins</a>
+      <button id="logoutBtn" style="background:none;border:1px solid rgba(255,255,255,0.4);color:white;padding:6px 12px;border-radius:6px;cursor:pointer;">Log out</button>
+    </div>
+  </div>
+  <div class="wrap">
+    <section>
+      <h2>Gate Activity (in/out)</h2>
+      <p class="refresh-note">Auto-refreshes every 10 seconds. One row per tag per day.</p>
+      <div class="filters">
+        <select id="gateSchoolFilter"><option value="">All schools</option></select>
+        <select id="gateClassFilter"><option value="">All classes</option></select>
+        <input id="gateNameFilter" placeholder="Search child name...">
+      </div>
+      <div id="gateContent">Loading...</div>
+    </section>
+
+    <section>
+      <h2>Scan Activity (tap-to-view taps)</h2>
+      <p class="refresh-note">Auto-refreshes every 10 seconds. Showing the 200 most recent scans across all children.</p>
+      <div class="filters">
+        <select id="scanSchoolFilter"><option value="">All schools</option></select>
+        <select id="scanClassFilter"><option value="">All classes</option></select>
+        <input id="scanNameFilter" placeholder="Search child name...">
+      </div>
+      <div id="content">Loading...</div>
+    </section>
+  </div>
+
+<script>
+const API_BASE = 'http://localhost:3000'; // change to your real Render URL for production
+const token = localStorage.getItem('onetag_admin_token');
+if (!token) window.location.href = 'admin-login.html';
+const adminInfo = JSON.parse(localStorage.getItem('onetag_admin_info') || '{}');
+
+let gateRows = [];
+let scanRows = [];
+
+async function authFetch(path) {
+  const res = await fetch(`${API_BASE}${path}`, { headers: { 'Authorization': `Bearer ${token}` } });
+  if (res.status === 401) {
+    localStorage.removeItem('onetag_admin_token');
+    window.location.href = 'admin-login.html';
+    throw new Error('Session expired');
+  }
+  return res;
+}
+
+function locationCell(lat, lng) {
+  return (lat && lng)
+    ? `<a class="map-link" target="_blank" href="https://www.google.com/maps?q=${lat},${lng}">${lat.toFixed(4)}, ${lng.toFixed(4)}</a>`
+    : '<span class="no-loc">Not shared</span>';
+}
+// Escapes any value that came from the database (child names, school names,
+// class names, etc.) before it's inserted into the page — without this, a
+// malicious value entered during registration could run as real code for
+// anyone viewing this dashboard, including admin sessions.
+function esc(val) {
+  if (val === null || val === undefined) return '';
+  return String(val)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+function populateFilterOptions(rows, schoolSelectId, classSelectId) {
+  const schoolSelect = document.getElementById(schoolSelectId);
+  const classSelect = document.getElementById(classSelectId);
+  const prevSchool = schoolSelect.value;
+  const prevClass = classSelect.value;
+
+  const schools = [...new Set(rows.map(r => r.school_name).filter(Boolean))].sort();
+  const classes = [...new Set(rows.map(r => r.class_name).filter(Boolean))].sort();
+
+  schoolSelect.innerHTML = '<option value="">All schools</option>' + schools.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+  classSelect.innerHTML = '<option value="">All classes</option>' + classes.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  schoolSelect.value = prevSchool;
+  classSelect.value = prevClass;
+}
+
+function applyFilters(rows, schoolVal, classVal, nameVal) {
+  return rows.filter(r =>
+    (!schoolVal || r.school_name === schoolVal) &&
+    (!classVal || r.class_name === classVal) &&
+    (!nameVal || (r.child_name || '').toLowerCase().includes(nameVal.toLowerCase()))
+  );
+}
+
+async function loadGate() {
+  const content = document.getElementById('gateContent');
+  try {
+    const res = await authFetch('/api/gate-logs');
+    gateRows = await res.json();
+    populateFilterOptions(gateRows, 'gateSchoolFilter', 'gateClassFilter');
+    renderGate();
+  } catch (err) {
+    content.innerHTML = `<div class="empty">Couldn't load gate history: ${err.message}</div>`;
+  }
+}
+
+function renderGate() {
+  const content = document.getElementById('gateContent');
+  const schoolVal = document.getElementById('gateSchoolFilter').value;
+  const classVal = document.getElementById('gateClassFilter').value;
+  const nameVal = document.getElementById('gateNameFilter').value;
+  const rows = applyFilters(gateRows, schoolVal, classVal, nameVal);
+
+  if (!rows.length) {
+    content.innerHTML = '<div class="empty">No gate activity matches these filters.</div>';
+    return;
+  }
+  content.innerHTML = `
+    <table>
+      <thead><tr>
+        <th>Date</th><th>School</th><th>Class</th><th>Child</th><th>Tag ID</th>
+        <th>IN</th><th>IN Location</th><th>OUT</th><th>OUT Location</th>
+      </tr></thead>
+      <tbody>
+        ${rows.map(r => `
+          <tr>
+            <td>${esc(r.day)}</td>
+            <td>${r.school_name ? esc(r.school_name) : '<span class="no-loc">—</span>'}</td>
+            <td>${r.class_name ? esc(r.class_name) : '<span class="no-loc">—</span>'}</td>
+            <td>${r.child_name ? esc(r.child_name) : '<span class="no-loc">Unregistered</span>'}</td>
+            <td>${esc(r.tag_id)}</td>
+            <td style="font-weight:700;color:var(--ok)">${r.in_time ? new Date(r.in_time + 'Z').toLocaleTimeString() : '<span class="no-loc">—</span>'}</td>
+            <td>${locationCell(r.in_lat, r.in_lng)}</td>
+            <td style="font-weight:700;color:var(--sun)">${r.out_time ? new Date(r.out_time + 'Z').toLocaleTimeString() : '<span class="no-loc">—</span>'}</td>
+            <td>${locationCell(r.out_lat, r.out_lng)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+async function loadScan() {
+  const content = document.getElementById('content');
+  try {
+    const res = await authFetch('/api/scan-logs');
+    scanRows = await res.json();
+    populateFilterOptions(scanRows, 'scanSchoolFilter', 'scanClassFilter');
+    renderScan();
+  } catch (err) {
+    content.innerHTML = `<div class="empty">Couldn't load scan history: ${err.message}</div>`;
+  }
+}
+
+function renderScan() {
+  const content = document.getElementById('content');
+  const schoolVal = document.getElementById('scanSchoolFilter').value;
+  const classVal = document.getElementById('scanClassFilter').value;
+  const nameVal = document.getElementById('scanNameFilter').value;
+  const rows = applyFilters(scanRows, schoolVal, classVal, nameVal);
+
+  if (!rows.length) {
+    content.innerHTML = '<div class="empty">No scans match these filters.</div>';
+    return;
+  }
+  content.innerHTML = `
+    <table>
+      <thead><tr><th>Time</th><th>School</th><th>Class</th><th>Child</th><th>Tag ID</th><th>Location</th></tr></thead>
+      <tbody>
+        ${rows.map(r => `
+          <tr>
+            <td>${new Date(r.timestamp + 'Z').toLocaleString()}</td>
+            <td>${r.school_name ? esc(r.school_name) : '<span class="no-loc">—</span>'}</td>
+            <td>${r.class_name ? esc(r.class_name) : '<span class="no-loc">—</span>'}</td>
+            <td>${r.child_name ? esc(r.child_name) : '<span class="no-loc">Unregistered</span>'}</td>
+            <td>${esc(r.tag_id)}</td>
+            <td>${locationCell(r.location_lat, r.location_lng)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+['gateSchoolFilter', 'gateClassFilter', 'gateNameFilter'].forEach(id =>
+  document.getElementById(id).addEventListener('input', renderGate));
+['scanSchoolFilter', 'scanClassFilter', 'scanNameFilter'].forEach(id =>
+  document.getElementById(id).addEventListener('input', renderScan));
+
+document.getElementById('whoami').textContent = `${adminInfo.username} (${adminInfo.role === 'super_admin' ? 'all schools' : 'school admin'})`;
+if (adminInfo.role === 'super_admin') document.getElementById('managementLink').style.display = 'inline';
+document.getElementById('logoutBtn').onclick = async () => {
+  await fetch(`${API_BASE}/api/admin/logout`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }).catch(() => {});
+  localStorage.removeItem('onetag_admin_token');
+  localStorage.removeItem('onetag_admin_info');
+  window.location.href = 'admin-login.html';
+};
+
+loadGate();
+loadScan();
+setInterval(loadGate, 10000);
+setInterval(loadScan, 10000);
+</script>
+</body>
+</html>

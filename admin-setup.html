@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OneTag — Set Up Your Admin Account</title>
+<style>
+  :root {
+    --ink: #0E2A32; --steppe: #0F4C5C; --sun: #E8A33D; --paper: #FAF8F4;
+    --card: #FFFFFF; --line: #DCE4E6; --danger: #C1442C; --ok: #2E7D5B; --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--paper); color: var(--ink); min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 32px; width: 100%; max-width: 380px; }
+  h1 { font-size: 18px; margin: 0 0 6px; }
+  .hint { font-size: 13px; color: #6B7A7D; margin-bottom: 14px; }
+  label { display: block; font-size: 13px; font-weight: 600; margin: 14px 0 6px; }
+  input { width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 9px; font-size: 15px; }
+  .btn { width: 100%; padding: 13px; border: none; border-radius: 10px; background: var(--steppe); color: white; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 20px; }
+  .msg { padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-top: 14px; }
+  .msg.error { background: #FBE9E5; color: var(--danger); }
+  .msg.ok { background: #E4F3EB; color: var(--ok); }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Set up your OneTag admin account</h1>
+    <p class="hint">Enter the admin ID and code from your invitation email, and choose a password.</p>
+    <form id="setupForm">
+      <label>Admin ID</label>
+      <input name="admin_id" required placeholder="ADM-XXXXXX">
+      <label>Code from email</label>
+      <input name="code" required maxlength="6">
+      <label>Choose a password (min 8 characters)</label>
+      <input name="password" type="password" required minlength="8">
+      <button type="submit" class="btn">Activate account</button>
+      <div id="msg"></div>
+    </form>
+  </div>
+
+<script>
+const API_BASE = 'http://localhost:3000'; // change to your real Render URL for production
+
+document.getElementById('setupForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  const msg = document.getElementById('msg');
+  msg.innerHTML = '';
+
+  const res = await fetch(`${API_BASE}/api/admin/admins/complete-setup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ admin_id: f.admin_id.value, code: f.code.value, password: f.password.value })
+  });
+  const out = await res.json();
+  if (!res.ok) {
+    msg.innerHTML = `<div class="msg error">${out.error}</div>`;
+    return;
+  }
+  msg.innerHTML = `<div class="msg ok">Account activated! Redirecting to login...</div>`;
+  setTimeout(() => window.location.href = 'admin-login.html', 1500);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OneTag</title>
+<style>
+  :root {
+    --ink: #0E2A32;
+    --steppe: #0F4C5C;
+    --steppe-light: #16687D;
+    --sun: #E8A33D;
+    --sun-dim: #F2C583;
+    --paper: #FAF8F4;
+    --card: #FFFFFF;
+    --line: #DCE4E6;
+    --danger: #C1442C;
+    --ok: #2E7D5B;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+  .topbar {
+    background: var(--steppe);
+    color: white;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .topbar .mark {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    background: var(--sun);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; color: var(--steppe); font-size: 15px;
+  }
+  .topbar h1 { font-size: 17px; margin: 0; font-weight: 700; letter-spacing: 0.2px; }
+  .wrap { max-width: 480px; margin: 0 auto; padding: 20px 18px 60px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  h2 { font-size: 16px; margin: 0 0 12px; color: var(--steppe); }
+  label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 5px; color: var(--ink); }
+  input, select, textarea {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    font-size: 15px;
+    font-family: inherit;
+    background: #fff;
+  }
+  textarea { resize: vertical; min-height: 60px; }
+  .contact-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  .contact-row input { flex: 1; }
+  .btn {
+    display: inline-block;
+    width: 100%;
+    padding: 13px;
+    border: none;
+    border-radius: 10px;
+    background: var(--steppe);
+    color: white;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 14px;
+  }
+  .btn:active { background: var(--steppe-light); }
+  .btn.secondary { background: transparent; color: var(--steppe); border: 1.5px solid var(--steppe); }
+  .btn.link { background: none; color: var(--steppe-light); font-weight: 600; padding: 8px; text-decoration: underline; width: auto; }
+  .btn.small { padding: 9px; font-size: 13px; }
+  .btn.remove { background: var(--danger); width: auto; padding: 8px 12px; margin-top: 0; }
+  .emergency-banner {
+    background: var(--danger);
+    color: white;
+    text-align: center;
+    padding: 10px;
+    border-radius: var(--radius) var(--radius) 0 0;
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+  }
+  .profile-photo {
+    width: 88px; height: 88px; border-radius: 50%;
+    background: var(--sun-dim);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; font-weight: 800; color: var(--steppe);
+    margin: 0 auto 10px;
+  }
+  .child-name { text-align: center; font-size: 20px; font-weight: 800; margin: 0; }
+  .child-meta { text-align: center; color: #6B7A7D; font-size: 13px; margin: 2px 0 16px; }
+  .info-row { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .info-row:last-child { border-bottom: none; }
+  .info-label { color: #6B7A7D; }
+  .call-btn {
+    display: block; text-align: center;
+    background: var(--ok); color: white;
+    padding: 15px; border-radius: 10px;
+    font-weight: 800; font-size: 16px;
+    text-decoration: none; margin-top: 14px;
+  }
+  .hint { font-size: 12px; color: #6B7A7D; margin-top: 6px; }
+  .msg { padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-top: 10px; }
+  .msg.error { background: #FBE9E5; color: var(--danger); }
+  .msg.ok { background: #E4F3EB; color: var(--ok); }
+  .footer-link { text-align: center; margin-top: 10px; }
+  .locked-badge {
+    display: inline-block; font-size: 11px; font-weight: 700;
+    background: var(--sun-dim); color: var(--steppe);
+    padding: 3px 9px; border-radius: 20px; margin-bottom: 10px;
+  }
+  .loading { text-align: center; padding: 60px 0; color: #6B7A7D; }
+  .lang-toggle { display: flex; justify-content: center; gap: 6px; padding: 12px 0 4px; }
+  .lang-btn {
+    padding: 6px 14px; border-radius: 20px; border: 1px solid var(--line);
+    background: white; font-size: 12.5px; font-weight: 700; color: var(--steppe);
+    cursor: pointer;
+  }
+  .lang-btn.active { background: var(--steppe); color: white; border-color: var(--steppe); }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="mark">OT</div>
+    <h1>OneTag — Child Safety Wristband</h1>
+  </div>
+  <div class="wrap" id="app">
+    <div class="loading">Loading…</div>
+  </div>
+
+<script>
+const params = new URLSearchParams(window.location.search);
+const tagId = params.get('tag');
+const app = document.getElementById('app');
+
+function el(html) {
+  const d = document.createElement('div');
+  d.innerHTML = html;
+  return d.firstElementChild;
+}
+// Escapes any value that came from the database before rendering it —
+// prevents a malicious value entered at registration from running as code
+// on this page, which is viewed by strangers who found the child.
+function esc(val) {
+  if (val === null || val === undefined) return '';
+  return String(val)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+// Log current geolocation on every view/scan of this tag (Idea #4)
+function logScan(role = 'public') {
+  if (!tagId) return;
+  const send = (lat, lng) => {
+    fetch(`/api/scan/${tagId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lat, lng, role })
+    }).catch(() => {});
+  };
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => send(pos.coords.latitude, pos.coords.longitude),
+      () => send(null, null),
+      { timeout: 20000 } // desktop WiFi-based location can take 10-15s, unlike phone GPS
+    );
+  } else {
+    send(null, null);
+  }
+}
+
+// ---------------- Translations ----------------
+const TRANSLATIONS = {
+  en: {
+    noTagTitle: 'No tag found', noTagBody: "Scan a OneTag wristband to open its profile.",
+    unknownTagTitle: 'Unknown tag', unknownTagBody: 'This tag ID was not found. Please contact the school.',
+    registerTitle: 'Register this wristband',
+    registerHint: id => `Tag ID: ${id}. This is a one-time setup — after saving, you'll need a code sent by email to make changes.`,
+    childName: "Child's full name *", schoolName: 'School name', schoolNamePlaceholder: 'e.g. Ikh Urgoo Special Needs School',
+    schoolSelectOther: "My school isn't listed",
+    classGrade: 'Class / grade', bloodType: 'Blood type', bloodTypePlaceholder: 'e.g. O+',
+    allergies: 'Allergies', allergiesPlaceholder: 'e.g. Peanuts, penicillin',
+    conditions: 'Medical conditions', conditionsPlaceholder: 'e.g. Epilepsy, autism spectrum, non-verbal',
+    medications: 'Current medications', emergencyContacts: 'Emergency contacts *', addContact: '+ Add contact',
+    contactName: 'Name', contactRelation: 'Relation', contactPhone: 'Phone',
+    parentPhone: 'Parent phone number *', parentPhonePlaceholder: '+976...',
+    parentEmail: 'Parent email * (used for edit codes)', saveLock: 'Save & Lock Profile',
+    lostChildBanner: 'LOST CHILD — PLEASE HELP', callGuardian: '📞 Call Guardian Now',
+    callGuardianHint: "Tapping connects you directly — the phone number stays private.",
+    profileLocked: '🔒 Profile locked', editHint: 'Parent or teacher? Request a code to edit this profile.',
+    editProfile: 'Edit this profile', requestCodeTitle: 'Request edit code',
+    sendCodeBtn: 'Send code', enterCodeTitle: 'Enter code', codeTargetLabel: 'Your email address',
+    codeLabel: '6-digit code', verifyUnlock: 'Verify & Unlock', bloodTypeLabel: 'Blood type'
+  },
+  mn: {
+    noTagTitle: 'Таг олдсонгүй', noTagBody: 'Профайлыг нээхийн тулд OneTag бугуйвчийг уншуулна уу.',
+    unknownTagTitle: 'Тодорхойгүй таг', unknownTagBody: 'Энэ тагийн ID олдсонгүй. Сургуультай холбогдоно уу.',
+    registerTitle: 'Энэ бугуйвчийг бүртгэх',
+    registerHint: id => `Тагийн ID: ${id}. Энэ нь нэг удаагийн тохиргоо — хадгалсны дараа өөрчлөлт хийхийн тулд имэйлээр код авах шаардлагатай.`,
+    childName: 'Хүүхдийн бүтэн нэр *', schoolName: 'Сургуулийн нэр', schoolNamePlaceholder: 'жишээ нь: Их Өргөө тусгай хэрэгцээт сургууль',
+    schoolSelectOther: 'Миний сургууль жагсаалтад алга',
+    classGrade: 'Анги / курс', bloodType: 'Цусны бүлэг', bloodTypePlaceholder: 'жишээ нь: O+',
+    allergies: 'Харшил', allergiesPlaceholder: 'жишээ нь: Самар, пенициллин',
+    conditions: 'Эрүүл мэндийн онцлог', conditionsPlaceholder: 'жишээ нь: Таталт, аутизм, ярианы бэрхшээл',
+    medications: 'Одоо хэрэглэж буй эм', emergencyContacts: 'Яаралтай тусламжийн холбоо барих хүн *', addContact: '+ Холбоо барих хүн нэмэх',
+    contactName: 'Нэр', contactRelation: 'Хамаарал', contactPhone: 'Утас',
+    parentPhone: 'Эцэг эхийн утасны дугаар *', parentPhonePlaceholder: '+976...',
+    parentEmail: 'Эцэг эхийн имэйл * (код авахад ашиглана)', saveLock: 'Хадгалж түгжих',
+    lostChildBanner: 'ХҮҮХЭД ТӨӨРСӨН — ТУСЛАНА УУ', callGuardian: '📞 Асран хамгаалагчид залгах',
+    callGuardianHint: 'Дарахад шууд холбоно — утасны дугаар нууц хэвээр байна.',
+    profileLocked: '🔒 Профайл түгжигдсэн', editHint: 'Эцэг эх эсвэл багш уу? Энэ профайлыг засварлах код хүсэх.',
+    editProfile: 'Профайл засах', requestCodeTitle: 'Засварлах код хүсэх',
+    sendCodeBtn: 'Код илгээх', enterCodeTitle: 'Код оруулах', codeTargetLabel: 'Таны имэйл хаяг',
+    codeLabel: '6 оронтой код', verifyUnlock: 'Баталгаажуулж түгжээг тайлах', bloodTypeLabel: 'Цусны бүлэг'
+  },
+  zh: {
+    noTagTitle: '未找到标签', noTagBody: '请扫描 OneTag 手环以打开资料。',
+    unknownTagTitle: '未知标签', unknownTagBody: '未找到此标签 ID。请联系学校。',
+    registerTitle: '注册此手环',
+    registerHint: id => `标签 ID：${id}。这是一次性设置——保存后，如需修改需通过邮箱获取验证码。`,
+    childName: '孩子全名 *', schoolName: '学校名称', schoolNamePlaceholder: '例如：Ikh Urgoo 特殊需要学校',
+    schoolSelectOther: '我的学校不在列表中',
+    classGrade: '班级 / 年级', bloodType: '血型', bloodTypePlaceholder: '例如：O+',
+    allergies: '过敏', allergiesPlaceholder: '例如：花生、青霉素',
+    conditions: '健康状况', conditionsPlaceholder: '例如：癫痫、自闭症、非语言',
+    medications: '目前用药', emergencyContacts: '紧急联系人 *', addContact: '+ 添加联系人',
+    contactName: '姓名', contactRelation: '关系', contactPhone: '电话',
+    parentPhone: '家长电话 *', parentPhonePlaceholder: '+976...',
+    parentEmail: '家长邮箱 *（用于获取修改验证码）', saveLock: '保存并锁定资料',
+    lostChildBanner: '走失儿童 — 请帮助', callGuardian: '📞 立即致电监护人',
+    callGuardianHint: '点击直接接通——电话号码保持私密。',
+    profileLocked: '🔒 资料已锁定', editHint: '家长或老师？请求验证码以编辑此资料。',
+    editProfile: '编辑资料', requestCodeTitle: '请求编辑验证码',
+    sendCodeBtn: '发送验证码', enterCodeTitle: '输入验证码', codeTargetLabel: '您的邮箱地址',
+    codeLabel: '6 位验证码', verifyUnlock: '验证并解锁', bloodTypeLabel: '血型'
+  }
+};
+let LANG = 'mn'; // default until fetched
+// Which languages show as buttons on the visitor-facing safety card toggle.
+// Mandarin translations stay fully built and ready — just add 'zh' back to
+// this list whenever you want to turn it on, no other changes needed.
+const ENABLED_LANGUAGES = ['mn', 'en'];
+const LANGUAGE_LABELS = { mn: 'MN', en: 'EN', zh: '中文' };
+function t(key, ...args) {
+  const dict = TRANSLATIONS[LANG] || TRANSLATIONS.mn;
+  const val = dict[key] ?? TRANSLATIONS.en[key] ?? key;
+  return typeof val === 'function' ? val(...args) : val;
+}
+
+async function init() {
+  try {
+    const langRes = await fetch('/api/settings/language');
+    if (langRes.ok) LANG = (await langRes.json()).language || 'mn';
+  } catch (e) { /* fall back to default LANG */ }
+
+  if (!tagId) {
+    app.innerHTML = `<div class="card"><h2>${t('noTagTitle')}</h2><p>${t('noTagBody')}</p></div>`;
+    return;
+  }
+  logScan('public');
+
+  const res = await fetch(`/api/tag/${tagId}`);
+  if (!res.ok) {
+    app.innerHTML = `<div class="card"><h2>${t('unknownTagTitle')}</h2><p>${t('unknownTagBody')}</p></div>`;
+    return;
+  }
+  const data = await res.json();
+
+  if (!data.hasProfile) {
+    renderRegisterForm();
+  } else {
+    renderPublicProfile();
+  }
+}
+
+// ---------------- Registration form ----------------
+function renderRegisterForm() {
+  app.innerHTML = '';
+  const card = el(`
+    <div class="card">
+      <h2>${t('registerTitle')}</h2>
+      <p class="hint">${t('registerHint', tagId)}</p>
+      <form id="regForm">
+        <label>${t('childName')}</label>
+        <input name="child_name" required>
+
+        <label>${t('schoolName')}</label>
+        <select name="school_id" id="schoolSelect">
+          <option value="">${t('schoolSelectOther')}</option>
+        </select>
+        <input name="school_name_other" id="schoolOtherInput" placeholder="${t('schoolNamePlaceholder')}" style="display:none; margin-top:8px;">
+
+        <label>${t('classGrade')}</label>
+        <input name="class_name">
+
+        <label>${t('bloodType')}</label>
+        <input name="blood_type" placeholder="${t('bloodTypePlaceholder')}">
+
+        <label>${t('allergies')}</label>
+        <textarea name="allergies" placeholder="${t('allergiesPlaceholder')}"></textarea>
+
+        <label>${t('conditions')}</label>
+        <textarea name="conditions" placeholder="${t('conditionsPlaceholder')}"></textarea>
+
+        <label>${t('medications')}</label>
+        <textarea name="medications"></textarea>
+
+        <label>${t('emergencyContacts')}</label>
+        <div id="contacts"></div>
+        <button type="button" class="btn secondary small" id="addContact">${t('addContact')}</button>
+
+        <label>${t('parentPhone')}</label>
+        <input name="parent_phone" required placeholder="${t('parentPhonePlaceholder')}">
+
+        <label>${t('parentEmail')}</label>
+        <input name="parent_email" type="email" required>
+
+        <button type="submit" class="btn">${t('saveLock')}</button>
+        <div id="regMsg"></div>
+      </form>
+    </div>
+  `);
+  app.appendChild(card);
+
+  const contactsDiv = card.querySelector('#contacts');
+  function addContactRow(name = '', relation = '', phone = '') {
+    const row = el(`
+      <div class="contact-row">
+        <input placeholder="${t('contactName')}" class="c-name" value="${name}">
+        <input placeholder="${t('contactRelation')}" class="c-relation" value="${relation}">
+        <input placeholder="${t('contactPhone')}" class="c-phone" value="${phone}">
+      </div>
+    `);
+    contactsDiv.appendChild(row);
+  }
+  addContactRow();
+  card.querySelector('#addContact').onclick = () => addContactRow();
+
+  // Populate real schools into the dropdown; show free-text fallback if "other" chosen
+  fetch('/api/schools').then(r => r.json()).then(schools => {
+    const select = card.querySelector('#schoolSelect');
+    schools.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.school_id;
+      opt.textContent = s.name;
+      select.insertBefore(opt, select.firstChild); // keep "not listed" option last
+    });
+    select.value = schools[0] ? schools[0].school_id : '';
+  }).catch(() => {});
+
+  const schoolSelect = card.querySelector('#schoolSelect');
+  const schoolOtherInput = card.querySelector('#schoolOtherInput');
+  schoolSelect.addEventListener('change', () => {
+    schoolOtherInput.style.display = schoolSelect.value === '' ? 'block' : 'none';
+  });
+
+  card.querySelector('#regForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const f = e.target;
+    const contacts = [...contactsDiv.querySelectorAll('.contact-row')].map(row => ({
+      name: row.querySelector('.c-name').value,
+      relation: row.querySelector('.c-relation').value,
+      phone: row.querySelector('.c-phone').value
+    })).filter(c => c.name && c.phone);
+
+    const body = {
+      child_name: f.child_name.value,
+      class_name: f.class_name.value,
+      school_id: f.school_id.value || null,
+      school_name_other: f.school_name_other.value || null,
+      emergency_contacts: contacts,
+      health_info: {
+        blood_type: f.blood_type.value,
+        allergies: f.allergies.value,
+        conditions: f.conditions.value,
+        medications: f.medications.value
+      },
+      parent_phone: f.parent_phone.value,
+      parent_email: f.parent_email.value
+    };
+
+    const msg = card.querySelector('#regMsg');
+    msg.innerHTML = '';
+    const res = await fetch(`/api/profile/${tagId}/register`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    });
+    const out = await res.json();
+    if (!res.ok) {
+      msg.innerHTML = `<div class="msg error">${out.error}</div>`;
+      return;
+    }
+    renderPublicProfile();
+  };
+}
+
+// ---------------- Public profile view ----------------
+async function renderPublicProfile() {
+  const res = await fetch(`/api/profile/${tagId}`);
+  const p = await res.json();
+  app.innerHTML = '';
+  const initials = (p.child_name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+
+  const card = el(`
+    <div>
+      <div class="lang-toggle">
+        ${ENABLED_LANGUAGES.map(lang => `
+          <button class="lang-btn ${LANG === lang ? 'active' : ''}" data-lang="${lang}">${LANGUAGE_LABELS[lang]}</button>
+        `).join('')}
+      </div>
+      <div class="emergency-banner">${t('lostChildBanner')}</div>
+      <div class="card" style="border-top:none; border-radius: 0 0 var(--radius) var(--radius); margin-top:-1px;">
+        <div class="profile-photo">${initials}</div>
+        <p class="child-name">${esc(p.child_name)}</p>
+        <p class="child-meta">${esc(p.class_name) || ''}</p>
+
+        <div class="info-row"><span class="info-label">${t('allergies')}</span><span>${esc(p.health_summary.allergies) || '—'}</span></div>
+        <div class="info-row"><span class="info-label">${t('conditions')}</span><span>${esc(p.health_summary.conditions) || '—'}</span></div>
+        <div class="info-row"><span class="info-label">${t('bloodTypeLabel')}</span><span>${esc(p.health_summary.blood_type) || '—'}</span></div>
+
+        <button class="call-btn" id="callGuardian" style="border:none;width:100%;cursor:pointer;">${t('callGuardian')}</button>
+        <p class="hint" style="text-align:center;">${t('callGuardianHint')}</p>
+      </div>
+
+      <div class="card">
+        <span class="locked-badge">${t('profileLocked')}</span>
+        <p class="hint">${t('editHint')}</p>
+        <button class="btn secondary" id="editBtn">${t('editProfile')}</button>
+      </div>
+    </div>
+  `);
+  app.appendChild(card);
+
+  // Visitor-facing language switch — for THIS viewer only, on THIS device,
+  // for this one safety card. Doesn't touch the site-wide admin setting,
+  // and resets next time someone else taps the same tag.
+  card.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.onclick = () => {
+      LANG = btn.dataset.lang;
+      renderPublicProfile();
+    };
+  });
+
+  card.querySelector('#callGuardian').onclick = async () => {
+    // In production: server relays the call (e.g. via Twilio click-to-call)
+    // so the raw number is never exposed to the browser.
+    const full = await fetch(`/api/profile/${tagId}?full=1`).then(r => r.json()).catch(() => null);
+    alert('Connecting you to the guardian now (number kept private in production build).');
+  };
+
+  card.querySelector('#editBtn').onclick = renderOtpRequest;
+}
+
+// ---------------- OTP request + verify + edit (email-only) ----------------
+function renderOtpRequest() {
+  app.innerHTML = '';
+  const card = el(`
+    <div class="card">
+      <h2>${t('requestCodeTitle')}</h2>
+      <button class="btn" id="sendCode">${t('sendCodeBtn')}</button>
+      <div id="otpMsg"></div>
+    </div>
+  `);
+  app.appendChild(card);
+
+  card.querySelector('#sendCode').onclick = async () => {
+    const res = await fetch(`/api/profile/${tagId}/request-otp`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel: 'email' })
+    });
+    const out = await res.json();
+    const msg = card.querySelector('#otpMsg');
+    if (!res.ok) { msg.innerHTML = `<div class="msg error">${out.error}</div>`; return; }
+    msg.innerHTML = `<div class="msg ok">Code sent to ${out.sentTo}. Check server console in this prototype.</div>`;
+    renderOtpVerify();
+  };
+}
+
+function renderOtpVerify() {
+  const card = el(`
+    <div class="card">
+      <h2>${t('enterCodeTitle')}</h2>
+      <label>${t('codeTargetLabel')}</label>
+      <input id="targetInput" placeholder="you@example.com">
+      <label>${t('codeLabel')}</label>
+      <input id="codeInput" maxlength="6">
+      <button class="btn" id="verifyBtn">${t('verifyUnlock')}</button>
+      <div id="verifyMsg"></div>
+    </div>
+  `);
+  app.appendChild(card);
+
+  card.querySelector('#verifyBtn').onclick = async () => {
+    const target = card.querySelector('#targetInput').value;
+    const code = card.querySelector('#codeInput').value;
+    const res = await fetch(`/api/profile/${tagId}/verify-otp`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ target, code })
+    });
+    const out = await res.json();
+    const msg = card.querySelector('#verifyMsg');
+    if (!res.ok) { msg.innerHTML = `<div class="msg error">${out.error}</div>`; return; }
+    renderRegisterForm(); // reuse the same form to re-enter/update info
+  };
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+# Never commit these — secrets, local data, and dependencies
+.env
+.env.local
+*.db
+*.db-shm
+*.db-wal
+node_modules/
+server.log
+*.log

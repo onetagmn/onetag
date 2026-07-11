@@ -1,0 +1,148 @@
+// db.js — PostgreSQL version for real deployment.
+// Render's filesystem resets on every restart/redeploy, so SQLite (a local
+// file) would lose all data. Postgres is a real managed database that
+// persists independently of the web service.
+
+const { Pool } = require('pg');
+
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  console.error('❌ DATABASE_URL environment variable is not set. Cannot connect to the database.');
+  console.error('   Locally: postgres://postgres:yourpassword@localhost:5432/onetag_test');
+  console.error('   On Render: copy the "Internal Database URL" from your Postgres instance.');
+  process.exit(1);
+}
+
+// Render's managed Postgres requires SSL but uses a certificate chain that
+// Node doesn't automatically trust — rejectUnauthorized:false is the
+// standard, documented way to connect to it. Not needed for local testing.
+const isLocal = connectionString.includes('localhost') || connectionString.includes('127.0.0.1');
+const pool = new Pool({
+  connectionString,
+  ssl: isLocal ? false : { rejectUnauthorized: false }
+});
+
+async function initSchema() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS tags (
+      tag_id TEXT PRIMARY KEY,
+      uid TEXT UNIQUE,
+      status TEXT NOT NULL DEFAULT 'unclaimed',
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS schools (
+      school_id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS profiles (
+      tag_id TEXT PRIMARY KEY REFERENCES tags(tag_id),
+      child_name TEXT,
+      photo_url TEXT,
+      school_id TEXT REFERENCES schools(school_id),
+      school_name_other TEXT,
+      class_name TEXT,
+      emergency_contacts TEXT,
+      health_info TEXT,
+      parent_phone TEXT,
+      parent_email TEXT,
+      locked INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS admins (
+      admin_id TEXT PRIMARY KEY,
+      username TEXT NOT NULL UNIQUE,
+      email TEXT NOT NULL,
+      password_hash TEXT,
+      password_salt TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      role TEXT NOT NULL DEFAULT 'school_admin',
+      school_id TEXT REFERENCES schools(school_id),
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS admin_sessions (
+      token TEXT PRIMARY KEY,
+      admin_id TEXT NOT NULL REFERENCES admins(admin_id),
+      expires_at TIMESTAMP NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS parent_sessions (
+      token TEXT PRIMARY KEY,
+      phone TEXT NOT NULL,
+      expires_at TIMESTAMP NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS staff (
+      staff_id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      phone TEXT,
+      email TEXT,
+      role TEXT NOT NULL DEFAULT 'teacher',
+      school_id TEXT,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+    INSERT INTO settings (key, value) VALUES ('site_language', 'mn') ON CONFLICT (key) DO NOTHING;
+
+    CREATE TABLE IF NOT EXISTS otp_codes (
+      id SERIAL PRIMARY KEY,
+      target TEXT NOT NULL,
+      target_type TEXT NOT NULL,
+      purpose TEXT NOT NULL,
+      ref_id TEXT NOT NULL,
+      code TEXT NOT NULL,
+      expires_at TIMESTAMP NOT NULL,
+      used INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS gate_logs (
+      id SERIAL PRIMARY KEY,
+      tag_id TEXT NOT NULL,
+      direction TEXT NOT NULL,
+      timestamp TIMESTAMP NOT NULL DEFAULT NOW(),
+      location_lat DOUBLE PRECISION,
+      location_lng DOUBLE PRECISION
+    );
+
+    CREATE TABLE IF NOT EXISTS scan_logs (
+      id SERIAL PRIMARY KEY,
+      tag_id TEXT NOT NULL,
+      timestamp TIMESTAMP NOT NULL DEFAULT NOW(),
+      location_lat DOUBLE PRECISION,
+      location_lng DOUBLE PRECISION,
+      scanner_role TEXT DEFAULT 'public'
+    );
+  `);
+}
+
+// Runs a set of queries inside a transaction using a single client —
+// needed for multi-step operations (like the bulk tag provisioning loop
+// or the UID-reassignment swap) that must all succeed or all fail together.
+async function withTransaction(fn) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await fn(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+module.exports = { pool, initSchema, withTransaction };
