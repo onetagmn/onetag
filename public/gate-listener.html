@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>OneTag Gate Reader</title>
+<style>
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0E2A32;
+    color: white;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  h1 { font-size: 20px; margin-bottom: 6px; }
+  .hint { color: #9fb3b8; font-size: 13px; margin-bottom: 30px; }
+  #catcher {
+    position: fixed;
+    top: -1000px; /* kept off-screen but focused, so it silently catches keystrokes */
+  }
+  .status {
+    font-size: 48px;
+    font-weight: 800;
+    margin-bottom: 10px;
+  }
+  .status.in { color: #6FCF97; }
+  .status.out { color: #F2A65A; }
+  .status.error { color: #EB5757; }
+  .detail { font-size: 16px; color: #cfe0e3; }
+  .log {
+    margin-top: 40px;
+    width: 480px;
+    max-height: 300px;
+    overflow-y: auto;
+    font-size: 13px;
+    color: #9fb3b8;
+  }
+  .log div { padding: 4px 0; border-bottom: 1px solid #1c3d47; }
+</style>
+</head>
+<body>
+  <h1>OneTag Gate Reader</h1>
+  <p class="hint">Keep this window open and focused. Tap wristbands on the reader below.</p>
+  <div class="status" id="status">Ready</div>
+  <div class="detail" id="detail">Waiting for a tap...</div>
+  <div class="log" id="log"></div>
+
+  <!-- This input silently captures whatever the reader "types" -->
+  <input type="text" id="catcher" autofocus>
+
+<script>
+// ---- CONFIG ----
+const API_BASE = 'https://onetag-0b04.onrender.com'; // your deployed Render URL
+// -----------------
+
+const catcher = document.getElementById('catcher');
+const statusEl = document.getElementById('status');
+const detailEl = document.getElementById('detail');
+const logEl = document.getElementById('log');
+
+// Detect this gate's location once when the page loads, so the same hosted
+// file works at every gate without any per-location editing. A URL like
+// ?lat=47.91&lng=106.91 always wins if present (useful for precision or if
+// the browser's own GPS fix would be inaccurate indoors). Otherwise we ask
+// the browser once and cache the result for the rest of this session.
+let gateLat = null, gateLng = null;
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.has('lat') && urlParams.has('lng')) {
+  gateLat = parseFloat(urlParams.get('lat'));
+  gateLng = parseFloat(urlParams.get('lng'));
+  detailEl.textContent = `Location set from URL: ${gateLat}, ${gateLng}`;
+} else if (navigator.geolocation) {
+  detailEl.textContent = 'Detecting this gate\'s location...';
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      gateLat = pos.coords.latitude;
+      gateLng = pos.coords.longitude;
+      detailEl.textContent = 'Ready — location detected. Waiting for a tap...';
+    },
+    () => { detailEl.textContent = 'Ready — location unavailable, taps will log without GPS.'; },
+    { timeout: 20000 }
+  );
+}
+
+// Keep focus on the hidden input at all times, so keystrokes always land here
+// even if someone accidentally clicks elsewhere on the page.
+setInterval(() => catcher.focus(), 500);
+catcher.focus();
+
+function logLine(text) {
+  const div = document.createElement('div');
+  div.textContent = `${new Date().toLocaleTimeString()} — ${text}`;
+  logEl.prepend(div);
+}
+
+async function handleUid(rawUid) {
+  // The reader outputs the UID as hex characters (format depends on its
+  // configuration — commonly no separators, e.g. "046DA494C82A81").
+  // We normalize it to match how write-tags.js recorded it (colon-separated).
+  const clean = rawUid.trim().replace(/[^0-9A-Fa-f]/g, '');
+  if (!clean) return;
+  const formatted = clean.match(/.{1,2}/g).join(':').toUpperCase();
+
+  try {
+    const lookup = await fetch(`${API_BASE}/api/tag/by-uid/${formatted}`);
+    if (!lookup.ok) {
+      statusEl.textContent = 'Unknown tag';
+      statusEl.className = 'status error';
+      detailEl.textContent = `UID ${formatted} isn't registered to any child yet.`;
+      logLine(`✘ Unknown UID: ${formatted}`);
+      return;
+    }
+    const { tag_id } = await lookup.json();
+
+    // Direction is now decided by the server (first tap of the day = in,
+    // next = out, anything further that day is ignored) — we just send the
+    // location and read back what happened.
+    const gateRes = await fetch(`${API_BASE}/api/gate/${tag_id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lat: gateLat, lng: gateLng })
+    });
+    const gateResult = await gateRes.json();
+
+    if (gateResult.ignored) {
+      statusEl.textContent = 'Already logged';
+      statusEl.className = 'status'; // neutral, not in/out colored
+      detailEl.textContent = `${tag_id} already has both in & out recorded today — this tap didn't change anything.`;
+      logLine(`— ${tag_id} — extra tap ignored`);
+      return;
+    }
+
+    const direction = gateResult.direction;
+    statusEl.textContent = direction.toUpperCase();
+    statusEl.className = `status ${direction}`;
+    detailEl.textContent = `${tag_id} logged at ${new Date().toLocaleTimeString()}`;
+    logLine(`✔ ${tag_id} — ${direction}`);
+  } catch (err) {
+    statusEl.textContent = 'Error';
+    statusEl.className = 'status error';
+    detailEl.textContent = err.message;
+    logLine(`✘ Error: ${err.message}`);
+  }
+}
+
+catcher.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    const value = catcher.value;
+    catcher.value = '';
+    handleUid(value);
+  }
+});
+</script>
+</body>
+</html>
