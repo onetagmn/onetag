@@ -47,7 +47,7 @@
   </div>
 
 <script>
-const API_BASE = 'http://localhost:3000'; // change to your real Render URL for production
+const API_BASE = window.location.origin; // auto-detects localhost during dev, onrender.com in production
 const app = document.getElementById('app');
 function esc(val) {
   if (val === null || val === undefined) return '';
