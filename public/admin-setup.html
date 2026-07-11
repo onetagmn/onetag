@@ -29,10 +29,10 @@
 <body>
   <div class="card">
     <h1>Set up your OneTag admin account</h1>
-    <p class="hint">Enter the admin ID and code from your invitation email, and choose a password.</p>
+    <p class="hint">Enter your username and the code from your invitation email, and choose a password.</p>
     <form id="setupForm">
-      <label>Admin ID</label>
-      <input name="admin_id" required placeholder="ADM-XXXXXX">
+      <label>Username</label>
+      <input name="username" required placeholder="The username your invite was sent under">
       <label>Code from email</label>
       <input name="code" required maxlength="6">
       <label>Choose a password (min 8 characters)</label>
@@ -54,7 +54,7 @@ document.getElementById('setupForm').addEventListener('submit', async (e) => {
   const res = await fetch(`${API_BASE}/api/admin/admins/complete-setup`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ admin_id: f.admin_id.value, code: f.code.value, password: f.password.value })
+    body: JSON.stringify({ username: f.username.value, code: f.code.value, password: f.password.value })
   });
   const out = await res.json();
   if (!res.ok) {
