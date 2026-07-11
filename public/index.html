@@ -118,7 +118,7 @@
   .footer-link { text-align: center; margin-top: 10px; }
   .locked-badge {
     display: inline-block; font-size: 11px; font-weight: 700;
-    background: var(--sun-dim); color: var(--steppe);
+    background: var(--steppe); color: white;
     padding: 3px 9px; border-radius: 20px; margin-bottom: 10px;
   }
   .loading { text-align: center; padding: 60px 0; color: #6B7A7D; }
@@ -199,7 +199,7 @@ const TRANSLATIONS = {
     parentEmail: 'Parent email * (used for edit codes)', saveLock: 'Save & Lock Profile',
     lostChildBanner: 'LOST CHILD — PLEASE HELP', callGuardian: 'Call Guardian Now',
     callGuardianHint: "Tapping connects you directly.",
-    profileLocked: '🔒 Profile locked', editHint: 'Request a code to edit this profile.',
+    profileLocked: 'Profile locked', editHint: 'Request a code to edit this profile.',
     editProfile: 'Edit this profile', requestCodeTitle: 'Request edit code',
     sendCodeBtn: 'Send code', enterCodeTitle: 'Enter code', codeTargetLabel: 'Your email address',
     codeLabel: '6-digit code', verifyUnlock: 'Verify & Unlock', bloodTypeLabel: 'Blood type'
@@ -220,7 +220,7 @@ const TRANSLATIONS = {
     parentEmail: 'Эцэг эхийн имэйл * (код авахад ашиглана)', saveLock: 'Хадгалж түгжих',
     lostChildBanner: 'ХҮҮХЭД ТӨӨРСӨН — ТУСЛАНА УУ', callGuardian: 'Асран хамгаалагчид залгах',
     callGuardianHint: 'Дарахад шууд холбоно.',
-    profileLocked: '🔒 Профайл түгжигдсэн', editHint: 'Энэ профайлыг засварлах код хүсэх.',
+    profileLocked: 'Профайл түгжигдсэн', editHint: 'Энэ профайлыг засварлах код хүсэх.',
     editProfile: 'Профайл засах', requestCodeTitle: 'Засварлах код хүсэх',
     sendCodeBtn: 'Код илгээх', enterCodeTitle: 'Код оруулах', codeTargetLabel: 'Таны имэйл хаяг',
     codeLabel: '6 оронтой код', verifyUnlock: 'Баталгаажуулж түгжээг тайлах', bloodTypeLabel: 'Цусны бүлэг'
@@ -241,7 +241,7 @@ const TRANSLATIONS = {
     parentEmail: '家长邮箱 *（用于获取修改验证码）', saveLock: '保存并锁定资料',
     lostChildBanner: '走失儿童 — 请帮助', callGuardian: '📞 立即致电监护人',
     callGuardianHint: '点击直接接通——电话号码保持私密。',
-    profileLocked: '🔒 资料已锁定', editHint: '家长或老师？请求验证码以编辑此资料。',
+    profileLocked: '资料已锁定', editHint: '家长或老师？请求验证码以编辑此资料。',
     editProfile: '编辑资料', requestCodeTitle: '请求编辑验证码',
     sendCodeBtn: '发送验证码', enterCodeTitle: '输入验证码', codeTargetLabel: '您的邮箱地址',
     codeLabel: '6 位验证码', verifyUnlock: '验证并解锁', bloodTypeLabel: '血型'
@@ -438,7 +438,6 @@ async function renderPublicProfile() {
 
       <div class="card">
         <span class="locked-badge">${t('profileLocked')}</span>
-        <p class="hint">${t('editHint')}</p>
         <button class="btn secondary" id="editBtn">${t('editProfile')}</button>
       </div>
     </div>
