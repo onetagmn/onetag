@@ -149,19 +149,26 @@ app.post('/api/admin/admins/invite', requireSuperAdmin, async (req, res) => {
 });
 
 app.post('/api/admin/admins/complete-setup', async (req, res) => {
-  const { admin_id, code, password } = req.body;
-  if (!admin_id || !code || !password) return res.status(400).json({ error: 'admin_id, code, and password are required' });
+  // Accepts either the internal admin_id (ADM-XXXXXX) or the plain username —
+  // school admins setting up their account only know their username, not the
+  // internal ID, so username is the expected/primary way to look this up.
+  const { admin_id, username, code, password } = req.body;
+  const lookupValue = admin_id || username;
+  if (!lookupValue || !code || !password) return res.status(400).json({ error: 'username, code, and password are required' });
   if (password.length < 8) return res.status(400).json({ error: 'Password must be at least 8 characters' });
 
-  const adminRes = await pool.query(`SELECT * FROM admins WHERE admin_id = $1`, [admin_id]);
+  const adminRes = await pool.query(
+    `SELECT * FROM admins WHERE admin_id = $1 OR username = $1`, [lookupValue]
+  );
   const admin = adminRes.rows[0];
-  if (!admin) return res.status(404).json({ error: 'Unknown admin_id' });
+  if (!admin) return res.status(404).json({ error: 'No pending account found for that username' });
+  if (admin.status !== 'pending') return res.status(409).json({ error: 'This account has already been activated. Try logging in instead.' });
 
-  const result = await verifyOtp({ target: admin.email, purpose: 'admin_setup', refId: admin_id, code });
+  const result = await verifyOtp({ target: admin.email, purpose: 'admin_setup', refId: admin.admin_id, code });
   if (!result.valid) return res.status(401).json({ error: result.reason });
 
   const { hash, salt } = hashPassword(password);
-  await pool.query(`UPDATE admins SET password_hash = $1, password_salt = $2, status = 'active' WHERE admin_id = $3`, [hash, salt, admin_id]);
+  await pool.query(`UPDATE admins SET password_hash = $1, password_salt = $2, status = 'active' WHERE admin_id = $3`, [hash, salt, admin.admin_id]);
   res.json({ success: true });
 });
 
