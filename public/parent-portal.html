@@ -107,14 +107,14 @@ async function loadHistory(token) {
     card.className = 'card';
     const gateRows = child.gate_logs.map(g => `
       <div class="log-row">
-        <span>${new Date(g.timestamp + 'Z').toLocaleString()}</span>
+        <span>${new Date(g.timestamp).toLocaleString()}</span>
         <span class="${g.direction === 'in' ? 'tag-in' : 'tag-out'}">${g.direction.toUpperCase()}</span>
       </div>
     `).join('') || '<p class="empty">No gate activity yet.</p>';
 
     const scanRows = child.scan_logs.map(s => `
       <div class="log-row">
-        <span>${new Date(s.timestamp + 'Z').toLocaleString()}</span>
+        <span>${new Date(s.timestamp).toLocaleString()}</span>
         <span>${s.location_lat ? `${s.location_lat.toFixed(4)}, ${s.location_lng.toFixed(4)}` : 'No location'}</span>
       </div>
     `).join('') || '<p class="empty">No scans yet.</p>';
