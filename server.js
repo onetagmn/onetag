@@ -15,7 +15,16 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders: (res, filePath) => {
+    // HTML pages must always be fetched fresh — staff, parents, and finders
+    // should never be stuck on a stale cached version after we ship a fix.
+    // Other static assets (if any are added later) can still cache normally.
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+  }
+}));
 
 // ---------- Basic rate limiting for sensitive endpoints ----------
 const rateLimitBuckets = new Map();
