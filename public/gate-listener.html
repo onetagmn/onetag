@@ -81,7 +81,7 @@ if (urlParams.has('lat') && urlParams.has('lng')) {
       detailEl.textContent = 'Ready — location detected. Waiting for a tap...';
     },
     () => { detailEl.textContent = 'Ready — location unavailable, taps will log without GPS.'; },
-    { timeout: 20000 }
+    { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
   );
 }
 

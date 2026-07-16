@@ -174,7 +174,12 @@ function logScan(role = 'public') {
     navigator.geolocation.getCurrentPosition(
       pos => send(pos.coords.latitude, pos.coords.longitude),
       () => send(null, null),
-      { timeout: 20000 } // desktop WiFi-based location can take 10-15s, unlike phone GPS
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+      // enableHighAccuracy: true asks for a real GPS fix on phones instead of a
+      // coarse WiFi/network-based estimate — that network-based fallback is
+      // why repeated taps from the same building always returned the exact
+      // same coordinate. maximumAge: 0 also guarantees a fresh reading every
+      // time, never a cached one.
     );
   } else {
     send(null, null);
