@@ -170,10 +170,30 @@ function logScan(role = 'public') {
       body: JSON.stringify({ lat, lng, role })
     }).catch(() => {});
   };
+  // TEMPORARY DEBUG DISPLAY — shows exactly what the browser's geolocation
+  // API returned, including the accuracy radius in meters. Remove this once
+  // we've confirmed real GPS readings are coming through correctly; it's
+  // not meant to stay in the production page long-term.
+  function showDebug(text) {
+    let el = document.getElementById('geoDebug');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'geoDebug';
+      el.style.cssText = 'position:fixed;bottom:8px;left:8px;right:8px;background:#000;color:#0f0;font:11px monospace;padding:8px;border-radius:6px;z-index:9999;white-space:pre-wrap;';
+      document.body.appendChild(el);
+    }
+    el.textContent = text;
+  }
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
-      pos => send(pos.coords.latitude, pos.coords.longitude),
-      () => send(null, null),
+      pos => {
+        showDebug(`GEO OK\nlat: ${pos.coords.latitude}\nlng: ${pos.coords.longitude}\naccuracy: ${pos.coords.accuracy}m\ntimestamp: ${new Date(pos.timestamp).toLocaleTimeString()}`);
+        send(pos.coords.latitude, pos.coords.longitude);
+      },
+      err => {
+        showDebug(`GEO ERROR\ncode: ${err.code}\nmessage: ${err.message}`);
+        send(null, null);
+      },
       { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
       // enableHighAccuracy: true asks for a real GPS fix on phones instead of a
       // coarse WiFi/network-based estimate — that network-based fallback is
@@ -182,6 +202,7 @@ function logScan(role = 'public') {
       // time, never a cached one.
     );
   } else {
+    showDebug('navigator.geolocation not available on this device/browser.');
     send(null, null);
   }
 }
