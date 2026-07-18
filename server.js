@@ -89,6 +89,25 @@ function requireSuperAdmin(req, res, next) {
     next();
   });
 }
+async function requireStaffAuth(req, res, next) {
+  try {
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    if (!token) return res.status(401).json({ error: 'Missing staff session token' });
+
+    const sessionRes = await pool.query(`SELECT * FROM staff_sessions WHERE token = $1`, [token]);
+    const session = sessionRes.rows[0];
+    if (!session || new Date(session.expires_at) < new Date()) {
+      return res.status(401).json({ error: 'Session expired or invalid — please log in again' });
+    }
+    const staffRes = await pool.query(`SELECT * FROM staff WHERE staff_id = $1`, [session.staff_id]);
+    const staff = staffRes.rows[0];
+    if (!staff) return res.status(401).json({ error: 'Staff account not found' });
+
+    req.staff = staff;
+    next();
+  } catch (err) { res.status(500).json({ error: err.message }); }
+}
 
 // ---------- Bootstrap: create the first super_admin if none exists ----------
 async function bootstrapSuperAdmin() {
@@ -462,16 +481,22 @@ app.get('/api/gate-logs', requireAdmin, async (req, res) => {
 });
 
 // ---------- Teacher/staff OTP login ----------
-app.post('/api/staff/register', async (req, res) => {
+// Requires an admin to be logged in — staff accounts should be created
+// by someone with authority over that school, not by anyone who finds
+// this endpoint.
+app.post('/api/staff/register', requireAdmin, async (req, res) => {
   const { name, phone, email, role, school_id } = req.body;
   if (!name || (!phone && !email)) return res.status(400).json({ error: 'name and phone or email required' });
+  // A school admin can only register staff for their own school; a super
+  // admin may specify any school_id.
+  const effectiveSchoolId = req.admin.role === 'super_admin' ? (school_id || null) : req.admin.school_id;
   const staffId = genStaffId();
   await pool.query(`INSERT INTO staff (staff_id, name, phone, email, role, school_id) VALUES ($1, $2, $3, $4, $5, $6)`,
-    [staffId, name, phone || null, email || null, role || 'teacher', school_id || null]);
+    [staffId, name, phone || null, email || null, role || 'teacher', effectiveSchoolId]);
   res.json({ staff_id: staffId });
 });
 
-app.post('/api/staff/request-otp', async (req, res) => {
+app.post('/api/staff/request-otp', rateLimit(5, 15), async (req, res) => {
   const { staff_id, channel } = req.body;
   const staffRes = await pool.query(`SELECT * FROM staff WHERE staff_id = $1`, [staff_id]);
   const staff = staffRes.rows[0];
@@ -482,16 +507,27 @@ app.post('/api/staff/request-otp', async (req, res) => {
   res.json(result);
 });
 
-app.post('/api/staff/verify-otp', async (req, res) => {
+app.post('/api/staff/verify-otp', rateLimit(10, 15), async (req, res) => {
   const { staff_id, target, code } = req.body;
   const result = await verifyOtp({ target, purpose: 'staff_login', refId: staff_id, code });
   if (!result.valid) return res.status(401).json({ error: result.reason });
+  // Actually persist the session this time — previously this token was
+  // generated and handed to the client but never stored anywhere, so it
+  // could never be validated on any later request.
   const sessionToken = crypto.randomBytes(24).toString('hex');
+  const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000); // 12-hour shift-length session
+  await pool.query(`INSERT INTO staff_sessions (token, staff_id, expires_at) VALUES ($1, $2, $3)`, [sessionToken, staff_id, expiresAt]);
   res.json({ success: true, sessionToken });
 });
 
-app.get('/api/staff/:staffId/roster', async (req, res) => {
-  const result = await pool.query(`SELECT tag_id, child_name, class_name FROM profiles ORDER BY class_name, child_name`);
+app.get('/api/staff/:staffId/roster', requireStaffAuth, async (req, res) => {
+  // Scoped to the logged-in staff member's own school only — previously
+  // this ignored :staffId entirely and returned every child in every
+  // school to anyone who called it, with no login required at all.
+  const result = await pool.query(
+    `SELECT tag_id, child_name, class_name FROM profiles WHERE school_id = $1 ORDER BY class_name, child_name`,
+    [req.staff.school_id]
+  );
   res.json(result.rows);
 });
 
@@ -542,7 +578,10 @@ app.post('/api/parent/verify-otp', rateLimit(10, 15), async (req, res) => {
   if (!result.valid) return res.status(401).json({ error: result.reason });
 
   const token = crypto.randomBytes(32).toString('hex');
-  const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+  // 30-day session so a parent's device stays recognized between visits —
+  // they only need to verify with OTP again after 30 days, or if they clear
+  // their browser data / switch devices.
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   await pool.query(`INSERT INTO parent_sessions (token, phone, expires_at) VALUES ($1, $2, $3)`, [token, phone, expiresAt]);
   res.json({ success: true, token });
 });
