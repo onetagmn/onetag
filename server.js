@@ -250,7 +250,7 @@ app.get('/api/admin/me', requireAdmin, (req, res) => {
 });
 
 // ---------- Bulk tag provisioning ----------
-app.post('/api/admin/provision', async (req, res) => {
+app.post('/api/admin/provision', requireSuperAdmin, async (req, res) => {
   const count = parseInt(req.body.count, 10) || 0;
   if (count <= 0 || count > 5000) return res.status(400).json({ error: 'Invalid count' });
 
@@ -268,8 +268,19 @@ app.post('/api/admin/provision', async (req, res) => {
   res.json({ created: created.length, tag_ids: created });
 });
 
+// A shared secret for the tag-writer scripts (write-tags.js, prepare-tag.js)
+// running on your laptop, which have no browser login session to attach a
+// normal admin token to. Anyone who doesn't know this key can no longer
+// silently rebind which physical wristband a tag_id points to.
+const TAG_WRITE_KEY = process.env.TAG_WRITE_KEY || 'onetag-write-2026';
+if (!process.env.TAG_WRITE_KEY) {
+  console.warn('⚠️  WARNING: TAG_WRITE_KEY is not set as an environment variable — using the default fallback.');
+  console.warn('⚠️  Set a real TAG_WRITE_KEY before deploying to production, or anyone could rebind a tag\'s UID.');
+}
+
 // ---------- UID registration ----------
-app.post('/api/tag/:tagId/set-uid', async (req, res) => {
+app.post('/api/tag/:tagId/set-uid', rateLimit(30, 15), async (req, res) => {
+  if (req.body.key !== TAG_WRITE_KEY) return res.status(401).json({ error: 'Invalid or missing write key' });
   const { tagId } = req.params;
   const uid = normalizeUid(req.body.uid);
   if (!uid) return res.status(400).json({ error: 'uid is required' });
@@ -392,7 +403,7 @@ app.get('/api/profile/:tagId', async (req, res) => {
   });
 });
 
-app.post('/api/scan/:tagId', async (req, res) => {
+app.post('/api/scan/:tagId', rateLimit(20, 15), async (req, res) => {
   const { tagId } = req.params;
   const { lat, lng, role } = req.body;
   await pool.query(`INSERT INTO scan_logs (tag_id, location_lat, location_lng, scanner_role) VALUES ($1, $2, $3, $4)`,
@@ -403,7 +414,18 @@ app.post('/api/scan/:tagId', async (req, res) => {
 // ---------- Gate logs ----------
 const MIN_MINUTES_BETWEEN_IN_AND_OUT = 30;
 
-app.post('/api/gate/:tagId', async (req, res) => {
+// Shared secret for the gate reader device (gate-listener.html), which has
+// no browser login either — it's an unattended device sitting at a school
+// gate. Without this, anyone who knew a tag_id could POST fake "arrived
+// safely" / "left safely" events for a child who was never actually there.
+const GATE_DEVICE_KEY = process.env.GATE_DEVICE_KEY || 'onetag-gate-2026';
+if (!process.env.GATE_DEVICE_KEY) {
+  console.warn('⚠️  WARNING: GATE_DEVICE_KEY is not set as an environment variable — using the default fallback.');
+  console.warn('⚠️  Set a real GATE_DEVICE_KEY before deploying to production, or gate check-ins could be spoofed.');
+}
+
+app.post('/api/gate/:tagId', rateLimit(20, 15), async (req, res) => {
+  if (req.body.key !== GATE_DEVICE_KEY) return res.status(401).json({ error: 'Invalid or missing device key' });
   const { tagId } = req.params;
   const { lat, lng } = req.body;
 
@@ -430,15 +452,12 @@ app.post('/api/gate/:tagId', async (req, res) => {
   res.json({ success: true, ignored: false, direction: 'out' });
 });
 
-app.get('/api/gate/:tagId/history', async (req, res) => {
-  const result = await pool.query(`SELECT * FROM gate_logs WHERE tag_id = $1 ORDER BY timestamp DESC LIMIT 50`, [req.params.tagId]);
-  res.json(result.rows);
-});
-
-app.get('/api/scan/:tagId/history', async (req, res) => {
-  const result = await pool.query(`SELECT * FROM scan_logs WHERE tag_id = $1 ORDER BY timestamp DESC LIMIT 50`, [req.params.tagId]);
-  res.json(result.rows);
-});
+// NOTE: /api/gate/:tagId/history and /api/scan/:tagId/history were removed —
+// they returned a specific child's full location history with zero
+// authentication, and nothing in the app actually used them. The dashboard
+// uses /api/gate-logs and /api/scan-logs (admin-only, school-scoped), and
+// the parent portal uses /api/parent/history (session-token scoped to that
+// parent's own children). Neither needs a per-tag public history route.
 
 app.get('/api/scan-logs', requireAdmin, async (req, res) => {
   const schoolFilter = req.admin.role === 'super_admin' ? '' : 'AND profiles.school_id = $1';
