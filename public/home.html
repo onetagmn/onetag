@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="index, follow">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OneTag — NFC Safety Wristband</title>
+<meta name="description" content="OneTag is an NFC wristband that logs safe school arrival and departure automatically, and instantly shows real-time location and emergency details to anyone who finds your child.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue: #0B5FFF; --blue-dark: #0847C7; --sky: #DCEEFF; --green: #32C36C;
+    --white: #FFFFFF; --bg-light: #F7F9FC; --ink: #1E293B; --muted: #64748B;
+    --line: #E4E9F0; --radius: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter', -apple-system, "Segoe UI", sans-serif; background: var(--white); color: var(--ink); overflow-x: hidden; line-height: 1.5; }
+  img { max-width: 100%; display: block; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+  section { padding: 96px 0; }
+  h1, h2, h3 { font-weight: 800; letter-spacing: -0.02em; }
+  a { color: inherit; }
+  button { font-family: inherit; }
+
+  .nav { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .nav-logo { font-weight: 800; font-size: 19px; color: var(--ink); display: flex; align-items: center; gap: 8px; }
+  .nav-logo .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); }
+  .nav-right { display: flex; align-items: center; gap: 18px; }
+  .nav-links { display: flex; gap: 22px; font-size: 14.5px; font-weight: 500; color: var(--muted); }
+  .nav-links a { text-decoration: none; }
+  .nav-links a:hover { color: var(--ink); }
+  .nav-actions { display: flex; gap: 10px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; font-size: 14.5px; font-weight: 700; padding: 11px 20px; border-radius: 10px; text-decoration: none; cursor: pointer; border: none; }
+  .btn-primary { background: var(--blue); color: #fff; }
+  .btn-primary:hover { background: var(--blue-dark); }
+  .btn-primary:disabled { opacity: 0.6; cursor: default; }
+  .btn-ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
+  .btn-ghost:hover { border-color: var(--blue); color: var(--blue); }
+  .btn-sm { padding: 8px 14px; font-size: 13px; }
+  .lang-bar { display: flex; gap: 6px; }
+  .lang-btn { padding: 5px 13px; border-radius: 20px; border: 1px solid var(--line); background: #fff; color: var(--muted); font-size: 12.5px; font-weight: 700; cursor: pointer; }
+  .lang-btn.active { background: var(--sky); color: var(--blue); border-color: var(--sky); }
+
+  .hero { padding: 88px 0 40px; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; top: -180px; right: -160px; width: 480px; height: 480px; border-radius: 50%; background: radial-gradient(circle, var(--sky), transparent 70%); z-index: 0; }
+  .hero::after { content: ''; position: absolute; bottom: -220px; left: -180px; width: 420px; height: 420px; border-radius: 50%; background: radial-gradient(circle, var(--sky), transparent 70%); z-index: 0; }
+  .hero-inner { position: relative; z-index: 1; text-align: center; max-width: 760px; margin: 0 auto; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 7px; background: var(--sky); color: var(--blue); font-size: 13px; font-weight: 700; padding: 7px 16px; border-radius: 20px; margin-bottom: 22px; }
+  .eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+  .hero h1 { font-size: clamp(34px, 5.6vw, 56px); line-height: 1.1; color: var(--ink); }
+  .hero-sub { margin-top: 20px; font-size: clamp(16px, 2vw, 19px); color: var(--muted); max-width: 580px; margin-left: auto; margin-right: auto; font-weight: 400; }
+  .hero-ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 32px; }
+  .hero-ctas .btn { padding: 14px 26px; font-size: 15px; }
+
+  /* Dual scenario panels */
+  .panels { position: relative; z-index: 1; max-width: 900px; margin: 56px auto 0; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .panel { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 28px 26px; text-align: left; }
+  .panel-icon { width: 40px; height: 40px; border-radius: 11px; background: var(--sky); color: var(--blue); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; margin-bottom: 14px; }
+  .panel h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+  .panel p { font-size: 14px; color: var(--muted); line-height: 1.6; font-weight: 400; }
+  .panel-photo { width: 100%; border-radius: 12px; margin-top: 16px; overflow: hidden; aspect-ratio: 4/3; }
+  .panel-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+  .photo-stage { position: relative; z-index: 1; max-width: 480px; margin: 56px auto 0; cursor: pointer; }
+  .photo-frame { position: relative; aspect-ratio: 16/10; border-radius: 22px; overflow: hidden; background: linear-gradient(160deg, var(--sky), var(--bg-light)); border: 1px solid var(--line); box-shadow: 0 24px 60px -20px rgba(11,95,255,0.25); }
+  .photo-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .photo-caption { margin-top: 14px; font-size: 13px; color: var(--muted); text-align: center; }
+
+  .reveal-overlay { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0); pointer-events: none; transition: background 0.35s ease; padding: 24px; }
+  .reveal-overlay.active { background: rgba(15, 23, 42, 0.55); pointer-events: auto; }
+  .reveal-card { width: min(320px, 100%); background: #fff; border-radius: 18px; padding: 26px 24px; text-align: left; transform: translateY(20px) scale(0.96); opacity: 0; transition: transform 0.35s cubic-bezier(.2,.8,.2,1), opacity 0.35s ease; box-shadow: 0 30px 60px -20px rgba(0,0,0,0.3); }
+  .reveal-overlay.active .reveal-card { transform: translateY(0) scale(1); opacity: 1; }
+  .reveal-badge { display: inline-block; background: var(--green); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 5px 11px; border-radius: 20px; margin-bottom: 14px; }
+  .reveal-card h3 { font-size: 20px; font-weight: 700; }
+  .reveal-card p.sub { font-size: 13px; color: var(--muted); margin: 4px 0 16px; font-weight: 400; }
+  .reveal-row { display: flex; justify-content: space-between; padding: 9px 0; border-top: 1px solid var(--line); font-size: 13px; }
+  .reveal-row span:first-child { color: var(--muted); }
+  .reveal-row span:last-child { font-weight: 600; }
+  .reveal-call { margin-top: 16px; background: var(--blue); color: #fff; text-align: center; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 700; }
+  .reveal-close { display: block; text-align: center; margin-top: 14px; font-size: 12px; color: var(--muted); cursor: pointer; }
+
+  .eyebrow-sm { color: var(--blue); font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; text-align: center; margin-bottom: 12px; }
+  .section-title { font-size: clamp(26px, 3.6vw, 38px); text-align: center; color: var(--ink); max-width: 680px; margin: 0 auto 16px; line-height: 1.2; }
+  .section-sub { text-align: center; color: var(--muted); font-size: 16px; max-width: 560px; margin: 0 auto 56px; font-weight: 400; }
+  .bg-light { background: var(--bg-light); }
+  .bg-dark { background: var(--ink); color: #fff; }
+
+  /* ---------- GPS SPEED DEMO ---------- */
+  .gps-demo { max-width: 560px; margin: 0 auto; text-align: center; }
+  .gps-stage {
+    position: relative; aspect-ratio: 4/3; border-radius: var(--radius); overflow: hidden;
+    background-color: #0E2338;
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(255,255,255,0.14) 1px, transparent 0);
+    background-size: 22px 22px;
+    margin-bottom: 24px; display: flex; align-items: center; justify-content: center;
+  }
+  .gps-pin { position: relative; opacity: 0; transition: opacity 0.3s ease; }
+  .gps-pin.show { opacity: 1; }
+  .pin-dot { width: 16px; height: 16px; border-radius: 50%; background: var(--green); border: 3px solid #fff; position: relative; z-index: 2; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+  .pulse-ring { position: absolute; inset: -20px; border: 2px solid var(--green); border-radius: 50%; opacity: 0; }
+  .gps-pin.show .pulse-ring { animation: pulseOut 1.6s ease-out infinite; }
+  .gps-pin.show .pulse-ring.delay1 { animation-delay: 0.5s; }
+  .gps-pin.show .pulse-ring.delay2 { animation-delay: 1s; }
+  @keyframes pulseOut { 0% { transform: scale(0.3); opacity: 0.9; } 100% { transform: scale(2.6); opacity: 0; } }
+  .gps-result { position: absolute; bottom: 16px; left: 16px; right: 16px; background: rgba(255,255,255,0.95); border-radius: 12px; padding: 12px 16px; opacity: 0; transform: translateY(8px); transition: opacity 0.3s ease, transform 0.3s ease; text-align: left; }
+  .gps-result.show { opacity: 1; transform: translateY(0); }
+  .gps-result .big { font-size: 17px; font-weight: 800; color: var(--ink); }
+  .gps-result .small { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+  .gps-timer { font-family: 'Inter', monospace; font-size: 15px; font-weight: 700; color: var(--muted); margin-bottom: 14px; min-height: 20px; }
+  .gps-footer-note { margin-top: 20px; font-size: 13.5px; color: var(--muted); max-width: 460px; margin-left: auto; margin-right: auto; }
+  .gps-real-photo { max-width: 280px; margin: 32px auto 0; border-radius: 18px; overflow: hidden; box-shadow: 0 24px 50px -20px rgba(11,95,255,0.3); }
+  .gps-real-photo img { width: 100%; display: block; }
+  .gps-real-caption { margin-top: 10px; font-size: 12.5px; color: var(--muted); }
+
+  /* ---------- STATS ---------- */
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 32px; }
+  .stat-box { text-align: center; }
+  .stat-num { font-size: clamp(30px, 4.4vw, 44px); font-weight: 800; color: var(--blue); line-height: 1; }
+  .stat-label { margin-top: 10px; font-size: 13.5px; color: var(--muted); line-height: 1.5; max-width: 220px; margin-left: auto; margin-right: auto; }
+  .stats-footer-note { text-align: center; font-size: 15px; color: var(--ink); font-weight: 600; max-width: 560px; margin: 0 auto; line-height: 1.6; }
+
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .icon-card { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 28px 24px; }
+  .icon-badge { width: 42px; height: 42px; border-radius: 12px; background: var(--sky); display: flex; align-items: center; justify-content: center; margin-bottom: 16px; color: var(--blue); flex-shrink: 0; }
+  .icon-badge svg { width: 22px; height: 22px; }
+  .panel-icon svg, .panel-icon img { width: 20px; height: 20px; }
+  .contact-method .icon-badge svg { width: 18px; height: 18px; }
+  .icon-card h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .icon-card p { font-size: 13.5px; color: var(--muted); line-height: 1.55; font-weight: 400; }
+
+  .timeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; position: relative; }
+  .timeline::before { content: ''; position: absolute; top: 21px; left: 12.5%; right: 12.5%; height: 2px; background: var(--line); }
+  .timeline-step { text-align: center; position: relative; }
+  .timeline-num { width: 44px; height: 44px; border-radius: 50%; background: var(--blue); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; margin: 0 auto 16px; position: relative; z-index: 1; }
+  .timeline-step h3 { font-size: 15.5px; font-weight: 700; margin-bottom: 6px; }
+  .timeline-step p { font-size: 13px; color: var(--muted); font-weight: 400; line-height: 1.5; }
+
+  .tabs-nav { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 40px; }
+  .tab-btn { padding: 10px 18px; border-radius: 10px; border: 1px solid var(--line); background: #fff; font-size: 14px; font-weight: 600; color: var(--muted); cursor: pointer; }
+  .tab-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .tab-content { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 36px; max-width: 720px; margin: 0 auto; }
+  .tab-content ul { list-style: none; display: flex; flex-direction: column; gap: 16px; }
+  .tab-content li { font-size: 15px; color: var(--ink); line-height: 1.6; padding-left: 26px; position: relative; font-weight: 400; }
+  .tab-content li::before { content: '✓'; position: absolute; left: 0; top: 0; color: var(--green); font-weight: 800; }
+
+  .gallery-grid { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 16px; }
+  .gallery-grid .g-tall { grid-row: span 2; }
+  .gallery-item { border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); background: var(--bg-light); position: relative; aspect-ratio: 4/3; }
+  .gallery-item img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+  .testimonial-placeholder { max-width: 640px; margin: 0 auto; text-align: center; background: var(--bg-light); border: 1px dashed var(--line); border-radius: var(--radius); padding: 48px 32px; }
+  .testimonial-placeholder p { color: var(--muted); font-size: 15px; }
+
+  .faq-list { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+  .faq-item { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .faq-q { padding: 18px 20px; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #fff; }
+  .faq-q .chev { transition: transform 0.25s ease; color: var(--muted); font-size: 13px; }
+  .faq-item.open .faq-q .chev { transform: rotate(180deg); }
+  .faq-a { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; background: var(--bg-light); font-size: 14px; color: var(--muted); font-weight: 400; line-height: 1.6; }
+  .faq-item.open .faq-a { max-height: 260px; }
+  .faq-a-inner { padding: 0 20px 18px; }
+
+  .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+  .contact-info h2 { font-size: 28px; margin-bottom: 14px; }
+  .contact-info p { color: var(--muted); font-size: 15px; margin-bottom: 24px; font-weight: 400; }
+  .contact-methods { display: flex; flex-direction: column; gap: 12px; }
+  .contact-method { display: flex; align-items: center; gap: 12px; font-size: 14.5px; font-weight: 600; padding: 12px 16px; border: 1px solid var(--line); border-radius: 12px; text-decoration: none; color: var(--ink); }
+  .contact-method .icon-badge { width: 34px; height: 34px; margin-bottom: 0; font-size: 15px; flex-shrink: 0; }
+  .contact-form { background: var(--bg-light); border-radius: var(--radius); padding: 28px; }
+  .contact-form label { display: block; font-size: 13px; font-weight: 600; margin: 14px 0 6px; }
+  .contact-form label:first-child { margin-top: 0; }
+  .contact-form input, .contact-form textarea { width: 100%; padding: 11px 13px; border: 1px solid var(--line); border-radius: 9px; font-size: 14.5px; font-family: inherit; background: #fff; }
+  .contact-form textarea { resize: vertical; min-height: 90px; }
+  .contact-form .btn { width: 100%; margin-top: 18px; padding: 13px; font-size: 15px; }
+
+  footer { background: var(--ink); color: #CBD5E1; padding: 48px 0 28px; }
+  .footer-top { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 32px; margin-bottom: 32px; }
+  .footer-logo { font-weight: 800; font-size: 18px; color: #fff; margin-bottom: 10px; }
+  .footer-logo .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--green); margin-right: 6px; }
+  .footer-desc { font-size: 13.5px; color: #94A3B8; max-width: 280px; font-weight: 400; }
+  .footer-col h4 { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 12px; }
+  .footer-col a { display: block; font-size: 13.5px; color: #94A3B8; text-decoration: none; margin-bottom: 8px; }
+  .footer-col a:hover { color: #fff; }
+  .footer-bottom { border-top: 1px solid #334155; padding-top: 20px; font-size: 12.5px; color: #64748B; text-align: center; }
+
+  .reveal-on-scroll { opacity: 0; transform: translateY(16px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .reveal-on-scroll.in-view { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 860px) {
+    .grid-3 { grid-template-columns: 1fr 1fr; }
+    .panels { grid-template-columns: 1fr; }
+    .contact-grid { grid-template-columns: 1fr; }
+    .gallery-grid { grid-template-columns: 1fr; }
+    .g-tall { grid-row: span 1; }
+    .timeline { grid-template-columns: 1fr 1fr; row-gap: 32px; }
+    .timeline::before { display: none; }
+    .nav-links { display: none; }
+    .stats-grid { grid-template-columns: 1fr; gap: 32px; }
+  }
+  @media (max-width: 560px) {
+    .grid-3 { grid-template-columns: 1fr; }
+    .timeline { grid-template-columns: 1fr; }
+    section { padding: 64px 0; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo"><span class="dot"></span>OneTag</div>
+  <div class="nav-right">
+    <div class="nav-links">
+      <a href="#gps-demo" data-i18n="nav_gps">Real-time GPS</a>
+      <a href="#how-it-works" data-i18n="nav_how">How it works</a>
+      <a href="#benefits" data-i18n="nav_benefits">Benefits</a>
+      <a href="#faq" data-i18n="nav_faq">FAQ</a>
+      <a href="#contact" data-i18n="nav_contact">Contact</a>
+    </div>
+    <div class="lang-bar" id="langBar"></div>
+    <div class="nav-actions">
+      <a href="/parent-portal.html" class="btn btn-ghost btn-sm" data-i18n="nav_parents">For Parents</a>
+      <a href="/admin-login.html" class="btn btn-primary btn-sm" data-i18n="nav_staff">School Login</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-inner">
+    <div class="eyebrow"><span class="dot"></span><span data-i18n="eyebrow">NFC Safety Wristband</span></div>
+    <h1 data-i18n="hero_h1">Safe every school day. Found in seconds, wherever they are.</h1>
+    <p class="hero-sub" data-i18n="hero_sub">OneTag is a wristband that logs safe arrival and departure at school automatically — and instantly shows real-time location and emergency details to anyone who finds your child, anywhere else.</p>
+    <div class="hero-ctas">
+      <a href="#contact" class="btn btn-primary" data-i18n="hero_cta_primary">Get OneTag for your school</a>
+      <a href="#gps-demo" class="btn btn-ghost" data-i18n="hero_cta_secondary">See how fast it works</a>
+    </div>
+  </div>
+
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-icon"><img src="/assets/icon-panel-lost.png" alt=""></div>
+      <h3 data-i18n="panel_lost_title">If they're ever lost</h3>
+      <p data-i18n="panel_lost_p">Anyone who finds them taps the wristband and instantly sees a name, photo, blood type, allergies, and medical notes — plus one button to call you. Your number stays private, always.</p>
+      <div class="panel-photo"><img src="/assets/call-guardian-screen.png" alt="Call Guardian screen showing a child's profile and emergency call button"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-icon"><img src="/assets/icon-panel-daily.png" alt=""></div>
+      <h3 data-i18n="panel_daily_title">Every single school day</h3>
+      <p data-i18n="panel_daily_p">A tap at the gate each morning and afternoon sends an instant notice: arrived safely, left safely. No sign-in sheets, no wondering.</p>
+      <div class="panel-photo"><img src="/assets/gate-tap-morning.png" alt="Child tapping the OneTag wristband at the school gate"></div>
+    </div>
+  </div>
+
+  <div class="photo-stage" id="photoStage">
+    <div class="photo-frame">
+      <img id="wristbandPhoto" src="/assets/product-hero.png" alt="OneTag wristband">
+    </div>
+    <p class="photo-caption" data-i18n="photo_caption">Tap the photo — this is exactly what a finder sees</p>
+  </div>
+</section>
+
+<div class="reveal-overlay" id="revealOverlay">
+  <div class="reveal-card">
+    <div class="reveal-badge" data-i18n="reveal_badge">Found — tap to help</div>
+    <h3>Anu B.</h3>
+    <p class="sub" data-i18n="reveal_sub">Age 7 · Special Needs School</p>
+    <div class="reveal-row"><span data-i18n="reveal_allergy_label">Allergies</span><span data-i18n="reveal_allergy_val">Peanuts</span></div>
+    <div class="reveal-row"><span data-i18n="reveal_condition_label">Condition</span><span data-i18n="reveal_condition_val">Non-verbal, ASD</span></div>
+    <div class="reveal-row"><span data-i18n="reveal_blood_label">Blood type</span><span>O+</span></div>
+    <div class="reveal-call" data-i18n="reveal_call">Call guardian now</div>
+    <div class="reveal-close" id="revealClose" data-i18n="reveal_close">Close</div>
+  </div>
+</div>
+
+<section id="gps-demo" class="bg-light reveal-on-scroll">
+  <div class="wrap">
+    <div class="eyebrow-sm" data-i18n="gps_eyebrow">Real-time location</div>
+    <h2 class="section-title" data-i18n="gps_title">See how fast we find them</h2>
+    <p class="section-sub" data-i18n="gps_sub">Real GPS, not a guess. Tap below to see it work.</p>
+    <div class="gps-demo">
+      <div class="gps-stage">
+        <div class="gps-pin" id="gpsPin">
+          <div class="pulse-ring"></div>
+          <div class="pulse-ring delay1"></div>
+          <div class="pulse-ring delay2"></div>
+          <div class="pin-dot"></div>
+        </div>
+        <div class="gps-result" id="gpsResult">
+          <div class="big" id="gpsResultBig"></div>
+          <div class="small" id="gpsResultSmall"></div>
+        </div>
+      </div>
+      <div class="gps-timer" id="gpsTimer"></div>
+      <button class="btn btn-primary" id="gpsBtn" data-i18n="gps_btn">Locate now</button>
+      <p class="gps-footer-note" data-i18n="gps_footer_note">The same real-time GPS runs every time the wristband is tapped — at the school gate, or anywhere else.</p>
+      <div class="gps-real-photo"><img src="/assets/gps-locate-screen.png" alt="OneTag app screen showing a child located in 2.4 seconds"></div>
+      <p class="gps-real-caption" data-i18n="gps_real_caption">A real screen from the OneTag app</p>
+    </div>
+  </div>
+</section>
+
+<section class="reveal-on-scroll">
+  <div class="wrap">
+    <div class="eyebrow-sm" data-i18n="stats_eyebrow">Why this matters</div>
+    <h2 class="section-title" data-i18n="stats_title">Every day, thousands of children face risks they can't explain</h2>
+    <div class="stats-grid">
+      <div class="stat-box"><div class="stat-num">115,000</div><div class="stat-label" data-i18n="stat_a_label">people living with disabilities in Mongolia today</div></div>
+      <div class="stat-box"><div class="stat-num">~11,000</div><div class="stat-label" data-i18n="stat_b_label">children with disabilities nationwide</div></div>
+      <div class="stat-box"><div class="stat-num">953</div><div class="stat-label" data-i18n="stat_c_label">road injuries involving children in a single year</div></div>
+    </div>
+    <p class="stats-footer-note" data-i18n="stats_footer">A child who can't speak can't be found by name. OneTag gives them a voice when it matters most.</p>
+  </div>
+</section>
+
+<section class="bg-light reveal-on-scroll">
+  <div class="wrap">
+    <div class="eyebrow-sm" data-i18n="features_eyebrow">Features</div>
+    <h2 class="section-title" data-i18n="features_title">Everything built in, ready on day one</h2>
+    <p class="section-sub" data-i18n="features_sub">One wristband, one dashboard, no extra hardware to manage.</p>
+    <div class="grid-3">
+      <div class="icon-card"><div class="icon-badge"><img src="/assets/icon-gps.png" alt=""></div><h3 data-i18n="feat_1_title">Real-time GPS</h3><p data-i18n="feat_1_p">Every tap shows a location within seconds — a real measurement, not a guess.</p></div>
+      <div class="icon-card"><div class="icon-badge"><img src="/assets/icon-nfc.png" alt=""></div><h3 data-i18n="feat_2_title">NFC technology</h3><p data-i18n="feat_2_p">Works with any NFC-capable phone — no special reader needed for a finder to help.</p></div>
+      <div class="icon-card"><div class="icon-badge"><img src="/assets/icon-attendance.png" alt=""></div><h3 data-i18n="feat_3_title">Attendance tracking</h3><p data-i18n="feat_3_p">Gate taps log arrival and departure automatically, with time and location.</p></div>
+      <div class="icon-card"><div class="icon-badge"><img src="/assets/icon-emergency.png" alt=""></div><h3 data-i18n="feat_4_title">Emergency contact</h3><p data-i18n="feat_4_p">One button connects a finder directly to the guardian, without exposing the number.</p></div>
+      <div class="icon-card"><div class="icon-badge"><img src="/assets/icon-id.png" alt=""></div><h3 data-i18n="feat_5_title">Student identification</h3><p data-i18n="feat_5_p">Name, school, class, and photo — available instantly to anyone who taps.</p></div>
+      <div class="icon-card"><div class="icon-badge"><img src="/assets/icon-notifications.png" alt=""></div><h3 data-i18n="feat_6_title">Parent notifications</h3><p data-i18n="feat_6_p">Parents check daily activity themselves — no separate app, just a phone number and a code.</p></div>
+      <div class="icon-card"><div class="icon-badge"><img src="/assets/icon-dashboard.png" alt=""></div><h3 data-i18n="feat_7_title">School dashboard</h3><p data-i18n="feat_7_p">Staff see every child's gate and scan activity in one place, filterable by class.</p></div>
+      <div class="icon-card"><div class="icon-badge"><img src="/assets/icon-secure.png" alt=""></div><h3 data-i18n="feat_8_title">Secure by design</h3><p data-i18n="feat_8_p">Profiles are locked — editing always requires a one-time code sent to the parent.</p></div>
+      <div class="icon-card"><div class="icon-badge"><img src="/assets/icon-durable.png" alt=""></div><h3 data-i18n="feat_9_title">Durable & bilingual</h3><p data-i18n="feat_9_p">Full Mongolian and English support, built into a wristband durable enough to wear all day, every day.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="how-it-works" class="reveal-on-scroll">
+  <div class="wrap">
+    <div class="eyebrow-sm" data-i18n="how_eyebrow">How it works</div>
+    <h2 class="section-title" data-i18n="how_title">From wristband to reunited, in four steps</h2>
+    <p class="section-sub">&nbsp;</p>
+    <div class="timeline">
+      <div class="timeline-step"><div class="timeline-num">1</div><h3 data-i18n="how_1_title">Wear</h3><p data-i18n="how_1_p">The child wears the wristband, registered once by the school.</p></div>
+      <div class="timeline-step"><div class="timeline-num">2</div><h3 data-i18n="how_2_title">Tap</h3><p data-i18n="how_2_p">Anyone with a phone taps the wristband — no app required.</p></div>
+      <div class="timeline-step"><div class="timeline-num">3</div><h3 data-i18n="how_3_title">Info appears</h3><p data-i18n="how_3_p">Name, school, and emergency details appear in the child's language.</p></div>
+      <div class="timeline-step"><div class="timeline-num">4</div><h3 data-i18n="how_4_title">Everyone's notified</h3><p data-i18n="how_4_p">Guardians and school staff can see exactly what happened, and when.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="benefits" class="bg-light reveal-on-scroll">
+  <div class="wrap">
+    <div class="eyebrow-sm" data-i18n="benefits_eyebrow">Benefits</div>
+    <h2 class="section-title" data-i18n="benefits_title">Built for everyone around the child</h2>
+    <p class="section-sub">&nbsp;</p>
+    <div class="tabs-nav" id="tabsNav"></div>
+    <div id="tabsPanels">
+      <div class="tab-panel active" data-tab="parents"><div class="tab-content"><ul>
+        <li data-i18n="tab_parents_1">See exactly when your child arrived at and left school — automatically.</li>
+        <li data-i18n="tab_parents_2">Your phone number is never shown to a finder — they connect through OneTag.</li>
+        <li data-i18n="tab_parents_3">No app to install — check activity from any phone browser with a one-time code.</li>
+      </ul></div></div>
+      <div class="tab-panel" data-tab="schools"><div class="tab-content"><ul>
+        <li data-i18n="tab_schools_1">Gate arrival and departure are logged automatically — no manual sheets.</li>
+        <li data-i18n="tab_schools_2">One dashboard shows every child's activity, filterable by class.</li>
+        <li data-i18n="tab_schools_3">Every admin account is scoped to its own school — no data crossover.</li>
+      </ul></div></div>
+      <div class="tab-panel" data-tab="teachers"><div class="tab-content"><ul>
+        <li data-i18n="tab_teachers_1">Know instantly which children are present without a roll call.</li>
+        <li data-i18n="tab_teachers_2">Emergency medical notes are one tap away in an actual emergency.</li>
+        <li data-i18n="tab_teachers_3">Less time on paperwork, more time with the children.</li>
+      </ul></div></div>
+      <div class="tab-panel" data-tab="admin"><div class="tab-content"><ul>
+        <li data-i18n="tab_admin_1">Manage every school, class, and admin account from one place.</li>
+        <li data-i18n="tab_admin_2">A clear audit trail of every gate tap and profile edit.</li>
+        <li data-i18n="tab_admin_3">Add or remove school admins in minutes, not days.</li>
+      </ul></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="reveal-on-scroll">
+  <div class="wrap">
+    <div class="eyebrow-sm" data-i18n="gallery_eyebrow">Gallery</div>
+    <h2 class="section-title" data-i18n="gallery_title">See OneTag in the real world</h2>
+    <p class="section-sub">&nbsp;</p>
+    <div class="gallery-grid">
+      <div class="gallery-item g-tall">
+        <img src="/assets/classroom-drawing.png" alt="Children wearing OneTag wristbands during a classroom activity">
+      </div>
+      <div class="gallery-item">
+        <img src="/assets/parent-activity-screen.png" alt="Parent's phone showing arrived and left safely notifications">
+      </div>
+      <div class="gallery-item">
+        <img src="/assets/product-macro-tag.png" alt="Close-up of the OneTag wristband tag">
+      </div>
+      <div class="gallery-item">
+        <img src="/assets/gate-tap-afternoon.png" alt="Child tapping the wristband at school gate departure">
+      </div>
+      <div class="gallery-item">
+        <img src="/assets/product-scale-pencil.png" alt="OneTag wristband shown next to a pencil for scale">
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="bg-light reveal-on-scroll">
+  <div class="wrap">
+    <div class="eyebrow-sm" data-i18n="testimonial_eyebrow">Feedback</div>
+    <h2 class="section-title" data-i18n="testimonial_title">From families and schools</h2>
+    <div class="testimonial-placeholder"><p data-i18n="testimonial_placeholder_text">Real feedback from families and schools will appear here as more join OneTag.</p></div>
+  </div>
+</section>
+
+<section id="faq" class="reveal-on-scroll">
+  <div class="wrap">
+    <div class="eyebrow-sm" data-i18n="faq_eyebrow">FAQ</div>
+    <h2 class="section-title" data-i18n="faq_title">Common questions</h2>
+    <p class="section-sub">&nbsp;</p>
+    <div class="faq-list" id="faqList">
+      <div class="faq-item"><div class="faq-q"><span data-i18n="faq_1_q">Does a finder need to install an app?</span><span class="chev">▾</span></div><div class="faq-a"><div class="faq-a-inner" data-i18n="faq_1_a">No. Tapping the wristband opens a normal web page in any browser — nothing to install.</div></div></div>
+      <div class="faq-item"><div class="faq-q"><span data-i18n="faq_2_q">Is our child's information safe?</span><span class="chev">▾</span></div><div class="faq-a"><div class="faq-a-inner" data-i18n="faq_2_a">Only essential emergency details are public. Editing a profile always requires a one-time code sent to the parent, and the parent's phone number is never shown to a finder.</div></div></div>
+      <div class="faq-item"><div class="faq-q"><span data-i18n="faq_3_q">What happens if the wristband is lost?</span><span class="chev">▾</span></div><div class="faq-a"><div class="faq-a-inner" data-i18n="faq_3_a">A school admin can deactivate a lost tag and issue a new one from the dashboard in minutes.</div></div></div>
+      <div class="faq-item"><div class="faq-q"><span data-i18n="faq_4_q">What does OneTag cost?</span><span class="chev">▾</span></div><div class="faq-a"><div class="faq-a-inner" data-i18n="faq_4_a">Pricing depends on the number of students and deployment scale. Contact us for a quote tailored to your school.</div></div></div>
+      <div class="faq-item"><div class="faq-q"><span data-i18n="faq_5_q">Which languages are supported?</span><span class="chev">▾</span></div><div class="faq-a"><div class="faq-a-inner" data-i18n="faq_5_a">OneTag is fully bilingual in Mongolian and English today, with more languages planned.</div></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="contact" class="bg-light reveal-on-scroll">
+  <div class="wrap">
+    <div class="contact-grid">
+      <div class="contact-info">
+        <h2 data-i18n="contact_h2">Bring OneTag to your school</h2>
+        <p data-i18n="contact_p">OneTag is currently available for special-needs schools in Ulaanbaatar, with more schools launching soon. Reach out to book a demo, ask about pricing, or bring it to your school.</p>
+        <div class="contact-methods">
+          <a href="mailto:hello@onetag.mn" class="contact-method"><span class="icon-badge"><img src="/assets/icon-email.png" alt=""></span><span>hello@onetag.mn</span></a>
+          <a href="/parent-portal.html" class="contact-method"><span class="icon-badge"><img src="/assets/icon-parent.png" alt=""></span><span data-i18n="hero_btn_parent">I'm a parent</span></a>
+          <a href="/admin-login.html" class="contact-method"><span class="icon-badge"><img src="/assets/icon-staff.png" alt=""></span><span data-i18n="hero_btn_staff">I'm school staff</span></a>
+        </div>
+      </div>
+      <form class="contact-form" id="contactForm">
+        <label data-i18n="form_name">Name</label>
+        <input type="text" id="formName" required>
+        <label data-i18n="form_org">School / Organization</label>
+        <input type="text" id="formOrg">
+        <label data-i18n="form_email">Email</label>
+        <input type="email" id="formEmail" required>
+        <label data-i18n="form_message">Message</label>
+        <textarea id="formMessage" data-i18n-placeholder="form_message_ph" placeholder="Tell us about your school and what you're looking for..."></textarea>
+        <button type="submit" class="btn btn-primary" data-i18n="form_submit">Send message</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-top">
+      <div>
+        <div class="footer-logo"><span class="dot"></span>OneTag</div>
+        <p class="footer-desc" data-i18n="footer_desc">An NFC smart wristband for student safety — instant identification, emergency contact, real-time location, and attendance tracking.</p>
+      </div>
+      <div class="footer-col"><h4 data-i18n="footer_product">Product</h4><a href="#gps-demo" data-i18n="nav_gps">Real-time GPS</a><a href="#how-it-works" data-i18n="nav_how">How it works</a><a href="#benefits" data-i18n="nav_benefits">Benefits</a><a href="#faq" data-i18n="nav_faq">FAQ</a></div>
+      <div class="footer-col"><h4 data-i18n="footer_access">Access</h4><a href="/parent-portal.html" data-i18n="hero_btn_parent">I'm a parent</a><a href="/admin-login.html" data-i18n="hero_btn_staff">I'm school staff</a></div>
+      <div class="footer-col"><h4 data-i18n="footer_contact">Contact</h4><a href="mailto:hello@onetag.mn">hello@onetag.mn</a></div>
+    </div>
+    <div class="footer-bottom">© 2026 OneTag</div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  const ENABLED_LANGUAGES = ['mn', 'en']; // add 'zh' here to show Chinese too
+  const DEFAULT_LANGUAGE = 'mn';
+  const LANG_NAMES = { mn: 'МОН', en: 'EN', zh: '中文' };
+
+  const translations = {
+    en: {
+      nav_gps: "Real-time GPS", nav_how: "How it works", nav_benefits: "Benefits", nav_faq: "FAQ", nav_contact: "Contact",
+      nav_parents: "For Parents", nav_staff: "School Login",
+      eyebrow: "NFC Safety Wristband",
+      hero_h1: "Safe every school day. Found in seconds, wherever they are.",
+      hero_sub: "OneTag is a wristband that logs safe arrival and departure at school automatically — and instantly shows real-time location and emergency details to anyone who finds your child, anywhere else.",
+      hero_cta_primary: "Get OneTag for your school", hero_cta_secondary: "See how fast it works",
+      panel_lost_title: "If they're ever lost",
+      panel_lost_p: "Anyone who finds them taps the wristband and instantly sees a name, photo, blood type, allergies, and medical notes — plus one button to call you. Your number stays private, always.",
+      panel_daily_title: "Every single school day",
+      panel_daily_p: "A tap at the gate each morning and afternoon sends an instant notice: arrived safely, left safely. No sign-in sheets, no wondering.",
+      photo_caption: "Tap the photo — this is exactly what a finder sees",
+      reveal_badge: "Found — tap to help", reveal_sub: "Age 7 · Special Needs School",
+      reveal_allergy_label: "Allergies", reveal_allergy_val: "Peanuts",
+      reveal_condition_label: "Condition", reveal_condition_val: "Non-verbal, ASD",
+      reveal_blood_label: "Blood type", reveal_call: "Call guardian now", reveal_close: "Close",
+      gps_eyebrow: "Real-time location", gps_title: "See how fast we find them",
+      gps_sub: "Real GPS, not a guess. Tap below to see it work.",
+      gps_btn: "Locate now", gps_btn_again: "Locate again",
+      gps_result_prefix: "Found in", gps_result_suffix: "accurate to about 20 meters",
+      gps_footer_note: "The same real-time GPS runs every time the wristband is tapped — at the school gate, or anywhere else.",
+      gps_real_caption: "A real screen from the OneTag app",
+      stats_eyebrow: "Why this matters", stats_title: "Every day, thousands of children face risks they can't explain",
+      stat_a_label: "people living with disabilities in Mongolia today",
+      stat_b_label: "children with disabilities nationwide",
+      stat_c_label: "road injuries involving children in a single year",
+      stats_footer: "A child who can't speak can't be found by name. OneTag gives them a voice when it matters most.",
+      features_eyebrow: "Features", features_title: "Everything built in, ready on day one",
+      features_sub: "One wristband, one dashboard, no extra hardware to manage.",
+      feat_1_title: "Real-time GPS", feat_1_p: "Every tap shows a location within seconds — a real measurement, not a guess.",
+      feat_2_title: "NFC technology", feat_2_p: "Works with any NFC-capable phone — no special reader needed for a finder to help.",
+      feat_3_title: "Attendance tracking", feat_3_p: "Gate taps log arrival and departure automatically, with time and location.",
+      feat_4_title: "Emergency contact", feat_4_p: "One button connects a finder directly to the guardian, without exposing the number.",
+      feat_5_title: "Student identification", feat_5_p: "Name, school, class, and photo — available instantly to anyone who taps.",
+      feat_6_title: "Parent notifications", feat_6_p: "Parents check daily activity themselves — no separate app, just a phone number and a code.",
+      feat_7_title: "School dashboard", feat_7_p: "Staff see every child's gate and scan activity in one place, filterable by class.",
+      feat_8_title: "Secure by design", feat_8_p: "Profiles are locked — editing always requires a one-time code sent to the parent.",
+      feat_9_title: "Durable & bilingual", feat_9_p: "Full Mongolian and English support, built into a wristband durable enough to wear all day, every day.",
+      how_eyebrow: "How it works", how_title: "From wristband to reunited, in four steps",
+      how_1_title: "Wear", how_1_p: "The child wears the wristband, registered once by the school.",
+      how_2_title: "Tap", how_2_p: "Anyone with a phone taps the wristband — no app required.",
+      how_3_title: "Info appears", how_3_p: "Name, school, and emergency details appear in the child's language.",
+      how_4_title: "Everyone's notified", how_4_p: "Guardians and school staff can see exactly what happened, and when.",
+      benefits_eyebrow: "Benefits", benefits_title: "Built for everyone around the child",
+      tab_parents: "Parents", tab_schools: "Schools", tab_teachers: "Teachers", tab_admin: "Administrators",
+      tab_parents_1: "See exactly when your child arrived at and left school — automatically.",
+      tab_parents_2: "Your phone number is never shown to a finder — they connect through OneTag.",
+      tab_parents_3: "No app to install — check activity from any phone browser with a one-time code.",
+      tab_schools_1: "Gate arrival and departure are logged automatically — no manual sheets.",
+      tab_schools_2: "One dashboard shows every child's activity, filterable by class.",
+      tab_schools_3: "Every admin account is scoped to its own school — no data crossover.",
+      tab_teachers_1: "Know instantly which children are present without a roll call.",
+      tab_teachers_2: "Emergency medical notes are one tap away in an actual emergency.",
+      tab_teachers_3: "Less time on paperwork, more time with the children.",
+      tab_admin_1: "Manage every school, class, and admin account from one place.",
+      tab_admin_2: "A clear audit trail of every gate tap and profile edit.",
+      tab_admin_3: "Add or remove school admins in minutes, not days.",
+      gallery_eyebrow: "Gallery", gallery_title: "See OneTag in the real world",
+      testimonial_eyebrow: "Feedback", testimonial_title: "From families and schools",
+      testimonial_placeholder_text: "Real feedback from families and schools will appear here as more join OneTag.",
+      faq_eyebrow: "FAQ", faq_title: "Common questions",
+      faq_1_q: "Does a finder need to install an app?",
+      faq_1_a: "No. Tapping the wristband opens a normal web page in any browser — nothing to install.",
+      faq_2_q: "Is our child's information safe?",
+      faq_2_a: "Only essential emergency details are public. Editing a profile always requires a one-time code sent to the parent, and the parent's phone number is never shown to a finder.",
+      faq_3_q: "What happens if the wristband is lost?",
+      faq_3_a: "A school admin can deactivate a lost tag and issue a new one from the dashboard in minutes.",
+      faq_4_q: "What does OneTag cost?",
+      faq_4_a: "Pricing depends on the number of students and deployment scale. Contact us for a quote tailored to your school.",
+      faq_5_q: "Which languages are supported?",
+      faq_5_a: "OneTag is fully bilingual in Mongolian and English today, with more languages planned.",
+      contact_h2: "Bring OneTag to your school",
+      contact_p: "OneTag is currently available for special-needs schools in Ulaanbaatar, with more schools launching soon. Reach out to book a demo, ask about pricing, or bring it to your school.",
+      hero_btn_parent: "I'm a parent", hero_btn_staff: "I'm school staff",
+      form_name: "Name", form_org: "School / Organization", form_email: "Email", form_message: "Message",
+      form_message_ph: "Tell us about your school and what you're looking for...", form_submit: "Send message",
+      footer_desc: "An NFC smart wristband for student safety — instant identification, emergency contact, real-time location, and attendance tracking.",
+      footer_product: "Product", footer_access: "Access", footer_contact: "Contact"
+    },
+    mn: {
+      nav_gps: "Бодит цагийн байршил", nav_how: "Хэрхэн ажилладаг", nav_benefits: "Давуу тал", nav_faq: "Асуулт хариулт", nav_contact: "Холбоо барих",
+      nav_parents: "Эцэг эх", nav_staff: "Сургуулийн нэвтрэх",
+      eyebrow: "NFC аюулгүй байдлын бугуйвч",
+      hero_h1: "Сургуулийн өдөр бүр аюулгүй. Хаана ч байсан секундын дотор олдоно.",
+      hero_sub: "OneTag бол сургуульд ирсэн, явсныг автоматаар бүртгэдэг бугуйвч — мөн хаана ч олдсон хүүхдийг олсон хэн бүхэнд бодит цагийн байршил, яаралтай тусламжийн мэдээллийг шууд харуулдаг.",
+      hero_cta_primary: "Сургуульдаа OneTag авах", hero_cta_secondary: "Хэр хурдан ажилладгийг үзэх",
+      panel_lost_title: "Хэрэв тэднийг олдохгүй бол",
+      panel_lost_p: "Тэднийг олсон хэн ч бугуйвчийг товшиход нэр, зураг, цусны бүлэг, харшил, эрүүл мэндийн тэмдэглэл, мөн танд залгах нэг товчлуур шууд харагдана. Таны дугаар үргэлж нууц хэвээр байна.",
+      panel_daily_title: "Сургуулийн өдөр бүр",
+      panel_daily_p: "Өглөө, оройн хаалганы товшилт бүр танд шууд мэдэгдэл илгээнэ: аюулгүй ирлээ, аюулгүй явлаа. Бүртгэлийн хуудас, эргэлзээ хэрэггүй.",
+      photo_caption: "Зургийг товшино уу — олсон хүн яг үүнийг харна",
+      reveal_badge: "Олдлоо — тусламж үзүүлэхийн тулд товшино уу", reveal_sub: "7 настай · Тусгай хэрэгцээт сургууль",
+      reveal_allergy_label: "Харшил", reveal_allergy_val: "Газрын самар",
+      reveal_condition_label: "Онцлог", reveal_condition_val: "Хэлгүй, аутизм",
+      reveal_blood_label: "Цусны бүлэг", reveal_call: "Асран хамгаалагчид одоо залгах", reveal_close: "Хаах",
+      gps_eyebrow: "Бодит цагийн байршил", gps_title: "Бид хэр хурдан олдгийг үзээрэй",
+      gps_sub: "Таамаглал биш, бодит GPS. Доорх товчийг дарж үзээрэй.",
+      gps_btn: "Одоо байрлуулах", gps_btn_again: "Дахин байрлуулах",
+      gps_result_prefix: "Олдсон хугацаа:", gps_result_suffix: "~20 метрийн нарийвчлалтай",
+      gps_footer_note: "Бугуйвчийг товшох бүрд яг ижил бодит цагийн GPS ажилладаг — сургуулийн хаалганд ч, хаана ч байсан.",
+      gps_real_caption: "OneTag аппын бодит дэлгэц",
+      stats_eyebrow: "Яагаад чухал вэ", stats_title: "Өдөр бүр мянга мянган хүүхэд тайлбарлаж чадахгүй эрсдэлтэй тулгардаг",
+      stat_a_label: "Монголд өнөөдөр хөгжлийн бэрхшээлтэй амьдарч буй хүн",
+      stat_b_label: "хөгжлийн бэрхшээлтэй хүүхэд улс даяар",
+      stat_c_label: "нэг жилд хүүхэдтэй холбоотой замын хөдөлгөөний осол гэмтэл",
+      stats_footer: "Ярьж чадахгүй хүүхдийг нэрээр нь олох боломжгүй. OneTag хамгийн хэрэгтэй мөчид тэдэнд дуу хоолой болдог.",
+      features_eyebrow: "Онцлогууд", features_title: "Бүх зүйл нэг дор, эхний өдрөөс бэлэн",
+      features_sub: "Нэг бугуйвч, нэг удирдлагын самбар, нэмэлт төхөөрөмж хэрэггүй.",
+      feat_1_title: "Бодит цагийн GPS", feat_1_p: "Товшсон бүрт хүүхдийн байршлыг секундын дотор харуулна — таамаглал биш, бодит хэмжилт.",
+      feat_2_title: "NFC технологи", feat_2_p: "NFC дэмждэг ямар ч утсаар ажиллана — тусламж үзүүлэхэд тусгай уншигч хэрэггүй.",
+      feat_3_title: "Ирцийн бүртгэл", feat_3_p: "Хаалганы товшилт ирц, явцыг цаг хугацаа, байршилтай нь автоматаар бүртгэнэ.",
+      feat_4_title: "Яаралтай холбоо", feat_4_p: "Нэг товчлуураар олсон хүнийг дугаарыг задруулахгүйгээр асран хамгаалагчид холбоно.",
+      feat_5_title: "Хүүхдийн танилт", feat_5_p: "Нэр, сургууль, анги, зураг — товшсон хэн бүхэнд шууд харагдана.",
+      feat_6_title: "Эцэг эхийн мэдэгдэл", feat_6_p: "Эцэг эх өдөр тутмын үйл ажиллагааг өөрөө шалгана — тусдаа апп хэрэггүй, зөвхөн утасны дугаар, код.",
+      feat_7_title: "Сургуулийн самбар", feat_7_p: "Ажилтнууд бүх хүүхдийн хаалга, уншилтын мэдээллийг нэг дороос ангиар шүүж харна.",
+      feat_8_title: "Аюулгүй загвар", feat_8_p: "Мэдээлэл түгжээтэй — засахын тулд эцэг эхэд илгээсэн нэг удаагийн код үргэлж шаардлагатай.",
+      feat_9_title: "Бат бөх, хоёр хэлтэй", feat_9_p: "Монгол, англи хэлний бүрэн дэмжлэгтэй, өдөржин өмсөхөд зориулсан бат бөх силикон бугуйвч.",
+      how_eyebrow: "Хэрхэн ажилладаг", how_title: "Бугуйвчнаас эхлээд дахин нэгдэх хүртэл дөрвөн алхам",
+      how_1_title: "Өмсөх", how_1_p: "Хүүхэд бугуйвчийг өмсөнө, сургууль нэг удаа бүртгэнэ.",
+      how_2_title: "Товших", how_2_p: "Утастай хэн ч бугуйвчийг товшино — апп хэрэггүй.",
+      how_3_title: "Мэдээлэл гарч ирнэ", how_3_p: "Нэр, сургууль, яаралтай тусламжийн мэдээлэл хүүхдийн хэлээр гарч ирнэ.",
+      how_4_title: "Бүгд мэдэгдэнэ", how_4_p: "Асран хамгаалагч, сургуулийн ажилтан юу болсныг, хэзээ болсныг харна.",
+      benefits_eyebrow: "Давуу тал", benefits_title: "Хүүхдийг тойрсон хүн бүрт зориулав",
+      tab_parents: "Эцэг эх", tab_schools: "Сургууль", tab_teachers: "Багш", tab_admin: "Админ",
+      tab_parents_1: "Хүүхэд тань сургуульд хэзээ ирж, явсныг автоматаар харна.",
+      tab_parents_2: "Таны утасны дугаар олсон хүнд хэзээ ч харагдахгүй — OneTag-ээр дамжина.",
+      tab_parents_3: "Апп татах шаардлагагүй — ямар ч утсаар нэг удаагийн кодоор шалгаарай.",
+      tab_schools_1: "Хаалганы ирц, явцыг автоматаар бүртгэнэ — гар бүртгэл хэрэггүй.",
+      tab_schools_2: "Нэг самбараас бүх хүүхдийн үйл ажиллагааг ангиар шүүж харна.",
+      tab_schools_3: "Админ бүр зөвхөн өөрийн сургуулийн мэдээллийг харна.",
+      tab_teachers_1: "Ямар хүүхэд ирснийг нэрсийн жагсаалт уншихгүйгээр шууд мэднэ.",
+      tab_teachers_2: "Яаралтай тусламжийн тэмдэглэл нэг товшилтын зайд байна.",
+      tab_teachers_3: "Цаасан ажил багасч, хүүхдэдээ илүү цаг зарцуулна.",
+      tab_admin_1: "Бүх сургууль, анги, админ бүртгэлийг нэг дороос удирдана.",
+      tab_admin_2: "Хаалганы товшилт, мэдээлэл засварын тодорхой түүх.",
+      tab_admin_3: "Сургуулийн админыг хэдхэн минутанд нэмэх, хасах боломжтой.",
+      gallery_eyebrow: "Галерей", gallery_title: "OneTag-ийг бодит амьдрал дээр харах",
+      testimonial_eyebrow: "Санал хүсэлт", testimonial_title: "Гэр бүл, сургуулиудаас",
+      testimonial_placeholder_text: "Илүү олон гэр бүл, сургууль нэгдэхийн хэрээр бодит санал хүсэлт энд гарч ирнэ.",
+      faq_eyebrow: "Асуулт хариулт", faq_title: "Түгээмэл асуултууд",
+      faq_1_q: "Олсон хүн апп татах шаардлагатай юу?",
+      faq_1_a: "Үгүй. Бугуйвчийг товшихад ямар ч хөтчөөр энгийн вэб хуудас нээгдэнэ — юу ч татах шаардлагагүй.",
+      faq_2_q: "Хүүхдийнхээ мэдээлэл аюулгүй юу?",
+      faq_2_a: "Зөвхөн зайлшгүй яаралтай мэдээлэл нээлттэй байна. Мэдээлэл засахын тулд эцэг эхэд илгээсэн нэг удаагийн код үргэлж шаардлагатай бөгөөд эцэг эхийн утасны дугаар олсон хүнд хэзээ ч харагдахгүй.",
+      faq_3_q: "Бугуйвч гээгдвэл яах вэ?",
+      faq_3_a: "Сургуулийн админ гээгдсэн тагийг хэдхэн минутанд идэвхгүй болгож, шинийг олгож болно.",
+      faq_4_q: "OneTag хэдэн төгрөг вэ?",
+      faq_4_a: "Үнэ сурагчийн тоо, хэрэгжүүлэх хэмжээнээс хамаарна. Тохирсон үнийн санал авахын тулд бидэнтэй холбогдоно уу.",
+      faq_5_q: "Ямар хэл дэмждэг вэ?",
+      faq_5_a: "OneTag өнөөдөр монгол, англи хэлээр бүрэн ажилладаг бөгөөд цаашид өөр хэл нэмэгдэх төлөвтэй.",
+      contact_h2: "OneTag-ийг сургуульдаа авчрах",
+      contact_p: "OneTag одоогоор Улаанбаатар хотын тусгай хэрэгцээт сургуулиудад ашиглах боломжтой бөгөөд удахгүй илүү олон сургуульд нэвтэрнэ. Демо захиалах, үнийн санал авах эсвэл сургуульдаа авчрахын тулд бидэнтэй холбогдоно уу.",
+      hero_btn_parent: "Би эцэг эх", hero_btn_staff: "Би сургуулийн ажилтан",
+      form_name: "Нэр", form_org: "Сургууль / Байгууллага", form_email: "И-мэйл", form_message: "Зурвас",
+      form_message_ph: "Сургуулийнхаа болон хэрэгцээгээ бидэнд хэлнэ үү...", form_submit: "Зурвас илгээх",
+      footer_desc: "Хүүхдийн аюулгүй байдлын NFC ухаалаг бугуйвч — шуурхай танилт, яаралтай холбоо, бодит цагийн байршил, ирц бүртгэл.",
+      footer_product: "Бүтээгдэхүүн", footer_access: "Нэвтрэх", footer_contact: "Холбоо барих"
+    },
+    zh: {
+      nav_gps: "实时定位", nav_how: "工作原理", nav_benefits: "优势", nav_faq: "常见问题", nav_contact: "联系我们",
+      nav_parents: "为家长", nav_staff: "学校登录",
+      eyebrow: "NFC 安全手环",
+      hero_h1: "每个上学日都安全。无论身在何处，几秒内即可找到。",
+      hero_sub: "OneTag 是一款手环，自动记录到校与离校的安全状态 — 并能即时向发现孩子的任何人显示实时位置和紧急信息。",
+      hero_cta_primary: "为您的学校获取 OneTag", hero_cta_secondary: "查看其运作速度",
+      panel_lost_title: "如果孩子走失",
+      panel_lost_p: "发现孩子的任何人触碰手环，即可立即看到姓名、照片、血型、过敏信息和医疗记录 — 以及一个联系您的按钮。您的号码始终保密。",
+      panel_daily_title: "每一个上学日",
+      panel_daily_p: "每天早晚在校门触碰手环，都会立即通知您：安全到校、安全离校。无需签到表，无需担心。",
+      photo_caption: "点击照片 — 这正是发现者看到的画面",
+      reveal_badge: "已找到 — 点击提供帮助", reveal_sub: "7岁 · 特殊教育学校",
+      reveal_allergy_label: "过敏", reveal_allergy_val: "花生",
+      reveal_condition_label: "情况", reveal_condition_val: "不能言语，自闭症",
+      reveal_blood_label: "血型", reveal_call: "立即联系监护人", reveal_close: "关闭",
+      gps_eyebrow: "实时定位", gps_title: "看看我们找到孩子的速度",
+      gps_sub: "真实 GPS，而非猜测。点击下方按钮体验。",
+      gps_btn: "立即定位", gps_btn_again: "再次定位",
+      gps_result_prefix: "定位用时：", gps_result_suffix: "精度约20米",
+      gps_footer_note: "每次触碰手环都会运行同样的实时 GPS — 无论在校门口，还是任何其他地方。",
+      gps_real_caption: "OneTag 应用的真实画面",
+      stats_eyebrow: "为什么重要", stats_title: "每天，成千上万的孩子面临他们无法说明的风险",
+      stat_a_label: "蒙古目前生活着的残疾人士",
+      stat_b_label: "全国残疾儿童",
+      stat_c_label: "一年内涉及儿童的道路伤害事故",
+      stats_footer: "无法说话的孩子无法通过姓名被找到。OneTag 在最关键的时刻为他们发声。",
+      features_eyebrow: "功能", features_title: "一切内置，即刻可用",
+      features_sub: "一个手环，一个仪表盘，无需额外硬件管理。",
+      feat_1_title: "实时 GPS", feat_1_p: "每次触碰都能在几秒内显示孩子的位置 — 真实测量，而非猜测。",
+      feat_2_title: "NFC 技术", feat_2_p: "适用于任何支持 NFC 的手机 — 发现者无需特殊读取器即可提供帮助。",
+      feat_3_title: "考勤跟踪", feat_3_p: "校门触碰会自动记录到校与离校时间及地点。",
+      feat_4_title: "紧急联系", feat_4_p: "一个按钮即可将发现者直接连接到监护人，且不会泄露号码。",
+      feat_5_title: "学生身份识别", feat_5_p: "姓名、学校、班级和照片 — 任何触碰者都能即时查看。",
+      feat_6_title: "家长通知", feat_6_p: "家长自行查看每日活动 — 无需单独应用，只需电话号码和验证码。",
+      feat_7_title: "学校仪表盘", feat_7_p: "职员可在一处查看所有孩子的校门与扫描活动，可按班级筛选。",
+      feat_8_title: "安全设计", feat_8_p: "资料被锁定 — 编辑始终需要发送给家长的一次性验证码。",
+      feat_9_title: "耐用双语", feat_9_p: "完整支持蒙古语和英语，专为儿童全天佩戴设计的耐用硅胶手环。",
+      how_eyebrow: "工作原理", how_title: "从佩戴手环到团聚，只需四步",
+      how_1_title: "佩戴", how_1_p: "孩子佩戴手环，由学校一次性注册。",
+      how_2_title: "触碰", how_2_p: "任何有手机的人都能触碰手环 — 无需应用。",
+      how_3_title: "资料显示", how_3_p: "姓名、学校和紧急信息以孩子的语言显示。",
+      how_4_title: "各方均获通知", how_4_p: "监护人和学校职员可清楚了解发生了什么，以及具体时间。",
+      benefits_eyebrow: "优势", benefits_title: "为孩子身边的每个人而设计",
+      tab_parents: "家长", tab_schools: "学校", tab_teachers: "教师", tab_admin: "管理员",
+      tab_parents_1: "自动查看孩子到校和离校的准确时间。",
+      tab_parents_2: "您的电话号码绝不会显示给发现者 — 通过 OneTag 联系。",
+      tab_parents_3: "无需安装应用 — 使用一次性验证码即可通过任何手机浏览器查看。",
+      tab_schools_1: "校门到校与离校记录自动生成 — 无需人工表格。",
+      tab_schools_2: "一个仪表盘即可查看所有孩子的活动，可按班级筛选。",
+      tab_schools_3: "每个管理员账户仅限本校范围 — 数据不会交叉。",
+      tab_teachers_1: "无需点名即可即时了解哪些孩子在场。",
+      tab_teachers_2: "紧急医疗记录在真正需要时一触即达。",
+      tab_teachers_3: "减少文书工作，多陪伴孩子。",
+      tab_admin_1: "在一处管理所有学校、班级和管理员账户。",
+      tab_admin_2: "清晰记录每次校门触碰和资料编辑。",
+      tab_admin_3: "几分钟内即可添加或移除学校管理员。",
+      gallery_eyebrow: "图库", gallery_title: "了解 OneTag 的真实应用",
+      testimonial_eyebrow: "反馈", testimonial_title: "来自家庭与学校",
+      testimonial_placeholder_text: "随着更多家庭和学校加入，真实反馈将在此显示。",
+      faq_eyebrow: "常见问题", faq_title: "常见问题解答",
+      faq_1_q: "发现者需要安装应用吗？",
+      faq_1_a: "不需要。触碰手环会在任何浏览器中打开普通网页 — 无需安装任何内容。",
+      faq_2_q: "孩子的信息安全吗？",
+      faq_2_a: "仅公开必要的紧急信息。编辑资料始终需要发送给家长的一次性验证码，家长的电话号码绝不会显示给发现者。",
+      faq_3_q: "手环丢失了怎么办？",
+      faq_3_a: "学校管理员可在仪表盘中于几分钟内停用丢失的手环并发放新的手环。",
+      faq_4_q: "OneTag 的费用是多少？",
+      faq_4_a: "价格取决于学生人数和部署规模。请联系我们获取针对贵校的报价。",
+      faq_5_q: "支持哪些语言？",
+      faq_5_a: "OneTag 目前完整支持蒙古语和英语，未来计划支持更多语言。",
+      contact_h2: "将 OneTag 带到您的学校",
+      contact_p: "OneTag 目前已在乌兰巴托的特殊教育学校投入使用，更多学校即将上线。欢迎联系我们预约演示、咨询价格，或将其带到您的学校。",
+      hero_btn_parent: "我是家长", hero_btn_staff: "我是学校职员",
+      form_name: "姓名", form_org: "学校 / 机构", form_email: "电子邮箱", form_message: "留言",
+      form_message_ph: "请告诉我们贵校的情况以及您的需求...", form_submit: "发送留言",
+      footer_desc: "用于学生安全的 NFC 智能手环 — 即时身份识别、紧急联系、实时定位和考勤跟踪。",
+      footer_product: "产品", footer_access: "入口", footer_contact: "联系我们"
+    }
+  };
+
+  function applyLanguage(lang) {
+    const dict = translations[lang] || translations[DEFAULT_LANGUAGE];
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (dict[key]) el.textContent = dict[key];
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.getAttribute('data-i18n-placeholder');
+      if (dict[key]) el.setAttribute('placeholder', dict[key]);
+    });
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      const key = 'tab_' + btn.dataset.tab;
+      if (dict[key]) btn.textContent = dict[key];
+    });
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.lang === lang);
+    });
+    // GPS demo button label depends on whether it's been used yet
+    const gpsBtn = document.getElementById('gpsBtn');
+    if (gpsBtn && gpsBtn.dataset.used === 'true' && dict.gps_btn_again) {
+      gpsBtn.textContent = dict.gps_btn_again;
+    }
+    window.__currentLang = lang;
+    localStorage.setItem('onetag_home_lang', lang);
+  }
+
+  const langBar = document.getElementById('langBar');
+  ENABLED_LANGUAGES.forEach(lang => {
+    const btn = document.createElement('button');
+    btn.className = 'lang-btn';
+    btn.dataset.lang = lang;
+    btn.textContent = LANG_NAMES[lang];
+    btn.onclick = () => applyLanguage(lang);
+    langBar.appendChild(btn);
+  });
+
+  const tabsNav = document.getElementById('tabsNav');
+  const tabKeys = ['parents', 'schools', 'teachers', 'admin'];
+  tabKeys.forEach((key, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (i === 0 ? ' active' : '');
+    btn.dataset.tab = key;
+    btn.onclick = () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelector('.tab-panel[data-tab="' + key + '"]').classList.add('active');
+    };
+    tabsNav.appendChild(btn);
+  });
+
+  const savedLang = localStorage.getItem('onetag_home_lang');
+  applyLanguage(ENABLED_LANGUAGES.includes(savedLang) ? savedLang : DEFAULT_LANGUAGE);
+
+  // Photo reveal modal
+  const photoStage = document.getElementById('photoStage');
+  const revealOverlay = document.getElementById('revealOverlay');
+  const revealClose = document.getElementById('revealClose');
+  photoStage.addEventListener('click', () => revealOverlay.classList.add('active'));
+  revealClose.addEventListener('click', () => revealOverlay.classList.remove('active'));
+  revealOverlay.addEventListener('click', (e) => { if (e.target === revealOverlay) revealOverlay.classList.remove('active'); });
+
+  // ---- Interactive GPS speed demo ----
+  // Genuinely animates for the same real duration as the number it displays
+  // at the end, rather than showing an instant canned result — the timer
+  // and the pin/pulse animation both run for that real elapsed time.
+  const gpsBtn = document.getElementById('gpsBtn');
+  const gpsPin = document.getElementById('gpsPin');
+  const gpsTimer = document.getElementById('gpsTimer');
+  const gpsResult = document.getElementById('gpsResult');
+  const gpsResultBig = document.getElementById('gpsResultBig');
+  const gpsResultSmall = document.getElementById('gpsResultSmall');
+
+  gpsBtn.addEventListener('click', () => {
+    gpsBtn.disabled = true;
+    gpsResult.classList.remove('show');
+    gpsPin.classList.remove('show');
+    const targetSeconds = 1.8 + Math.random() * 1.6; // realistic 1.8–3.4s GPS acquisition
+    const startTime = performance.now();
+
+    function tick(now) {
+      const elapsed = (now - startTime) / 1000;
+      if (elapsed < targetSeconds) {
+        gpsTimer.textContent = elapsed.toFixed(1) + 's';
+        requestAnimationFrame(tick);
+      } else {
+        gpsTimer.textContent = targetSeconds.toFixed(1) + 's';
+        gpsPin.classList.add('show');
+        const dict = translations[window.__currentLang] || translations[DEFAULT_LANGUAGE];
+        gpsResultBig.textContent = `${dict.gps_result_prefix} ${targetSeconds.toFixed(1)}s`;
+        gpsResultSmall.textContent = dict.gps_result_suffix;
+        gpsResult.classList.add('show');
+        gpsBtn.disabled = false;
+        gpsBtn.dataset.used = 'true';
+        if (dict.gps_btn_again) gpsBtn.textContent = dict.gps_btn_again;
+      }
+    }
+    requestAnimationFrame(tick);
+  });
+
+  // FAQ accordion
+  document.querySelectorAll('.faq-item').forEach(item => {
+    item.querySelector('.faq-q').addEventListener('click', () => {
+      const wasOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+      if (!wasOpen) item.classList.add('open');
+    });
+  });
+
+  // Contact form — no backend endpoint exists yet, so this opens the
+  // visitor's email client with the details pre-filled.
+  document.getElementById('contactForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = document.getElementById('formName').value;
+    const org = document.getElementById('formOrg').value;
+    const email = document.getElementById('formEmail').value;
+    const message = document.getElementById('formMessage').value;
+    const body = `Name: ${name}\nSchool/Organization: ${org}\nEmail: ${email}\n\n${message}`;
+    window.location.href = `mailto:hello@onetag.mn?subject=${encodeURIComponent('OneTag inquiry from ' + name)}&body=${encodeURIComponent(body)}`;
+  });
+
+  // Scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('in-view'); });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal-on-scroll').forEach(el => observer.observe(el));
+})();
+</script>
+</body>
+</html>
