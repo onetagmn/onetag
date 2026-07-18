@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OneTag — Parent Portal</title>
+<meta name="robots" content="noindex, nofollow">
 <style>
   :root {
     --ink: #0E2A32; --steppe: #17458F; --sun: #F7A81B; --paper: #FAF8F4;
@@ -56,6 +57,14 @@ function esc(val) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
 
+// On load, check if this device already has a remembered session — if so,
+// skip the phone/OTP form entirely and go straight to the history view.
+const rememberedToken = localStorage.getItem('onetag_parent_token');
+if (rememberedToken) {
+  app.innerHTML = `<div class="card"><p class="empty">Loading...</p></div>`;
+  loadHistory(rememberedToken, true);
+}
+
 document.getElementById('phoneForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const phone = e.target.phone.value;
@@ -88,17 +97,35 @@ function renderCodeForm(phone) {
     const out = await res.json();
     const msg = card.querySelector('#verifyMsg');
     if (!res.ok) { msg.innerHTML = `<div class="msg error">${out.error}</div>`; return; }
+    // Remember this device — the token is valid for 30 days, so the parent
+    // won't need to re-enter a code every time they check on their child.
+    localStorage.setItem('onetag_parent_token', out.token);
     loadHistory(out.token);
   };
 }
 
-async function loadHistory(token) {
-  app.innerHTML = '';
+async function loadHistory(token, isAutoLogin) {
   const res = await fetch(`${API_BASE}/api/parent/history`, { headers: { 'Authorization': `Bearer ${token}` } });
+  if (!res.ok) {
+    // Stored token expired or invalid — clear it and fall back to the
+    // phone/OTP form rather than showing a dead end.
+    localStorage.removeItem('onetag_parent_token');
+    if (isAutoLogin) return; // app already shows the phone form by default
+    const out = await res.json().catch(() => ({}));
+    app.innerHTML = `<div class="card"><p class="msg error">${out.error || 'Session expired — please verify again.'}</p></div>`;
+    setTimeout(() => window.location.reload(), 1800);
+    return;
+  }
   const children = await res.json();
 
+  app.innerHTML = `<div style="text-align:right;margin-bottom:10px;"><span id="logoutLink" style="font-size:12.5px;color:#6B7A7D;cursor:pointer;text-decoration:underline;">Not you? Switch phone number</span></div>`;
+  document.getElementById('logoutLink').onclick = () => {
+    localStorage.removeItem('onetag_parent_token');
+    window.location.reload();
+  };
+
   if (!children.length) {
-    app.innerHTML = `<div class="card"><p class="empty">No children found for this phone number.</p></div>`;
+    app.innerHTML += `<div class="card"><p class="empty">No children found for this phone number.</p></div>`;
     return;
   }
 
