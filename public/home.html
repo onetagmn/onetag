@@ -45,42 +45,50 @@
   .lang-btn { padding: 5px 13px; border-radius: 20px; border: 1px solid var(--line); background: #fff; color: var(--muted); font-size: 12.5px; font-weight: 700; cursor: pointer; }
   .lang-btn.active { background: var(--sky); color: var(--blue); border-color: var(--sky); }
 
-  /* ---------- INTRO SLIDESHOW ---------- */
-  .intro-section { padding: 56px 0 48px; text-align: center; background: var(--white); }
-  .intro-eyebrow { color: var(--blue); font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 24px; }
-  .intro-stage { position: relative; max-width: 480px; margin: 0 auto; aspect-ratio: 16/10; border-radius: 20px; overflow: hidden; background: var(--bg-light); box-shadow: 0 20px 50px -20px rgba(11,95,255,0.25); }
-  .intro-slide { position: absolute; inset: 0; opacity: 0; transition: opacity 0.6s ease; }
-  .intro-slide.active { opacity: 1; }
-  .intro-slide img { width: 100%; height: 100%; object-fit: cover; }
-  .intro-caption { min-height: 52px; max-width: 440px; margin: 22px auto 0; font-size: 17px; font-weight: 600; color: var(--ink); line-height: 1.45; }
-  .intro-dots { display: flex; justify-content: center; gap: 8px; margin-top: 18px; }
-  .intro-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line); border: none; cursor: pointer; padding: 0; transition: background 0.25s ease, width 0.25s ease; }
-  .intro-dot.active { background: var(--blue); width: 22px; border-radius: 5px; }
-
-  .hero { padding: 88px 0 40px; position: relative; overflow: hidden; }
-  .hero::before { content: ''; position: absolute; top: -180px; right: -160px; width: 480px; height: 480px; border-radius: 50%; background: radial-gradient(circle, var(--sky), transparent 70%); z-index: 0; }
-  .hero::after { content: ''; position: absolute; bottom: -220px; left: -180px; width: 420px; height: 420px; border-radius: 50%; background: radial-gradient(circle, var(--sky), transparent 70%); z-index: 0; }
-  .hero-inner { position: relative; z-index: 1; text-align: center; max-width: 760px; margin: 0 auto; }
-  .eyebrow { display: inline-flex; align-items: center; gap: 7px; background: var(--sky); color: var(--blue); font-size: 13px; font-weight: 700; padding: 7px 16px; border-radius: 20px; margin-bottom: 22px; }
-  .eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
-  .hero h1 { font-size: clamp(34px, 5.6vw, 56px); line-height: 1.1; color: var(--ink); }
-  .hero-sub { margin-top: 20px; font-size: clamp(16px, 2vw, 19px); color: var(--muted); max-width: 580px; margin-left: auto; margin-right: auto; font-weight: 400; }
-  .hero-ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 32px; }
-  .hero-ctas .btn { padding: 14px 26px; font-size: 15px; }
-
-  /* Dual scenario panels */
-  .panels { position: relative; z-index: 1; max-width: 900px; margin: 56px auto 0; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  .panel { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 28px 26px; text-align: left; }
-  .panel-icon { width: 44px; height: 44px; border-radius: 12px; background: var(--sky); color: var(--blue); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; margin-bottom: 14px; }
-  .panel h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
-  .panel p { font-size: 14px; color: var(--muted); line-height: 1.6; font-weight: 400; }
-  .panel-photo { width: 100%; border-radius: 12px; margin-top: 16px; overflow: hidden; aspect-ratio: 4/3; }
-  .panel-photo img { width: 100%; height: 100%; object-fit: cover; }
-
-  .photo-stage { position: relative; z-index: 1; max-width: 480px; margin: 56px auto 0; cursor: pointer; }
-  .photo-frame { position: relative; aspect-ratio: 16/10; border-radius: 22px; overflow: hidden; background: linear-gradient(160deg, var(--sky), var(--bg-light)); border: 1px solid var(--line); box-shadow: 0 24px 60px -20px rgba(11,95,255,0.25); }
-  .photo-frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-  .photo-caption { margin-top: 14px; font-size: 13px; color: var(--muted); text-align: center; }
+  /* ---------- SCROLL STORY HERO ---------- */
+  .scroll-story { position: relative; height: 500vh; background: #0E2338; }
+  .story-sticky { position: sticky; top: 0; height: 100vh; overflow: hidden; }
+  .story-stage-photo {
+    position: absolute; inset: 0; opacity: 0; z-index: 1;
+    transform: scale(1.1) rotateY(6deg) translateZ(0);
+    transition: opacity 0.7s ease, transform 0.8s cubic-bezier(.2,.8,.2,1);
+    perspective: 1200px;
+  }
+  .story-stage-photo.active { opacity: 1; transform: scale(1) rotateY(0deg) translateZ(0); z-index: 2; }
+  .story-stage-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .story-overlay {
+    position: absolute; inset: 0; z-index: 3; pointer-events: none;
+    background: linear-gradient(to top, rgba(14,35,56,0.85) 0%, rgba(14,35,56,0.15) 45%, rgba(14,35,56,0.35) 100%);
+  }
+  .story-progress { position: absolute; top: 90px; left: 0; right: 0; z-index: 6; display: flex; justify-content: center; gap: 8px; pointer-events: none; }
+  .story-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.3); transition: background 0.3s ease, width 0.3s ease; }
+  .story-dot.active { background: #fff; width: 22px; border-radius: 5px; }
+  .story-caption-wrap { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+  .story-caption {
+    position: absolute; left: 0; right: 0; bottom: 130px; text-align: center; padding: 0 24px;
+    opacity: 0; transform: translateY(20px); transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .story-caption.active { opacity: 1; transform: translateY(0); }
+  .story-caption h1 { font-size: clamp(30px, 5vw, 54px); font-weight: 800; color: #fff; line-height: 1.12; max-width: 780px; margin: 0 auto; }
+  .story-caption h2 { font-size: clamp(24px, 4vw, 42px); font-weight: 800; color: #fff; line-height: 1.2; max-width: 700px; margin: 0 auto; }
+  .story-caption .eyebrow { display: inline-flex; align-items: center; gap: 7px; background: rgba(255,255,255,0.12); color: #fff; font-size: 13px; font-weight: 700; padding: 7px 16px; border-radius: 20px; margin-bottom: 20px; backdrop-filter: blur(6px); }
+  .story-caption .eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+  .story-preview-btn {
+    display: block; margin: 22px auto 0; pointer-events: auto; cursor: pointer;
+    background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.3);
+    padding: 10px 20px; border-radius: 20px; font-size: 13.5px; font-weight: 600; font-family: inherit;
+    backdrop-filter: blur(6px);
+  }
+  .story-preview-btn:hover { background: rgba(255,255,255,0.2); }
+  .story-scroll-hint {
+    position: absolute; bottom: 32px; left: 0; right: 0; z-index: 5; text-align: center;
+    color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 500; pointer-events: none;
+    animation: bobHint 1.8s ease-in-out infinite;
+  }
+  @keyframes bobHint { 0%, 100% { transform: translateY(0); opacity: 0.6; } 50% { transform: translateY(6px); opacity: 1; } }
+  .story-ctas { position: absolute; bottom: 90px; left: 0; right: 0; z-index: 6; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; padding: 0 24px; }
+  .story-ctas .btn { padding: 13px 24px; font-size: 14.5px; }
+  .story-ctas .btn-ghost { background: rgba(255,255,255,0.08); color: #fff; border-color: rgba(255,255,255,0.3); }
 
   .reveal-overlay { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0); pointer-events: none; transition: background 0.35s ease; padding: 24px; }
   .reveal-overlay.active { background: rgba(15, 23, 42, 0.55); pointer-events: auto; }
@@ -212,7 +220,6 @@
 
   @media (max-width: 860px) {
     .grid-3 { grid-template-columns: 1fr 1fr; }
-    .panels { grid-template-columns: 1fr; }
     .contact-grid { grid-template-columns: 1fr; }
     .gallery-grid { grid-template-columns: 1fr; }
     .g-tall { grid-row: span 1; }
@@ -220,8 +227,13 @@
     .timeline::before { display: none; }
     .nav-links { display: none; }
     .stats-grid { grid-template-columns: 1fr; gap: 32px; }
+    .story-ctas { bottom: 70px; }
+    .story-caption { bottom: 110px; }
   }
   @media (max-width: 560px) {
+    .scroll-story { height: 400vh; }
+    .story-ctas { flex-direction: column; align-items: center; bottom: 60px; }
+    .story-caption { bottom: 140px; }
     .grid-3 { grid-template-columns: 1fr; }
     .timeline { grid-template-columns: 1fr; }
     section { padding: 64px 0; }
@@ -248,52 +260,35 @@
   </div>
 </nav>
 
-<section class="intro-section">
-  <div class="wrap">
-    <div class="intro-eyebrow" data-i18n="intro_eyebrow">Meet OneTag</div>
-    <div class="intro-stage" id="introStage">
-      <div class="intro-slide active" data-slide="0"><img src="/assets/product-hero.png" alt="OneTag wristband"></div>
-      <div class="intro-slide" data-slide="1"><img src="/assets/gate-tap-morning.png" alt="Child tapping wristband at school gate in the morning"></div>
-      <div class="intro-slide" data-slide="2"><img src="/assets/gate-tap-afternoon.png" alt="Child tapping wristband at school gate departure"></div>
-      <div class="intro-slide" data-slide="3"><img src="/assets/call-guardian-screen.png" alt="Phone screen showing Call Guardian button"></div>
-      <div class="intro-slide" data-slide="4"><img src="/assets/gps-locate-screen.png" alt="Phone screen showing real-time location found in 2.4 seconds"></div>
-    </div>
-    <p class="intro-caption" id="introCaption" data-i18n="intro_1">Meet OneTag — a silicone NFC wristband for children.</p>
-    <div class="intro-dots" id="introDots"></div>
-  </div>
-</section>
+<section class="scroll-story" id="scrollStory">
+  <div class="story-sticky">
+    <div class="story-stage-photo active" data-stage="0"><img src="/assets/product-hero.png" alt="OneTag wristband"></div>
+    <div class="story-stage-photo" data-stage="1"><img src="/assets/gate-tap-morning.png" alt="Child tapping wristband at school gate in the morning"></div>
+    <div class="story-stage-photo" data-stage="2"><img src="/assets/gate-tap-afternoon.png" alt="Child tapping wristband at school gate departure"></div>
+    <div class="story-stage-photo" data-stage="3"><img src="/assets/call-guardian-screen.png" alt="Phone screen showing Call Guardian button"></div>
+    <div class="story-stage-photo" data-stage="4"><img src="/assets/gps-locate-screen.png" alt="Phone screen showing real-time location found in 2.4 seconds"></div>
 
-<section class="hero">
-  <div class="hero-inner">
-    <div class="eyebrow"><span class="dot"></span><span data-i18n="eyebrow">NFC Safety Wristband</span></div>
-    <h1 data-i18n="hero_h1">Safe every school day. Found in seconds, wherever they are.</h1>
-    <p class="hero-sub" data-i18n="hero_sub">OneTag is a wristband that logs safe arrival and departure at school automatically — and instantly shows real-time location and emergency details to anyone who finds your child, anywhere else.</p>
-    <div class="hero-ctas">
+    <div class="story-progress" id="storyProgress"></div>
+    <div class="story-overlay"></div>
+
+    <div class="story-caption-wrap">
+      <div class="story-caption active" data-stage="0">
+        <div class="eyebrow"><span class="dot"></span><span data-i18n="eyebrow">NFC Safety Wristband</span></div>
+        <h1 data-i18n="hero_h1">Safe every school day. Found in seconds, wherever they are.</h1>
+        <button class="story-preview-btn" id="storyPreviewBtn" data-i18n="photo_caption">Tap to preview the profile reveal</button>
+      </div>
+      <div class="story-caption" data-stage="1"><h2 data-i18n="intro_2">Tap at the school gate every morning...</h2></div>
+      <div class="story-caption" data-stage="2"><h2 data-i18n="intro_3">...and every afternoon. Parents know instantly.</h2></div>
+      <div class="story-caption" data-stage="3"><h2 data-i18n="intro_4">If they're ever lost, anyone can tap and call you — instantly.</h2></div>
+      <div class="story-caption" data-stage="4"><h2 data-i18n="intro_5">Real-time GPS finds them in seconds, not searches.</h2></div>
+    </div>
+
+    <div class="story-scroll-hint" id="storyScrollHint" data-i18n="scroll_hint">Scroll to see how it works ↓</div>
+
+    <div class="story-ctas">
       <a href="#contact" class="btn btn-primary" data-i18n="hero_cta_primary">Get OneTag for your school</a>
       <a href="#gps-demo" class="btn btn-ghost" data-i18n="hero_cta_secondary">See how fast it works</a>
     </div>
-  </div>
-
-  <div class="panels">
-    <div class="panel">
-      <div class="panel-icon"><img src="/assets/icon-panel-lost.png" alt=""></div>
-      <h3 data-i18n="panel_lost_title">If they're ever lost</h3>
-      <p data-i18n="panel_lost_p">Anyone who finds them taps the wristband and instantly sees a name, photo, blood type, allergies, and medical notes — plus one button to call you. Your number stays private, always.</p>
-      <div class="panel-photo"><img src="/assets/call-guardian-screen.png" alt="Call Guardian screen showing a child's profile and emergency call button"></div>
-    </div>
-    <div class="panel">
-      <div class="panel-icon"><img src="/assets/icon-panel-daily.png" alt=""></div>
-      <h3 data-i18n="panel_daily_title">Every single school day</h3>
-      <p data-i18n="panel_daily_p">A tap at the gate each morning and afternoon sends an instant notice: arrived safely, left safely. No sign-in sheets, no wondering.</p>
-      <div class="panel-photo"><img src="/assets/gate-tap-morning.png" alt="Child tapping the OneTag wristband at the school gate"></div>
-    </div>
-  </div>
-
-  <div class="photo-stage" id="photoStage">
-    <div class="photo-frame">
-      <img id="wristbandPhoto" src="/assets/product-hero.png" alt="OneTag wristband">
-    </div>
-    <p class="photo-caption" data-i18n="photo_caption">Tap the photo — this is exactly what a finder sees</p>
   </div>
 </section>
 
@@ -518,6 +513,7 @@
     en: {
       nav_gps: "Real-time GPS", nav_how: "How it works", nav_benefits: "Benefits", nav_faq: "FAQ", nav_contact: "Contact",
       intro_eyebrow: "Meet OneTag",
+      scroll_hint: "Scroll to see how it works ↓",
       intro_1: "Meet OneTag — a silicone NFC wristband for children.",
       intro_2: "Tap at the school gate every morning...",
       intro_3: "...and every afternoon. Parents know instantly.",
@@ -605,6 +601,7 @@
     mn: {
       nav_gps: "Бодит цагийн байршил", nav_how: "Хэрхэн ажилладаг", nav_benefits: "Давуу тал", nav_faq: "Асуулт хариулт", nav_contact: "Холбоо барих",
       intro_eyebrow: "OneTag-тай танилцах",
+      scroll_hint: "Хэрхэн ажилладгийг үзэхийн тулд гүйлгэнэ үү ↓",
       intro_1: "OneTag — хүүхдэд зориулсан силикон NFC бугуйвч.",
       intro_2: "Өглөө бүр сургуулийн хаалганд товшино...",
       intro_3: "...орой бүр мөн адил. Эцэг эх шууд мэднэ.",
@@ -692,6 +689,7 @@
     zh: {
       nav_gps: "实时定位", nav_how: "工作原理", nav_benefits: "优势", nav_faq: "常见问题", nav_contact: "联系我们",
       intro_eyebrow: "认识 OneTag",
+      scroll_hint: "向下滚动查看工作原理 ↓",
       intro_1: "认识 OneTag — 为儿童设计的硅胶 NFC 手环。",
       intro_2: "每天早晨在校门触碰...",
       intro_3: "...每天下午同样如此。家长即刻知晓。",
@@ -832,11 +830,11 @@
   const savedLang = localStorage.getItem('onetag_home_lang');
   applyLanguage(ENABLED_LANGUAGES.includes(savedLang) ? savedLang : DEFAULT_LANGUAGE);
 
-  // Photo reveal modal
-  const photoStage = document.getElementById('photoStage');
+  // Preview reveal modal — triggered from the scroll-story's stage-0 button
   const revealOverlay = document.getElementById('revealOverlay');
   const revealClose = document.getElementById('revealClose');
-  photoStage.addEventListener('click', () => revealOverlay.classList.add('active'));
+  const storyPreviewBtn = document.getElementById('storyPreviewBtn');
+  storyPreviewBtn.addEventListener('click', (e) => { e.stopPropagation(); revealOverlay.classList.add('active'); });
   revealClose.addEventListener('click', () => revealOverlay.classList.remove('active'));
   revealOverlay.addEventListener('click', (e) => { if (e.target === revealOverlay) revealOverlay.classList.remove('active'); });
 
@@ -925,40 +923,52 @@
     );
   });
 
-  // Intro slideshow — auto-advances through 5 real photos telling the
-  // product story before the main hero. Captions update via the same
+  // Scroll-driven story hero — as the visitor scrolls through the tall
+  // .scroll-story wrapper, the sticky inner section stays pinned while
+  // photos crossfade + subtly rotate/scale based on scroll position,
+  // walking through 5 real moments before releasing into the rest of
+  // the page. Captions and progress dots update via the same
   // translation system as everything else.
-  const introSlides = document.querySelectorAll('.intro-slide');
-  const introCaption = document.getElementById('introCaption');
-  const introDotsEl = document.getElementById('introDots');
-  const introKeys = ['intro_1', 'intro_2', 'intro_3', 'intro_4', 'intro_5'];
-  let introIndex = 0;
-  let introTimer = null;
+  const storyWrapper = document.getElementById('scrollStory');
+  const storyPhotos = document.querySelectorAll('.story-stage-photo');
+  const storyCaptions = document.querySelectorAll('.story-caption');
+  const storyProgressEl = document.getElementById('storyProgress');
+  const storyScrollHint = document.getElementById('storyScrollHint');
+  const STORY_STAGES = storyPhotos.length;
+  let storyActiveStage = 0;
 
-  introKeys.forEach((key, i) => {
-    const dot = document.createElement('button');
-    dot.className = 'intro-dot' + (i === 0 ? ' active' : '');
-    dot.setAttribute('aria-label', 'Slide ' + (i + 1));
-    dot.onclick = () => goToIntroSlide(i, true);
-    introDotsEl.appendChild(dot);
+  for (let i = 0; i < STORY_STAGES; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'story-dot' + (i === 0 ? ' active' : '');
+    storyProgressEl.appendChild(dot);
+  }
+  const storyDots = storyProgressEl.querySelectorAll('.story-dot');
+
+  function setStoryStage(stage) {
+    if (stage === storyActiveStage) return;
+    storyActiveStage = stage;
+    storyPhotos.forEach((el, i) => el.classList.toggle('active', i === stage));
+    storyCaptions.forEach((el) => el.classList.toggle('active', parseInt(el.dataset.stage, 10) === stage));
+    storyDots.forEach((el, i) => el.classList.toggle('active', i === stage));
+  }
+
+  let storyTicking = false;
+  function updateStoryScroll() {
+    storyTicking = false;
+    const rect = storyWrapper.getBoundingClientRect();
+    const viewportH = window.innerHeight;
+    const wrapperHeight = storyWrapper.offsetHeight;
+    const maxScroll = wrapperHeight - viewportH;
+    const scrolledIntoWrapper = -rect.top;
+    const progress = Math.min(Math.max(scrolledIntoWrapper / maxScroll, 0), 1);
+    const stage = Math.min(STORY_STAGES - 1, Math.floor(progress * STORY_STAGES));
+    setStoryStage(stage);
+    storyScrollHint.style.opacity = progress > 0.03 ? '0' : '1';
+  }
+  window.addEventListener('scroll', () => {
+    if (!storyTicking) { requestAnimationFrame(updateStoryScroll); storyTicking = true; }
   });
-
-  function goToIntroSlide(i, isManual) {
-    introIndex = i;
-    introSlides.forEach((s, si) => s.classList.toggle('active', si === i));
-    introDotsEl.querySelectorAll('.intro-dot').forEach((d, di) => d.classList.toggle('active', di === i));
-    introCaption.setAttribute('data-i18n', introKeys[i]);
-    introCaption.textContent = currentDict()[introKeys[i]];
-    if (isManual) restartIntroTimer();
-  }
-
-  function restartIntroTimer() {
-    clearInterval(introTimer);
-    introTimer = setInterval(() => {
-      goToIntroSlide((introIndex + 1) % introKeys.length, false);
-    }, 3200);
-  }
-  restartIntroTimer();
+  updateStoryScroll();
 
   // FAQ accordion
   document.querySelectorAll('.faq-item').forEach(item => {
