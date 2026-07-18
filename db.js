@@ -89,6 +89,13 @@ async function initSchema() {
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS staff_sessions (
+      token TEXT PRIMARY KEY,
+      staff_id TEXT NOT NULL REFERENCES staff(staff_id),
+      expires_at TIMESTAMP NOT NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    );
+
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
