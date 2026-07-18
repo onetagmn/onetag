@@ -50,6 +50,7 @@
         <select id="gateSchoolFilter"><option value="">All schools</option></select>
         <select id="gateClassFilter"><option value="">All classes</option></select>
         <input id="gateNameFilter" placeholder="Search child name...">
+        <input id="gateDateFilter" type="date">
       </div>
       <div id="gateContent">Loading...</div>
     </section>
@@ -61,6 +62,7 @@
         <select id="scanSchoolFilter"><option value="">All schools</option></select>
         <select id="scanClassFilter"><option value="">All classes</option></select>
         <input id="scanNameFilter" placeholder="Search child name...">
+        <input id="scanDateFilter" type="date">
       </div>
       <div id="content">Loading...</div>
     </section>
@@ -116,11 +118,25 @@ function populateFilterOptions(rows, schoolSelectId, classSelectId) {
   classSelect.value = prevClass;
 }
 
-function applyFilters(rows, schoolVal, classVal, nameVal) {
+// Extracts a YYYY-MM-DD string in the browser's LOCAL timezone from either
+// a full timestamp or a plain date. Used so the date filter matches what's
+// actually shown in the table (which is also rendered in local time) —
+// comparing raw UTC date strings would silently exclude rows near midnight
+// for anyone not in UTC.
+function localDateStr(value) {
+  const dt = new Date(value);
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, '0');
+  const d = String(dt.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function applyFilters(rows, schoolVal, classVal, nameVal, dateVal, getDate) {
   return rows.filter(r =>
     (!schoolVal || r.school_name === schoolVal) &&
     (!classVal || r.class_name === classVal) &&
-    (!nameVal || (r.child_name || '').toLowerCase().includes(nameVal.toLowerCase()))
+    (!nameVal || (r.child_name || '').toLowerCase().includes(nameVal.toLowerCase())) &&
+    (!dateVal || getDate(r) === dateVal)
   );
 }
 
@@ -141,7 +157,10 @@ function renderGate() {
   const schoolVal = document.getElementById('gateSchoolFilter').value;
   const classVal = document.getElementById('gateClassFilter').value;
   const nameVal = document.getElementById('gateNameFilter').value;
-  const rows = applyFilters(gateRows, schoolVal, classVal, nameVal);
+  const dateVal = document.getElementById('gateDateFilter').value;
+  // r.day is already a plain date string from the backend — read it as
+  // text (not through a Date object) to avoid any timezone shift.
+  const rows = applyFilters(gateRows, schoolVal, classVal, nameVal, dateVal, r => String(r.day || '').slice(0, 10));
 
   if (!rows.length) {
     content.innerHTML = '<div class="empty">No gate activity matches these filters.</div>';
@@ -189,7 +208,10 @@ function renderScan() {
   const schoolVal = document.getElementById('scanSchoolFilter').value;
   const classVal = document.getElementById('scanClassFilter').value;
   const nameVal = document.getElementById('scanNameFilter').value;
-  const rows = applyFilters(scanRows, schoolVal, classVal, nameVal);
+  const dateVal = document.getElementById('scanDateFilter').value;
+  // r.timestamp is a full datetime — convert to local date so the filter
+  // matches what's actually shown in the Time column (also local time).
+  const rows = applyFilters(scanRows, schoolVal, classVal, nameVal, dateVal, r => localDateStr(r.timestamp));
 
   if (!rows.length) {
     content.innerHTML = '<div class="empty">No scans match these filters.</div>';
@@ -214,9 +236,9 @@ function renderScan() {
   `;
 }
 
-['gateSchoolFilter', 'gateClassFilter', 'gateNameFilter'].forEach(id =>
+['gateSchoolFilter', 'gateClassFilter', 'gateNameFilter', 'gateDateFilter'].forEach(id =>
   document.getElementById(id).addEventListener('input', renderGate));
-['scanSchoolFilter', 'scanClassFilter', 'scanNameFilter'].forEach(id =>
+['scanSchoolFilter', 'scanClassFilter', 'scanNameFilter', 'scanDateFilter'].forEach(id =>
   document.getElementById(id).addEventListener('input', renderScan));
 
 document.getElementById('whoami').textContent = `${adminInfo.username} (${adminInfo.role === 'super_admin' ? 'all schools' : 'school admin'})`;

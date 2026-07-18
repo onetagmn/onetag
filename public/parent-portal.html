@@ -117,34 +117,73 @@ async function loadHistory(token, isAutoLogin) {
     return;
   }
   const children = await res.json();
+  currentChildren = children;
 
-  app.innerHTML = `<div style="text-align:right;margin-bottom:10px;"><span id="logoutLink" style="font-size:12.5px;color:#6B7A7D;cursor:pointer;text-decoration:underline;">Not you? Switch phone number</span></div>`;
+  app.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;flex-wrap:wrap;">
+      <div>
+        <label style="font-size:12.5px;font-weight:600;color:#6B7A7D;margin-right:6px;">Filter by date</label>
+        <input id="historyDateFilter" type="date" style="padding:7px 9px;border:1px solid var(--line);border-radius:8px;font-size:13px;">
+        <span id="clearDateFilter" style="font-size:12px;color:var(--steppe);cursor:pointer;text-decoration:underline;margin-left:6px;display:none;">Clear</span>
+      </div>
+      <span id="logoutLink" style="font-size:12.5px;color:#6B7A7D;cursor:pointer;text-decoration:underline;">Not you? Switch phone number</span>
+    </div>
+    <div id="childrenList"></div>
+  `;
   document.getElementById('logoutLink').onclick = () => {
     localStorage.removeItem('onetag_parent_token');
     window.location.reload();
   };
+  document.getElementById('historyDateFilter').addEventListener('input', renderChildren);
+  document.getElementById('clearDateFilter').addEventListener('click', () => {
+    document.getElementById('historyDateFilter').value = '';
+    renderChildren();
+  });
 
   if (!children.length) {
-    app.innerHTML += `<div class="card"><p class="empty">No children found for this phone number.</p></div>`;
+    document.getElementById('childrenList').innerHTML = '<div class="card"><p class="empty">No children found for this phone number.</p></div>';
     return;
   }
+  renderChildren();
+}
 
-  children.forEach(child => {
+// Extracts a YYYY-MM-DD string in the browser's LOCAL timezone, so the
+// date filter matches what's actually shown in each row (also local time).
+function localDateStr(value) {
+  const dt = new Date(value);
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, '0');
+  const d = String(dt.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+let currentChildren = [];
+
+function renderChildren() {
+  const listEl = document.getElementById('childrenList');
+  const dateVal = document.getElementById('historyDateFilter').value;
+  document.getElementById('clearDateFilter').style.display = dateVal ? 'inline' : 'none';
+  listEl.innerHTML = '';
+
+  currentChildren.forEach(child => {
     const card = document.createElement('div');
     card.className = 'card';
-    const gateRows = child.gate_logs.map(g => `
+    const gateLogsFiltered = child.gate_logs.filter(g => !dateVal || localDateStr(g.timestamp) === dateVal);
+    const scanLogsFiltered = child.scan_logs.filter(s => !dateVal || localDateStr(s.timestamp) === dateVal);
+
+    const gateRows = gateLogsFiltered.map(g => `
       <div class="log-row">
         <span>${new Date(g.timestamp).toLocaleString()}</span>
         <span class="${g.direction === 'in' ? 'tag-in' : 'tag-out'}">${g.direction.toUpperCase()}</span>
       </div>
-    `).join('') || '<p class="empty">No gate activity yet.</p>';
+    `).join('') || `<p class="empty">${dateVal ? 'No gate activity on this date.' : 'No gate activity yet.'}</p>`;
 
-    const scanRows = child.scan_logs.map(s => `
+    const scanRows = scanLogsFiltered.map(s => `
       <div class="log-row">
         <span>${new Date(s.timestamp).toLocaleString()}</span>
         <span>${s.location_lat ? `${s.location_lat.toFixed(4)}, ${s.location_lng.toFixed(4)}` : 'No location'}</span>
       </div>
-    `).join('') || '<p class="empty">No scans yet.</p>';
+    `).join('') || `<p class="empty">${dateVal ? 'No scans on this date.' : 'No scans yet.'}</p>`;
 
     card.innerHTML = `
       <div class="child-name">${esc(child.child_name)}</div>
@@ -153,7 +192,7 @@ async function loadHistory(token, isAutoLogin) {
       <h2 style="margin-top:16px;">Wristband scans</h2>
       ${scanRows}
     `;
-    app.appendChild(card);
+    listEl.appendChild(card);
   });
 }
 </script>
