@@ -46,7 +46,7 @@
   .lang-btn.active { background: var(--sky); color: var(--blue); border-color: var(--sky); }
 
   /* ---------- SCROLL STORY HERO ---------- */
-  .scroll-story { position: relative; height: 1050vh; background: #0E2338; }
+  .scroll-story { position: relative; height: 910vh; background: #0E2338; }
   .story-sticky { position: sticky; top: 0; height: 100vh; overflow: hidden; }
   .story-stage-photo {
     position: absolute; inset: 0; opacity: 0; z-index: 1;
@@ -58,35 +58,27 @@
   .story-stage-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
   /* ---------- HUD LABEL REVEAL (Scene 2) ---------- */
+  .hud-svg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; }
+  .hud-svg-line {
+    stroke: #0B5FFF; stroke-width: 0.25; fill: none;
+    stroke-dasharray: 40; stroke-dashoffset: 40;
+    transition: stroke-dashoffset 0.5s ease;
+  }
+  .hud-svg-line.revealed { stroke-dashoffset: 0; }
+  .hud-svg-dot {
+    fill: #fff; opacity: 0; transition: opacity 0.3s ease;
+  }
+  .hud-svg-dot.revealed { opacity: 1; }
   .hud-labels { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
   .hud-label {
-    position: absolute; display: flex; align-items: center; gap: 8px;
-    opacity: 0; transform: scale(0.85); transition: opacity 0.4s ease, transform 0.4s ease;
+    position: absolute; opacity: 0; transition: opacity 0.35s ease, transform 0.35s ease;
   }
-  .hud-label.revealed { opacity: 1; transform: scale(1); }
-  .hud-label[style*="right"] { flex-direction: row-reverse; }
-  .hud-line {
-    height: 1px; background: linear-gradient(90deg, rgba(11,95,255,0.9), rgba(11,95,255,0.1));
-    display: inline-block; transform: scaleX(0); transform-origin: left;
-    transition: transform 0.35s ease;
-  }
-  .hud-label[style*="right"] .hud-line {
-    background: linear-gradient(90deg, rgba(11,95,255,0.1), rgba(11,95,255,0.9));
-    transform-origin: right;
-  }
-  .hud-label.revealed .hud-line { transform: scaleX(1); }
+  .hud-label.revealed { opacity: 1; }
   .hud-text {
     background: rgba(11,95,255,0.92); color: #fff; font-size: 12.5px; font-weight: 700;
-    padding: 5px 12px; border-radius: 20px; white-space: nowrap;
+    padding: 5px 12px; border-radius: 20px; white-space: nowrap; display: inline-block;
     box-shadow: 0 4px 14px rgba(11,95,255,0.4);
   }
-  .hud-label::before {
-    content: ''; position: absolute; width: 6px; height: 6px; border-radius: 50%;
-    background: #fff; box-shadow: 0 0 8px 2px rgba(11,95,255,0.9);
-    top: 50%; margin-top: -3px;
-  }
-  .hud-label:not([style*="right"])::before { left: -3px; }
-  .hud-label[style*="right"]::before { right: -3px; }
   .story-overlay {
     position: absolute; inset: 0; z-index: 3; pointer-events: none;
     background: linear-gradient(to top, rgba(14,35,56,0.85) 0%, rgba(14,35,56,0.15) 45%, rgba(14,35,56,0.35) 100%);
@@ -117,9 +109,9 @@
     animation: bobHint 1.8s ease-in-out infinite;
   }
   @keyframes bobHint { 0%, 100% { transform: translateY(0); opacity: 0.6; } 50% { transform: translateY(6px); opacity: 1; } }
-  .story-ctas { position: absolute; bottom: 90px; left: 0; right: 0; z-index: 6; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; padding: 0 24px; }
-  .story-ctas .btn { padding: 13px 24px; font-size: 14.5px; }
-  .story-ctas .btn-ghost { background: rgba(255,255,255,0.08); color: #fff; border-color: rgba(255,255,255,0.3); }
+  .post-story-ctas { padding: 56px 0; background: var(--bg-light); text-align: center; }
+  .post-story-ctas-inner { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+  .post-story-ctas .btn { padding: 14px 26px; font-size: 15px; }
 
   .reveal-overlay { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0); pointer-events: none; transition: background 0.35s ease; padding: 24px; }
   .reveal-overlay.active { background: rgba(15, 23, 42, 0.55); pointer-events: auto; }
@@ -258,12 +250,11 @@
     .timeline::before { display: none; }
     .nav-links { display: none; }
     .stats-grid { grid-template-columns: 1fr; gap: 32px; }
-    .story-ctas { bottom: 70px; }
     .story-caption { bottom: 110px; }
   }
   @media (max-width: 560px) {
-    .scroll-story { height: 850vh; }
-    .story-ctas { flex-direction: column; align-items: center; bottom: 60px; }
+    .scroll-story { height: 740vh; }
+    .post-story-ctas-inner { flex-direction: column; align-items: center; }
     .story-caption { bottom: 140px; }
     .grid-3 { grid-template-columns: 1fr; }
     .timeline { grid-template-columns: 1fr; }
@@ -295,25 +286,37 @@
   <div class="story-sticky">
     <div class="story-stage-photo active" data-stage="0"><img src="/assets/scene1-product.jpg" alt="OneTag wristband"></div>
     <div class="story-stage-photo" data-stage="1">
-      <img src="/assets/scene2-registration-hud.jpg" alt="OneTag wristband — what it saves">
+      <img src="/assets/scene2-hud-v3.jpg" alt="OneTag wristband — what it saves">
+      <svg class="hud-svg" id="hudSvg" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <line class="hud-svg-line" data-hud="0" x1="38" y1="38" x2="14" y2="16"></line>
+        <line class="hud-svg-line" data-hud="1" x1="62" y1="38" x2="86" y2="16"></line>
+        <line class="hud-svg-line" data-hud="2" x1="29" y1="50" x2="9" y2="50"></line>
+        <line class="hud-svg-line" data-hud="3" x1="71" y1="50" x2="91" y2="50"></line>
+        <line class="hud-svg-line" data-hud="4" x1="40" y1="61" x2="16" y2="82"></line>
+        <line class="hud-svg-line" data-hud="5" x1="60" y1="61" x2="84" y2="82"></line>
+        <circle class="hud-svg-dot" data-hud="0" cx="38" cy="38" r="0.7"></circle>
+        <circle class="hud-svg-dot" data-hud="1" cx="62" cy="38" r="0.7"></circle>
+        <circle class="hud-svg-dot" data-hud="2" cx="29" cy="50" r="0.7"></circle>
+        <circle class="hud-svg-dot" data-hud="3" cx="71" cy="50" r="0.7"></circle>
+        <circle class="hud-svg-dot" data-hud="4" cx="40" cy="61" r="0.7"></circle>
+        <circle class="hud-svg-dot" data-hud="5" cx="60" cy="61" r="0.7"></circle>
+      </svg>
       <div class="hud-labels" id="hudLabels">
-        <div class="hud-label" data-hud="0" style="top:14%; left:10%;"><span class="hud-line" style="width:70px;"></span><span class="hud-text" data-i18n="label_name">Name</span></div>
-        <div class="hud-label" data-hud="1" style="top:14%; right:10%;"><span class="hud-line" style="width:70px;"></span><span class="hud-text" data-i18n="label_allergies">Allergies</span></div>
-        <div class="hud-label" data-hud="2" style="top:46%; left:6%;"><span class="hud-line" style="width:90px;"></span><span class="hud-text" data-i18n="label_blood">Blood Type</span></div>
-        <div class="hud-label" data-hud="3" style="top:46%; right:6%;"><span class="hud-line" style="width:90px;"></span><span class="hud-text" data-i18n="label_contact">Emergency Contact</span></div>
-        <div class="hud-label" data-hud="4" style="bottom:14%; left:12%;"><span class="hud-line" style="width:70px;"></span><span class="hud-text" data-i18n="label_school">School</span></div>
-        <div class="hud-label" data-hud="5" style="bottom:14%; right:12%;"><span class="hud-line" style="width:70px;"></span><span class="hud-text" data-i18n="label_class">Class</span></div>
+        <div class="hud-label" data-hud="0" style="top:16%; left:14%; transform:translate(-50%,-50%);"><span class="hud-text" data-i18n="label_name">Name</span></div>
+        <div class="hud-label" data-hud="1" style="top:16%; left:86%; transform:translate(-50%,-50%);"><span class="hud-text" data-i18n="label_allergies">Allergies</span></div>
+        <div class="hud-label" data-hud="2" style="top:50%; left:9%; transform:translate(-50%,-50%);"><span class="hud-text" data-i18n="label_blood">Blood Type</span></div>
+        <div class="hud-label" data-hud="3" style="top:50%; left:91%; transform:translate(-50%,-50%);"><span class="hud-text" data-i18n="label_contact">Emergency Contact</span></div>
+        <div class="hud-label" data-hud="4" style="top:82%; left:16%; transform:translate(-50%,-50%);"><span class="hud-text" data-i18n="label_school">School</span></div>
+        <div class="hud-label" data-hud="5" style="top:82%; left:84%; transform:translate(-50%,-50%);"><span class="hud-text" data-i18n="label_class">Class</span></div>
       </div>
     </div>
-    <div class="story-stage-photo" data-stage="2"><img src="/assets/scene3-walking.jpg" alt="Child walking to school wearing the wristband"></div>
+    <div class="story-stage-photo" data-stage="2"><img src="/assets/scene5-crane.jpg" alt="Descending toward the school gate"></div>
     <div class="story-stage-photo" data-stage="3"><img src="/assets/scene4-aerial.jpg" alt="Aerial view of children arriving at school"></div>
-    <div class="story-stage-photo" data-stage="4"><img src="/assets/scene5-crane.jpg" alt="Children walking toward the school gate"></div>
-    <div class="story-stage-photo" data-stage="5"><img src="/assets/scene7-tap-morning.jpg" alt="Child tapping the wristband at the school gate in the morning"></div>
-    <div class="story-stage-photo" data-stage="6"><img src="/assets/scene8-dashboard.jpg" alt="School staff viewing the arrival dashboard"></div>
-    <div class="story-stage-photo" data-stage="7"><img src="/assets/scene9-tap-dusk.jpg" alt="Child tapping the wristband while leaving school in the afternoon"></div>
-    <div class="story-stage-photo" data-stage="8"><img src="/assets/scene10-phone-notif.jpg" alt="Parent's phone showing a safe departure notification"></div>
-    <div class="story-stage-photo" data-stage="9"><img src="/assets/scene11-phone-map.jpg" alt="Phone transitioning to a real-time map"></div>
-    <div class="story-stage-photo" data-stage="10"><img src="/assets/scene12-map.jpg" alt="Full-screen real-time location map"></div>
+    <div class="story-stage-photo" data-stage="4"><img src="/assets/scene7-tap-morning.jpg" alt="Child tapping the wristband at the school gate in the morning"></div>
+    <div class="story-stage-photo" data-stage="5"><img src="/assets/scene8-dashboard.jpg" alt="School staff viewing the arrival dashboard"></div>
+    <div class="story-stage-photo" data-stage="6"><img src="/assets/scene9-tap-dusk.jpg" alt="Child tapping the wristband while leaving school in the afternoon"></div>
+    <div class="story-stage-photo" data-stage="7"><img src="/assets/scene10-phone-notif.jpg" alt="Parent's phone showing a safe departure notification"></div>
+    <div class="story-stage-photo" data-stage="8"><img src="/assets/scene12-map.jpg" alt="Full-screen real-time location map"></div>
 
     <div class="story-progress" id="storyProgress"></div>
     <div class="story-overlay"></div>
@@ -325,23 +328,23 @@
         <button class="story-preview-btn" id="storyPreviewBtn" data-i18n="photo_caption">Tap to preview the profile reveal</button>
       </div>
       <div class="story-caption" data-stage="1"><h2 data-i18n="story_2">Everything that matters, saved in seconds.</h2></div>
-      <div class="story-caption" data-stage="2"><h2 data-i18n="story_3">Every morning starts the same way.</h2></div>
+      <div class="story-caption" data-stage="2"><h2 data-i18n="story_crane">Closing in on the gate.</h2></div>
       <div class="story-caption" data-stage="3"><h2 data-i18n="story_4">Every child, accounted for the moment they arrive.</h2></div>
-      <div class="story-caption" data-stage="4"><h2 data-i18n="story_5">One tap at the gate is all it takes.</h2></div>
-      <div class="story-caption" data-stage="5"><h2 data-i18n="intro_2">Tap at the school gate every morning...</h2></div>
-      <div class="story-caption" data-stage="6"><h2 data-i18n="story_8">The school knows the instant they're in.</h2></div>
-      <div class="story-caption" data-stage="7"><h2 data-i18n="intro_3">...and every afternoon.</h2></div>
-      <div class="story-caption" data-stage="8"><h2 data-i18n="story_10">Left safely. You know the moment it happens.</h2></div>
-      <div class="story-caption" data-stage="9"><h2 data-i18n="story_11">See exactly where — down to the meter.</h2></div>
-      <div class="story-caption" data-stage="10"><h2 data-i18n="intro_5">Real-time GPS finds them in seconds, not searches.</h2></div>
+      <div class="story-caption" data-stage="4"><h2 data-i18n="intro_2">Tap at the school gate every morning...</h2></div>
+      <div class="story-caption" data-stage="5"><h2 data-i18n="story_8">The school knows the instant they're in.</h2></div>
+      <div class="story-caption" data-stage="6"><h2 data-i18n="intro_3">...and every afternoon.</h2></div>
+      <div class="story-caption" data-stage="7"><h2 data-i18n="story_10">Left safely. You know the moment it happens.</h2></div>
+      <div class="story-caption" data-stage="8"><h2 data-i18n="intro_5">Real-time GPS finds them in seconds, not searches.</h2></div>
     </div>
 
     <div class="story-scroll-hint" id="storyScrollHint" data-i18n="scroll_hint">Scroll to see how it works ↓</div>
+  </div>
+</section>
 
-    <div class="story-ctas">
-      <a href="#contact" class="btn btn-primary" data-i18n="hero_cta_primary">Get OneTag for your school</a>
-      <a href="#gps-demo" class="btn btn-ghost" data-i18n="hero_cta_secondary">See how fast it works</a>
-    </div>
+<section class="post-story-ctas">
+  <div class="wrap post-story-ctas-inner">
+    <a href="#contact" class="btn btn-primary" data-i18n="hero_cta_primary">Get OneTag for your school</a>
+    <a href="#gps-demo" class="btn btn-ghost" data-i18n="hero_cta_secondary">See how fast it works</a>
   </div>
 </section>
 
@@ -576,6 +579,7 @@
       story_11: "See exactly where — down to the meter.",
       label_name: "Name", label_allergies: "Allergies", label_blood: "Blood Type",
       label_contact: "Emergency Contact", label_school: "School", label_class: "Class",
+      story_crane: "Another school morning begins.",
       intro_1: "Meet OneTag — a silicone NFC wristband for children.",
       intro_2: "Tap at the school gate every morning...",
       intro_3: "...and every afternoon. Parents know instantly.",
@@ -673,6 +677,7 @@
       story_11: "Хаана байгааг нь метрийн нарийвчлалтай харна.",
       label_name: "Нэр", label_allergies: "Харшил", label_blood: "Цусны бүлэг",
       label_contact: "Яаралтай холбоо", label_school: "Сургууль", label_class: "Анги",
+      story_crane: "Сургуулийн өглөө дахин эхэлж байна.",
       intro_1: "OneTag — хүүхдэд зориулсан силикон NFC бугуйвч.",
       intro_2: "Өглөө бүр сургуулийн хаалганд товшино...",
       intro_3: "...орой бүр мөн адил. Эцэг эх шууд мэднэ.",
@@ -770,6 +775,7 @@
       story_11: "精确到米，实时掌握位置。",
       label_name: "姓名", label_allergies: "过敏", label_blood: "血型",
       label_contact: "紧急联系人", label_school: "学校", label_class: "班级",
+      story_crane: "又一个上学的早晨开始了。",
       intro_1: "认识 OneTag — 为儿童设计的硅胶 NFC 手环。",
       intro_2: "每天早晨在校门触碰...",
       intro_3: "...每天下午同样如此。家长即刻知晓。",
@@ -1020,7 +1026,7 @@
   // Relative weights per stage, matching the order of .story-stage-photo
   // elements above: product, registration, walking, aerial, crane, tap-AM,
   // dashboard, tap-PM, phone-notif, phone-map, full-map.
-  const STORY_WEIGHTS = [11, 10, 7, 11, 7, 11, 10, 10, 10, 7, 11];
+  const STORY_WEIGHTS = [11, 10, 7, 11, 11, 10, 10, 10, 11];
   const STORY_TOTAL_WEIGHT = STORY_WEIGHTS.reduce((a, b) => a + b, 0);
   const STORY_BOUNDARIES = []; // cumulative fraction (0-1) where each stage ENDS
   (function buildBoundaries() {
@@ -1040,19 +1046,31 @@
   const storyDots = storyProgressEl.querySelectorAll('.story-dot');
 
   const hudLabelEls = document.querySelectorAll('.hud-label');
+  const hudLineEls = document.querySelectorAll('.hud-svg-line');
+  const hudDotEls = document.querySelectorAll('.hud-svg-dot');
   let hudTimers = [];
   function triggerHudReveal() {
     hudTimers.forEach(t => clearTimeout(t));
     hudTimers = [];
     hudLabelEls.forEach(el => el.classList.remove('revealed'));
+    hudLineEls.forEach(el => el.classList.remove('revealed'));
+    hudDotEls.forEach(el => el.classList.remove('revealed'));
     hudLabelEls.forEach((el, i) => {
-      hudTimers.push(setTimeout(() => el.classList.add('revealed'), 250 + i * 260));
+      const delay = 250 + i * 320;
+      const hud = el.dataset.hud;
+      hudTimers.push(setTimeout(() => {
+        document.querySelector('.hud-svg-dot[data-hud="' + hud + '"]').classList.add('revealed');
+        document.querySelector('.hud-svg-line[data-hud="' + hud + '"]').classList.add('revealed');
+      }, delay));
+      hudTimers.push(setTimeout(() => el.classList.add('revealed'), delay + 250));
     });
   }
   function resetHudReveal() {
     hudTimers.forEach(t => clearTimeout(t));
     hudTimers = [];
     hudLabelEls.forEach(el => el.classList.remove('revealed'));
+    hudLineEls.forEach(el => el.classList.remove('revealed'));
+    hudDotEls.forEach(el => el.classList.remove('revealed'));
   }
 
   function setStoryStage(stage) {
