@@ -51,11 +51,20 @@
   .story-stage-photo {
     position: absolute; inset: 0; opacity: 0; z-index: 1;
     transform: scale(1.1) rotateY(6deg) translateZ(0);
-    transition: opacity 0.7s ease, transform 0.8s cubic-bezier(.2,.8,.2,1);
+    transition: opacity 0.8s ease, transform 1s cubic-bezier(.2,.8,.2,1);
     perspective: 1200px;
   }
   .story-stage-photo.active { opacity: 1; transform: scale(1) rotateY(0deg) translateZ(0); z-index: 2; }
   .story-stage-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* Aerial (stage 3) gets a distinct descending-zoom instead of the tilt —
+     entering more zoomed-out and pushing in, continuing the downward
+     camera movement started by the crane shot before it. */
+  .story-stage-photo[data-stage="3"] { transform: scale(1.35) translateY(-2%) rotateY(0deg) translateZ(0); }
+  .story-stage-photo[data-stage="3"].active { transform: scale(1) translateY(0%) rotateY(0deg) translateZ(0); }
+  /* Whip-blur pulse on every cut, mimicking a real camera swish rather
+     than a flat crossfade. */
+  .story-sticky { transition: filter 0.25s ease; }
+  .story-sticky.story-transitioning { filter: blur(5px) brightness(1.08); }
 
   /* ---------- HUD LABEL REVEAL (Scene 2) ---------- */
   .hud-svg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; }
@@ -94,7 +103,7 @@
   .story-caption.active { opacity: 1; transform: translateY(0); }
   .story-caption h1 { font-size: clamp(30px, 5vw, 54px); font-weight: 800; color: #fff; line-height: 1.12; max-width: 780px; margin: 0 auto; }
   .story-caption h2 { font-size: clamp(24px, 4vw, 42px); font-weight: 800; color: #fff; line-height: 1.2; max-width: 700px; margin: 0 auto; }
-  .story-caption .eyebrow { display: inline-flex; align-items: center; gap: 7px; background: rgba(255,255,255,0.12); color: #fff; font-size: 13px; font-weight: 700; padding: 7px 16px; border-radius: 20px; margin-bottom: 20px; backdrop-filter: blur(6px); }
+  .story-caption .eyebrow { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: rgba(0,0,0,0.45); color: #fff; font-size: 16px; font-weight: 700; padding: 9px 20px; border-radius: 24px; margin-bottom: 22px; backdrop-filter: blur(8px); }
   .story-caption .eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
   .story-preview-btn {
     display: block; margin: 22px auto 0; pointer-events: auto; cursor: pointer;
@@ -575,16 +584,16 @@
       story_4: "Every child, accounted for the moment they arrive.",
       story_5: "One tap at the gate is all it takes.",
       story_8: "The school knows the instant they're in.",
-      story_10: "Left safely. You know the moment it happens.",
+      story_10: "Left safely. Parents know instantly.",
       story_11: "See exactly where — down to the meter.",
       label_name: "Name", label_allergies: "Allergies", label_blood: "Blood Type",
-      label_contact: "Emergency Contact", label_school: "School", label_class: "Class",
+      label_contact: "Emergency Contact", label_school: "School", label_class: "Grade",
       story_crane: "Another school morning begins.",
       intro_1: "Meet OneTag — a silicone NFC wristband for children.",
       intro_2: "Tap at the school gate every morning...",
-      intro_3: "...and every afternoon. Parents know instantly.",
+      intro_3: "...and every afternoon.",
       intro_4: "If they're ever lost, anyone can tap and call you — instantly.",
-      intro_5: "Real-time GPS finds them in seconds, not searches.",
+      intro_5: "In an emergency, one tap finds them in seconds — real-time GPS.",
       nav_parents: "For Parents", nav_staff: "School Login",
       eyebrow: "NFC Safety Wristband",
       hero_h1: "Safe every school day. Found in seconds, wherever they are.",
@@ -673,16 +682,16 @@
       story_4: "Хүүхэд бүр ирсэн даруйдаа бүртгэгдэнэ.",
       story_5: "Хаалганд нэг товшилт л хэрэгтэй.",
       story_8: "Сургууль тэднийг ирсэн даруйд нь мэднэ.",
-      story_10: "Аюулгүй явлаа. Та яг тэр мөчийг мэднэ.",
+      story_10: "Аюулгүй явлаа. Эцэг эх шууд мэднэ.",
       story_11: "Хаана байгааг нь метрийн нарийвчлалтай харна.",
       label_name: "Нэр", label_allergies: "Харшил", label_blood: "Цусны бүлэг",
       label_contact: "Яаралтай холбоо", label_school: "Сургууль", label_class: "Анги",
       story_crane: "Сургуулийн өглөө дахин эхэлж байна.",
       intro_1: "OneTag — хүүхдэд зориулсан силикон NFC бугуйвч.",
       intro_2: "Өглөө бүр сургуулийн хаалганд товшино...",
-      intro_3: "...орой бүр мөн адил. Эцэг эх шууд мэднэ.",
+      intro_3: "...орой бүр мөн адил.",
       intro_4: "Хэрэв тэднийг олдохгүй бол хэн ч товшоод танд шууд залгаж болно.",
-      intro_5: "Бодит цагийн GPS тэднийг хайлт биш, секундын дотор олно.",
+      intro_5: "Онц үед нэг товшилтоор секундын дотор олно — бодит цагийн GPS.",
       nav_parents: "Эцэг эх", nav_staff: "Сургуулийн нэвтрэх",
       eyebrow: "NFC аюулгүй байдлын бугуйвч",
       hero_h1: "Сургуулийн өдөр бүр аюулгүй. Хаана ч байсан секундын дотор олдоно.",
@@ -771,16 +780,16 @@
       story_4: "每个孩子，到校那一刻即被记录。",
       story_5: "在校门轻触一下即可。",
       story_8: "孩子进校的那一刻，学校立即知晓。",
-      story_10: "安全离开。您第一时间知道。",
+      story_10: "安全离开。家长即刻知晓。",
       story_11: "精确到米，实时掌握位置。",
       label_name: "姓名", label_allergies: "过敏", label_blood: "血型",
       label_contact: "紧急联系人", label_school: "学校", label_class: "班级",
       story_crane: "又一个上学的早晨开始了。",
       intro_1: "认识 OneTag — 为儿童设计的硅胶 NFC 手环。",
       intro_2: "每天早晨在校门触碰...",
-      intro_3: "...每天下午同样如此。家长即刻知晓。",
+      intro_3: "...每天下午同样如此。",
       intro_4: "如果孩子走失，任何人触碰手环都能立即联系您。",
-      intro_5: "实时 GPS 只需几秒即可找到孩子，无需搜寻。",
+      intro_5: "紧急情况下，一次触碰，几秒内定位 — 实时 GPS。",
       nav_parents: "为家长", nav_staff: "学校登录",
       eyebrow: "NFC 安全手环",
       hero_h1: "每个上学日都安全。无论身在何处，几秒内即可找到。",
@@ -1073,6 +1082,7 @@
     hudDotEls.forEach(el => el.classList.remove('revealed'));
   }
 
+  let storyBlurTimer = null;
   function setStoryStage(stage) {
     if (stage === storyActiveStage) return;
     const enteringHud = stage === 1 && storyActiveStage !== 1;
@@ -1083,6 +1093,12 @@
     storyDots.forEach((el, i) => el.classList.toggle('active', i === stage));
     if (enteringHud) triggerHudReveal();
     if (leavingHud) resetHudReveal();
+    // Quick blur+brighten pulse on every cut, mimicking a real camera
+    // whip-pan instead of a flat crossfade between static photos.
+    const storySticky = document.querySelector('.story-sticky');
+    storySticky.classList.add('story-transitioning');
+    clearTimeout(storyBlurTimer);
+    storyBlurTimer = setTimeout(() => storySticky.classList.remove('story-transitioning'), 220);
   }
 
   function stageForProgress(progress) {
