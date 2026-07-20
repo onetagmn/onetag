@@ -92,7 +92,7 @@
     position: absolute; inset: 0; z-index: 3; pointer-events: none;
     background: linear-gradient(to top, rgba(14,35,56,0.85) 0%, rgba(14,35,56,0.15) 45%, rgba(14,35,56,0.35) 100%);
   }
-  .story-progress { position: absolute; top: 90px; left: 0; right: 0; z-index: 6; display: flex; justify-content: center; gap: 8px; pointer-events: none; }
+  .story-progress { display: none; }
   .story-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.3); transition: background 0.3s ease, width 0.3s ease; }
   .story-dot.active { background: #fff; width: 22px; border-radius: 5px; }
   .story-caption-wrap { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
@@ -103,15 +103,25 @@
   .story-caption.active { opacity: 1; transform: translateY(0); }
   .story-caption h1 { font-size: clamp(30px, 5vw, 54px); font-weight: 800; color: #fff; line-height: 1.12; max-width: 780px; margin: 0 auto; }
   .story-caption h2 { font-size: clamp(24px, 4vw, 42px); font-weight: 800; color: #fff; line-height: 1.2; max-width: 700px; margin: 0 auto; }
-  .story-caption .eyebrow { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: rgba(0,0,0,0.45); color: #fff; font-size: 16px; font-weight: 700; padding: 9px 20px; border-radius: 24px; margin-bottom: 22px; backdrop-filter: blur(8px); }
-  .story-caption .eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
-  .story-preview-btn {
-    display: block; margin: 22px auto 0; pointer-events: auto; cursor: pointer;
-    background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.3);
-    padding: 10px 20px; border-radius: 20px; font-size: 13.5px; font-weight: 600; font-family: inherit;
-    backdrop-filter: blur(6px);
+  .story-eyebrow-top {
+    position: absolute; top: 56px; left: 0; right: 0; z-index: 6;
+    display: none; align-items: center; justify-content: center; gap: 8px;
+    background: rgba(0,0,0,0.45); color: #fff; font-size: 15px; font-weight: 700;
+    width: fit-content; margin: 0 auto; padding: 9px 20px; border-radius: 24px;
+    backdrop-filter: blur(8px); pointer-events: none;
   }
-  .story-preview-btn:hover { background: rgba(255,255,255,0.2); }
+  .story-eyebrow-top.show { display: flex; }
+  .story-eyebrow-top .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+  .story-tap-center {
+    position: absolute; top: 58%; left: 40%; transform: translate(-50%, -50%);
+    z-index: 6; display: none; align-items: center; gap: 8px; pointer-events: auto; cursor: pointer;
+    background: rgba(0,0,0,0.5); color: #fff; border: 1.5px solid rgba(255,255,255,0.5);
+    padding: 11px 22px; border-radius: 24px; font-size: 14px; font-weight: 700; font-family: inherit;
+    backdrop-filter: blur(6px); animation: tapPulse 1.8s ease-in-out infinite;
+  }
+  .story-tap-center.show { display: flex; }
+  .story-tap-center:hover { background: rgba(0,0,0,0.65); }
+  @keyframes tapPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.25); } 50% { box-shadow: 0 0 0 10px rgba(255,255,255,0); } }
   .story-scroll-hint {
     position: absolute; bottom: 32px; left: 0; right: 0; z-index: 5; text-align: center;
     color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 500; pointer-events: none;
@@ -328,13 +338,20 @@
     <div class="story-stage-photo" data-stage="8"><img src="/assets/scene12-map.jpg" alt="Full-screen real-time location map"></div>
 
     <div class="story-progress" id="storyProgress"></div>
+
+    <div class="story-eyebrow-top show" id="storyEyebrowTop">
+      <span class="dot"></span><span data-i18n="eyebrow">NFC Safety Wristband</span>
+    </div>
+
+    <button class="story-tap-center show" id="storyPreviewBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><circle cx="12" cy="12" r="10" opacity="0.4"></circle></svg>
+      <span data-i18n="photo_caption">Tap here</span>
+    </button>
     <div class="story-overlay"></div>
 
     <div class="story-caption-wrap">
       <div class="story-caption active" data-stage="0">
-        <div class="eyebrow"><span class="dot"></span><span data-i18n="eyebrow">NFC Safety Wristband</span></div>
         <h1 data-i18n="hero_h1">Safe every school day. Found in seconds, wherever they are.</h1>
-        <button class="story-preview-btn" id="storyPreviewBtn" data-i18n="photo_caption">Tap to preview the profile reveal</button>
       </div>
       <div class="story-caption" data-stage="1"><h2 data-i18n="story_2">Everything that matters, saved in seconds.</h2></div>
       <div class="story-caption" data-stage="2"><h2 data-i18n="story_crane">Closing in on the gate.</h2></div>
@@ -596,14 +613,14 @@
       intro_5: "In an emergency, one tap finds them in seconds — real-time GPS.",
       nav_parents: "For Parents", nav_staff: "School Login",
       eyebrow: "NFC Safety Wristband",
-      hero_h1: "Safe every school day. Found in seconds, wherever they are.",
+      hero_h1: "Safe every school day. Peace of mind for parents. Found in seconds.",
       hero_sub: "OneTag is a wristband that logs safe arrival and departure at school automatically — and instantly shows real-time location and emergency details to anyone who finds your child, anywhere else.",
       hero_cta_primary: "Get OneTag for your school", hero_cta_secondary: "See how fast it works",
       panel_lost_title: "If they're ever lost",
       panel_lost_p: "Anyone who finds them taps the wristband and instantly sees a name, photo, blood type, allergies, and medical notes — plus one button to call you. Your number stays private, always.",
       panel_daily_title: "Every single school day",
       panel_daily_p: "A tap at the gate each morning and afternoon sends an instant notice: arrived safely, left safely. No sign-in sheets, no wondering.",
-      photo_caption: "Tap the photo — this is exactly what a finder sees",
+      photo_caption: "Tap here",
       reveal_badge: "Found — tap to help", reveal_sub: "Age 7 · Special Needs School",
       reveal_allergy_label: "Allergies", reveal_allergy_val: "Peanuts",
       reveal_condition_label: "Condition", reveal_condition_val: "Non-verbal, ASD",
@@ -694,14 +711,14 @@
       intro_5: "Онц үед нэг товшилтоор секундын дотор олно — бодит цагийн GPS.",
       nav_parents: "Эцэг эх", nav_staff: "Сургуулийн нэвтрэх",
       eyebrow: "NFC аюулгүй байдлын бугуйвч",
-      hero_h1: "Сургуулийн өдөр бүр аюулгүй. Хаана ч байсан секундын дотор олдоно.",
+      hero_h1: "Сургуулийн өдөр бүр аюулгүй. Эцэг эхэд санаа зовохгүй байдал. Секундын дотор олдоно.",
       hero_sub: "OneTag бол сургуульд ирсэн, явсныг автоматаар бүртгэдэг бугуйвч — мөн хаана ч олдсон хүүхдийг олсон хэн бүхэнд бодит цагийн байршил, яаралтай тусламжийн мэдээллийг шууд харуулдаг.",
       hero_cta_primary: "Сургуульдаа OneTag авах", hero_cta_secondary: "Хэр хурдан ажилладгийг үзэх",
       panel_lost_title: "Хэрэв тэднийг олдохгүй бол",
       panel_lost_p: "Тэднийг олсон хэн ч бугуйвчийг товшиход нэр, зураг, цусны бүлэг, харшил, эрүүл мэндийн тэмдэглэл, мөн танд залгах нэг товчлуур шууд харагдана. Таны дугаар үргэлж нууц хэвээр байна.",
       panel_daily_title: "Сургуулийн өдөр бүр",
       panel_daily_p: "Өглөө, оройн хаалганы товшилт бүр танд шууд мэдэгдэл илгээнэ: аюулгүй ирлээ, аюулгүй явлаа. Бүртгэлийн хуудас, эргэлзээ хэрэггүй.",
-      photo_caption: "Зургийг товшино уу — олсон хүн яг үүнийг харна",
+      photo_caption: "Энд товшино уу",
       reveal_badge: "Олдлоо — тусламж үзүүлэхийн тулд товшино уу", reveal_sub: "7 настай · Тусгай хэрэгцээт сургууль",
       reveal_allergy_label: "Харшил", reveal_allergy_val: "Газрын самар",
       reveal_condition_label: "Онцлог", reveal_condition_val: "Хэлгүй, аутизм",
@@ -792,14 +809,14 @@
       intro_5: "紧急情况下，一次触碰，几秒内定位 — 实时 GPS。",
       nav_parents: "为家长", nav_staff: "学校登录",
       eyebrow: "NFC 安全手环",
-      hero_h1: "每个上学日都安全。无论身在何处，几秒内即可找到。",
+      hero_h1: "每个上学日都安全。家长安心无忧。几秒内即可找到。",
       hero_sub: "OneTag 是一款手环，自动记录到校与离校的安全状态 — 并能即时向发现孩子的任何人显示实时位置和紧急信息。",
       hero_cta_primary: "为您的学校获取 OneTag", hero_cta_secondary: "查看其运作速度",
       panel_lost_title: "如果孩子走失",
       panel_lost_p: "发现孩子的任何人触碰手环，即可立即看到姓名、照片、血型、过敏信息和医疗记录 — 以及一个联系您的按钮。您的号码始终保密。",
       panel_daily_title: "每一个上学日",
       panel_daily_p: "每天早晚在校门触碰手环，都会立即通知您：安全到校、安全离校。无需签到表，无需担心。",
-      photo_caption: "点击照片 — 这正是发现者看到的画面",
+      photo_caption: "点击这里",
       reveal_badge: "已找到 — 点击提供帮助", reveal_sub: "7岁 · 特殊教育学校",
       reveal_allergy_label: "过敏", reveal_allergy_val: "花生",
       reveal_condition_label: "情况", reveal_condition_val: "不能言语，自闭症",
@@ -1093,6 +1110,8 @@
     storyDots.forEach((el, i) => el.classList.toggle('active', i === stage));
     if (enteringHud) triggerHudReveal();
     if (leavingHud) resetHudReveal();
+    document.getElementById('storyEyebrowTop').classList.toggle('show', stage === 0);
+    document.getElementById('storyPreviewBtn').classList.toggle('show', stage === 0);
     // Quick blur+brighten pulse on every cut, mimicking a real camera
     // whip-pan instead of a flat crossfade between static photos.
     const storySticky = document.querySelector('.story-sticky');
