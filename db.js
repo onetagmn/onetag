@@ -49,9 +49,13 @@ async function initSchema() {
       parent_phone TEXT,
       parent_email TEXT,
       locked INTEGER NOT NULL DEFAULT 0,
+      edit_token TEXT,
+      edit_token_expires_at TIMESTAMP,
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     );
+    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS edit_token TEXT;
+    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS edit_token_expires_at TIMESTAMP;
 
     CREATE TABLE IF NOT EXISTS admins (
       admin_id TEXT PRIMARY KEY,

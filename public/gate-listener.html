@@ -40,31 +40,82 @@
     color: #9fb3b8;
   }
   .log div { padding: 4px 0; border-bottom: 1px solid #1c3d47; }
+  #setupScreen input { font-size: 16px; padding: 10px 14px; border-radius: 8px; border: none; width: 320px; margin-bottom: 12px; }
+  #setupScreen button { font-size: 15px; padding: 10px 20px; border-radius: 8px; border: none; background: #6FCF97; color: #0E2A32; font-weight: 700; cursor: pointer; }
+  #setupScreen p.small { color: #9fb3b8; font-size: 12px; max-width: 420px; text-align: center; }
+  #changeKeyLink { position: fixed; bottom: 10px; right: 14px; color: #4b6a70; font-size: 11px; cursor: pointer; }
 </style>
 </head>
 <body>
-  <h1>OneTag Gate Reader</h1>
-  <p class="hint">Keep this window open and focused. Tap wristbands on the reader below.</p>
-  <div class="status" id="status">Ready</div>
-  <div class="detail" id="detail">Waiting for a tap...</div>
-  <div class="log" id="log"></div>
+  <!-- One-time setup screen: the device key is entered ONCE per physical
+       device by whoever installs it, then stored only in that browser's
+       localStorage. It is never hardcoded in this file or committed to
+       git — a key that ships in a public static HTML file is a key that
+       anyone in the world can read straight off the server. -->
+  <div id="setupScreen" style="display:none; flex-direction:column; align-items:center; text-align:center;">
+    <h1>Gate Reader Setup</h1>
+    <p class="hint">Enter this device's gate key once (ask your OneTag admin). It's saved only on this device.</p>
+    <input type="password" id="setupKeyInput" placeholder="Gate device key" autocomplete="off">
+    <button id="setupSaveBtn">Save & Start</button>
+    <p class="small">This key is what stops anyone else from sending fake "arrived/left" pings for a child who was never actually there — don't share it outside school staff who manage this reader.</p>
+  </div>
 
-  <!-- This input silently captures whatever the reader "types" -->
-  <input type="text" id="catcher" autofocus>
+  <div id="readerScreen" style="display:none; flex-direction:column; align-items:center;">
+    <h1>OneTag Gate Reader</h1>
+    <p class="hint">Keep this window open and focused. Tap wristbands on the reader below.</p>
+    <div class="status" id="status">Ready</div>
+    <div class="detail" id="detail">Waiting for a tap...</div>
+    <div class="log" id="log"></div>
+
+    <!-- This input silently captures whatever the reader "types" -->
+    <input type="text" id="catcher" autofocus>
+  </div>
+  <div id="changeKeyLink">change device key</div>
 
 <script>
 // ---- CONFIG ----
 const API_BASE = 'https://onetag-0b04.onrender.com'; // your deployed Render URL
-// Must match GATE_DEVICE_KEY on the server (Render env var). Keeping this
-// out of public knowledge is what stops anyone else from sending fake
-// "arrived safely" pings for a child who was never actually there.
-const GATE_DEVICE_KEY = 'fcdb5cbc581bb1e1f3ce293dc3293c59'; // matches GATE_DEVICE_KEY on Render
-// -----------------
+const KEY_STORAGE = 'onetag_gate_device_key';
+
+const setupScreen = document.getElementById('setupScreen');
+const readerScreen = document.getElementById('readerScreen');
+let GATE_DEVICE_KEY = localStorage.getItem(KEY_STORAGE) || '';
+
+function showSetup() {
+  setupScreen.style.display = 'flex';
+  readerScreen.style.display = 'none';
+  if (focusInterval) { clearInterval(focusInterval); focusInterval = null; }
+  document.getElementById('setupKeyInput').focus();
+}
+let focusInterval = null;
+function showReader() {
+  setupScreen.style.display = 'none';
+  readerScreen.style.display = 'flex';
+  catcher.focus();
+  // Keep focus on the hidden input at all times so keystrokes from the
+  // reader always land here — only while the reader screen is actually
+  // showing, so it doesn't fight with typing into the setup key field.
+  if (!focusInterval) focusInterval = setInterval(() => catcher.focus(), 500);
+}
+document.getElementById('setupSaveBtn').onclick = () => {
+  const val = document.getElementById('setupKeyInput').value.trim();
+  if (!val) return;
+  GATE_DEVICE_KEY = val;
+  localStorage.setItem(KEY_STORAGE, val);
+  showReader();
+};
+document.getElementById('changeKeyLink').onclick = () => {
+  localStorage.removeItem(KEY_STORAGE);
+  document.getElementById('setupKeyInput').value = '';
+  showSetup();
+};
 
 const catcher = document.getElementById('catcher');
 const statusEl = document.getElementById('status');
 const detailEl = document.getElementById('detail');
 const logEl = document.getElementById('log');
+
+if (GATE_DEVICE_KEY) { showReader(); } else { showSetup(); }
 
 // Detect this gate's location once when the page loads, so the same hosted
 // file works at every gate without any per-location editing. A URL like
@@ -89,11 +140,6 @@ if (urlParams.has('lat') && urlParams.has('lng')) {
     { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
   );
 }
-
-// Keep focus on the hidden input at all times, so keystrokes always land here
-// even if someone accidentally clicks elsewhere on the page.
-setInterval(() => catcher.focus(), 500);
-catcher.focus();
 
 function logLine(text) {
   const div = document.createElement('div');

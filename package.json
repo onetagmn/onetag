@@ -4,7 +4,9 @@
   "description": "OneTag child safety NFC wristband system",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "backup": "node scripts/backup.js",
+    "restore": "node scripts/restore.js"
   },
   "keywords": [],
   "author": "",
@@ -13,6 +15,7 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "nodemailer": "^9.0.3",
-    "pg": "^8.22.0"
+    "pg": "^8.22.0",
+    "twilio": "^6.0.2"
   }
 }

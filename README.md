@@ -62,14 +62,55 @@ in `db.js`.
 - `DATABASE_URL` — required
 - `SUPER_ADMIN_USERNAME` / `SUPER_ADMIN_PASSWORD` — set before going live
 - `ADMIN_KEY` — protects the site-language-switch endpoint
-- `EMAIL_USER` / `EMAIL_APP_PASSWORD` — Gmail App Password for real OTP emails
+- `TAG_WRITE_KEY` — protects the tag-writer scripts' UID-binding endpoint
+- `GATE_DEVICE_KEY` — protects the gate-reader check-in/out endpoint (enter
+  this once into `gate-listener.html`'s on-screen setup — never hardcode
+  it in that file, see "Known gaps" history below)
+- `ALLOWED_ORIGINS` — optional, CORS allowlist (defaults to the production
+  URL + localhost)
+- `EMAIL_USER` / `EMAIL_APP_PASSWORD` — Gmail App Password for real OTP
+  emails and for `scripts/backup.js` to email you backups
+- `BACKUP_EMAIL_TO` — optional, where backups get emailed (defaults to
+  `EMAIL_USER`)
+- `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_PHONE_NUMBER` —
+  optional, enables the real Call Guardian click-to-call relay
 
-## Known gaps before full production launch
-- CORS is currently wide open (`Access-Control-Allow-Origin: *`) — tighten
-  to your real domain once deployed
-- No automated database backup strategy yet
+## Backups
+`scripts/backup.js` exports every table that matters (schools, tags,
+profiles, admins, staff, settings, gate/scan logs — deliberately excluding
+short-lived session and OTP tables) to a single gzipped JSON file, and
+emails it to you if `EMAIL_USER`/`EMAIL_APP_PASSWORD` are set.
+```
+npm run backup                          # writes to ./backups/, emails if configured
+npm run restore -- backups/onetag-backup-2026-07-25.json.gz   # restores (safe upsert, never deletes)
+```
+Run it on a schedule with a **Render Cron Job** service (a separate,
+cheap/free service type on Render — not the same as your web service)
+pointed at the same `DATABASE_URL`, running `npm run backup` daily. If
+you're instead on a paid Render Postgres plan, Render already does
+automatic point-in-time-recovery backups for you — `npm run backup` is
+still worth keeping as a second, off-platform copy.
+
+## Security notes
+This app handles children's names, photos, health info, and parents'
+contact details, so a few things are worth understanding rather than just
+trusting blindly:
+- The public tap page (`/`) intentionally shows anyone who scans the
+  wristband a *limited* view — name, photo, class, and a health summary
+  (allergies/conditions/blood type) — with no login. It never shows parent
+  contact info or raw emergency contacts to an anonymous visitor. The full
+  record is only available to a logged-in admin, scoped to their own
+  school (`GET /api/admin/profile/:tagId/full`).
+- Editing an already-registered profile requires solving an OTP sent to
+  the registered email; the resulting `editToken` is single-use, 15
+  minutes, and required by the actual save request — not just the
+  OTP-verify step. Just knowing a `tag_id` isn't enough to edit an
+  existing profile.
+- "Call Guardian" never sends the parent's number to the browser — the
+  server looks it up and relays the call itself, so the visitor's phone
+  only ever sees your Twilio number, and (if Twilio isn't configured) it
+  tells the visitor plainly that calling isn't set up yet rather than
+  silently failing.
 - No formal legal review of Mongolia's data protection requirements for
-  children's health data
-- "Call Guardian" button currently just shows an alert — needs a real
-  click-to-call relay (e.g. Twilio) so the parent's number is never sent
-  to the browser
+  children's health data has been done — that's a legal, not technical,
+  gap and worth getting real advice on before scaling up.

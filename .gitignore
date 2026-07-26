@@ -7,3 +7,8 @@
 node_modules/
 server.log
 *.log
+
+# Local database backups (scripts/backup.js) contain children's PII —
+# these must never end up in git history.
+backups/
+*.backup.json.gz

@@ -203,7 +203,11 @@ const TRANSLATIONS = {
     parentPhone: 'Parent phone number *', parentPhonePlaceholder: '+976...',
     parentEmail: 'Parent email * (used for edit codes)', saveLock: 'Save & Lock Profile',
     lostChildBanner: 'LOST CHILD — PLEASE HELP', callGuardian: 'Call Guardian Now',
-    callGuardianHint: "Tapping connects you directly.",
+    callGuardianHint: "Enter your number below — we'll connect you directly. The guardian's number stays private.",
+    callGuardianPhonePlaceholder: 'Your phone number', callGuardianSubmit: 'Connect Me Now',
+    callGuardianCancel: 'Cancel', callGuardianConnecting: 'Connecting your call…',
+    callGuardianNotConfigured: "Calling isn't set up on this device yet. Please go to the school's front office for help.",
+    callGuardianError: 'Something went wrong — please try again or go to the front office.',
     profileLocked: 'Profile locked', editHint: 'Request a code to edit this profile.',
     editProfile: 'Edit this profile', requestCodeTitle: 'Request edit code',
     sendCodeBtn: 'Send code', enterCodeTitle: 'Enter code', codeTargetLabel: 'Your email address',
@@ -224,7 +228,11 @@ const TRANSLATIONS = {
     parentPhone: 'Эцэг эхийн утасны дугаар *', parentPhonePlaceholder: '+976...',
     parentEmail: 'Эцэг эхийн имэйл * (код авахад ашиглана)', saveLock: 'Хадгалж түгжих',
     lostChildBanner: 'ХҮҮХЭД ТӨӨРСӨН — ТУСЛАНА УУ', callGuardian: 'Асран хамгаалагчид залгах',
-    callGuardianHint: 'Дарахад шууд холбоно.',
+    callGuardianHint: 'Утасны дугаараа доор оруулна уу — бид тантай шууд холбоно. Асран хамгаалагчийн дугаар нууц хэвээр байна.',
+    callGuardianPhonePlaceholder: 'Таны утасны дугаар', callGuardianSubmit: 'Одоо холбогдох',
+    callGuardianCancel: 'Цуцлах', callGuardianConnecting: 'Холбож байна…',
+    callGuardianNotConfigured: 'Энэ төхөөрөмж дээр залгах функц тохируулагдаагүй байна. Сургуулийн үйлчилгээний албанд хандана уу.',
+    callGuardianError: 'Алдаа гарлаа — дахин оролдоно уу эсвэл сургуулийн албанд хандана уу.',
     profileLocked: 'Профайл түгжигдсэн', editHint: 'Энэ профайлыг засварлах код хүсэх.',
     editProfile: 'Профайл засах', requestCodeTitle: 'Засварлах код хүсэх',
     sendCodeBtn: 'Код илгээх', enterCodeTitle: 'Код оруулах', codeTargetLabel: 'Таны имэйл хаяг',
@@ -245,7 +253,11 @@ const TRANSLATIONS = {
     parentPhone: '家长电话 *', parentPhonePlaceholder: '+976...',
     parentEmail: '家长邮箱 *（用于获取修改验证码）', saveLock: '保存并锁定资料',
     lostChildBanner: '走失儿童 — 请帮助', callGuardian: '📞 立即致电监护人',
-    callGuardianHint: '点击直接接通——电话号码保持私密。',
+    callGuardianHint: '请在下方输入您的电话号码——我们会直接为您接通。监护人的号码将保持私密。',
+    callGuardianPhonePlaceholder: '您的电话号码', callGuardianSubmit: '立即接通',
+    callGuardianCancel: '取消', callGuardianConnecting: '正在接通…',
+    callGuardianNotConfigured: '此设备尚未设置拨号功能。请前往学校前台寻求帮助。',
+    callGuardianError: '出现错误——请重试或前往前台寻求帮助。',
     profileLocked: '资料已锁定', editHint: '家长或老师？请求验证码以编辑此资料。',
     editProfile: '编辑资料', requestCodeTitle: '请求编辑验证码',
     sendCodeBtn: '发送验证码', enterCodeTitle: '输入验证码', codeTargetLabel: '您的邮箱地址',
@@ -291,7 +303,7 @@ async function init() {
 }
 
 // ---------------- Registration form ----------------
-function renderRegisterForm() {
+function renderRegisterForm(editToken = null) {
   app.innerHTML = '';
   const card = el(`
     <div class="card">
@@ -393,7 +405,8 @@ function renderRegisterForm() {
         medications: f.medications.value
       },
       parent_phone: f.parent_phone.value,
-      parent_email: f.parent_email.value
+      parent_email: f.parent_email.value,
+      editToken: editToken || undefined
     };
 
     const msg = card.querySelector('#regMsg');
@@ -438,7 +451,14 @@ async function renderPublicProfile() {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24c1.12.37 2.33.57 3.58.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.61 21 3 13.39 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.46.57 3.58a1 1 0 0 1-.24 1.01l-2.21 2.2z"/></svg>
           <span>${t('callGuardian')}</span>
         </button>
-        <p class="hint" style="text-align:center;">${t('callGuardianHint')}</p>
+        <div id="callGuardianForm" style="display:none; margin-top:10px;">
+          <input id="callerPhoneInput" type="tel" placeholder="${t('callGuardianPhonePlaceholder')}" style="width:100%; box-sizing:border-box; margin-bottom:8px;">
+          <div style="display:flex; gap:8px;">
+            <button class="btn secondary" id="callGuardianCancelBtn" style="flex:1;">${t('callGuardianCancel')}</button>
+            <button class="btn" id="callGuardianSubmitBtn" style="flex:1;">${t('callGuardianSubmit')}</button>
+          </div>
+        </div>
+        <p class="hint" id="callGuardianMsg" style="text-align:center;">${t('callGuardianHint')}</p>
       </div>
 
       <div class="card">
@@ -459,11 +479,44 @@ async function renderPublicProfile() {
     };
   });
 
-  card.querySelector('#callGuardian').onclick = async () => {
-    // In production: server relays the call (e.g. via Twilio click-to-call)
-    // so the raw number is never exposed to the browser.
-    const full = await fetch(`/api/profile/${tagId}?full=1`).then(r => r.json()).catch(() => null);
-    alert('Connecting you to the guardian now (number kept private in production build).');
+  // The guardian's actual phone number is NEVER fetched into the browser.
+  // The server looks it up and relays the call server-side (e.g. via
+  // Twilio) — this page only ever sends the visitor's own callback number.
+  const guardianBtn = card.querySelector('#callGuardian');
+  const formDiv = card.querySelector('#callGuardianForm');
+  const msgEl = card.querySelector('#callGuardianMsg');
+  const phoneInput = card.querySelector('#callerPhoneInput');
+
+  guardianBtn.onclick = () => {
+    guardianBtn.style.display = 'none';
+    formDiv.style.display = 'block';
+    phoneInput.focus();
+  };
+  card.querySelector('#callGuardianCancelBtn').onclick = () => {
+    formDiv.style.display = 'none';
+    guardianBtn.style.display = 'flex';
+  };
+  card.querySelector('#callGuardianSubmitBtn').onclick = async () => {
+    const callerPhone = phoneInput.value.trim();
+    if (!callerPhone) return;
+    msgEl.textContent = t('callGuardianConnecting');
+    formDiv.style.display = 'none';
+    try {
+      const res = await fetch(`/api/call-guardian/${tagId}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ caller_phone: callerPhone })
+      });
+      const out = await res.json();
+      if (res.ok && out.success) {
+        msgEl.textContent = t('callGuardianConnecting');
+      } else if (out.reason === 'not_configured') {
+        msgEl.textContent = t('callGuardianNotConfigured');
+      } else {
+        msgEl.textContent = t('callGuardianError');
+      }
+    } catch {
+      msgEl.textContent = t('callGuardianError');
+    }
   };
 
   card.querySelector('#editBtn').onclick = renderOtpRequest;
@@ -516,7 +569,7 @@ function renderOtpVerify() {
     const out = await res.json();
     const msg = card.querySelector('#verifyMsg');
     if (!res.ok) { msg.innerHTML = `<div class="msg error">${out.error}</div>`; return; }
-    renderRegisterForm(); // reuse the same form to re-enter/update info
+    renderRegisterForm(out.editToken); // reuse the same form to re-enter/update info
   };
 }
 

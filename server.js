@@ -6,11 +6,32 @@ const { sendOtp, verifyOtp } = require('./otp');
 
 const app = express();
 app.use(express.json());
+// Render sits behind a reverse proxy — without this, req.ip resolves to
+// Render's internal proxy address for every request, making the
+// per-IP rate limiting below effectively share one bucket across everyone.
+app.set('trust proxy', 1);
+
+// Every page (public tap page, dashboard, admin panel, gate reader) is
+// served by this same Express app, so legitimate same-origin requests never
+// need CORS at all — CORS only matters for a DIFFERENT website's JS trying
+// to call this API from a visitor's browser. There's no legitimate reason
+// for that today, so we only allow the real deployed origin(s) rather than
+// '*'. Add more with a comma-separated ALLOWED_ORIGINS env var if a real
+// second consumer (e.g. a native app or admin tool on another domain) is
+// ever added.
+const DEFAULT_ALLOWED_ORIGINS = ['https://onetag-0b04.onrender.com', 'http://localhost:3000'];
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
+  : DEFAULT_ALLOWED_ORIGINS;
 
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
+  const origin = req.headers.origin;
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Vary', 'Origin');
+  }
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.sendStatus(200);
   next();
 });
@@ -61,6 +82,20 @@ function verifyPassword(password, hash, salt) {
   const a = Buffer.from(attemptHash, 'hex');
   const b = Buffer.from(hash, 'hex');
   return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+// Used for the shared device-secret keys (TAG_WRITE_KEY, GATE_DEVICE_KEY,
+// ADMIN_KEY). A plain !== leaks how many leading characters matched via
+// response timing — small, but free to close given how easy this is.
+function timingSafeStringEqual(a, b) {
+  const bufA = Buffer.from(String(a ?? ''));
+  const bufB = Buffer.from(String(b ?? ''));
+  if (bufA.length !== bufB.length) {
+    // still run a comparison of equal-length buffers so the early return
+    // for a length mismatch doesn't itself become a distinguishable signal
+    crypto.timingSafeEqual(bufA, bufA);
+    return false;
+  }
+  return crypto.timingSafeEqual(bufA, bufB);
 }
 
 // ---------- Admin auth middleware ----------
@@ -176,7 +211,10 @@ app.post('/api/admin/admins/invite', requireSuperAdmin, async (req, res) => {
   res.json({ success: true, admin_id: adminId, ...result });
 });
 
-app.post('/api/admin/admins/complete-setup', async (req, res) => {
+// This verifies an OTP that activates an admin account (including a
+// super_admin invite) and sets its password — it needs the same brute-force
+// protection every other OTP-verify route already has.
+app.post('/api/admin/admins/complete-setup', rateLimit(10, 15), async (req, res) => {
   // Accepts either the internal admin_id (ADM-XXXXXX) or the plain username —
   // school admins setting up their account only know their username, not the
   // internal ID, so username is the expected/primary way to look this up.
@@ -280,7 +318,7 @@ if (!process.env.TAG_WRITE_KEY) {
 
 // ---------- UID registration ----------
 app.post('/api/tag/:tagId/set-uid', rateLimit(30, 15), async (req, res) => {
-  if (req.body.key !== TAG_WRITE_KEY) return res.status(401).json({ error: 'Invalid or missing write key' });
+  if (!timingSafeStringEqual(req.body.key, TAG_WRITE_KEY)) return res.status(401).json({ error: 'Invalid or missing write key' });
   const { tagId } = req.params;
   const uid = normalizeUid(req.body.uid);
   if (!uid) return res.status(400).json({ error: 'uid is required' });
@@ -311,7 +349,9 @@ app.get('/api/tag/:tagId', async (req, res) => {
 });
 
 // ---------- First-time registration ----------
-app.post('/api/profile/:tagId/register', async (req, res) => {
+// Rate-limited: without this, an unlocked-but-not-yet-resaved profile (see
+// the editToken check below) could be hammered with repeated writes.
+app.post('/api/profile/:tagId/register', rateLimit(20, 15), async (req, res) => {
   const { tagId } = req.params;
   const tagRes = await pool.query(`SELECT * FROM tags WHERE tag_id = $1`, [tagId]);
   if (!tagRes.rows[0]) return res.status(404).json({ error: 'Unknown tag' });
@@ -320,6 +360,20 @@ app.post('/api/profile/:tagId/register', async (req, res) => {
   const existing = existingRes.rows[0];
   if (existing && existing.locked) {
     return res.status(409).json({ error: 'Profile already registered. Use edit + OTP to update.' });
+  }
+  // A profile that exists but is unlocked (locked=0) was unlocked by a
+  // specific successful OTP verification, which handed the caller a
+  // one-time editToken. Without checking that token here, ANYONE who knew
+  // the tag_id could overwrite the child's profile — including swapping in
+  // their own parent_phone/parent_email — for as long as the profile
+  // happened to sit unlocked (e.g. the real parent verified OTP but never
+  // finished saving). This closes that window: editing an existing profile
+  // always requires the token minted for that specific unlock.
+  if (existing && !existing.locked) {
+    const { editToken } = req.body;
+    if (!editToken || editToken !== existing.edit_token || new Date(existing.edit_token_expires_at) < new Date()) {
+      return res.status(401).json({ error: 'Edit session expired or invalid — please request a new code.' });
+    }
   }
 
   const {
@@ -342,7 +396,8 @@ app.post('/api/profile/:tagId/register', async (req, res) => {
   if (existing) {
     await pool.query(`
       UPDATE profiles SET child_name=$1, photo_url=$2, school_id=$3, school_name_other=$4, class_name=$5,
-        emergency_contacts=$6, health_info=$7, parent_phone=$8, parent_email=$9, locked=1, updated_at=$10
+        emergency_contacts=$6, health_info=$7, parent_phone=$8, parent_email=$9, locked=1, updated_at=$10,
+        edit_token=NULL, edit_token_expires_at=NULL
       WHERE tag_id=$11
     `, [child_name, photo_url || null, school_id || null, school_name_other || null, class_name || null,
       JSON.stringify(emergency_contacts), JSON.stringify(health_info || {}), parent_phone, parent_email || null, now, tagId]);
@@ -380,21 +435,30 @@ app.post('/api/profile/:tagId/verify-otp', rateLimit(10, 15), async (req, res) =
   const result = await verifyOtp({ target, purpose: 'profile_edit', refId: tagId, code });
   if (!result.valid) return res.status(401).json({ error: result.reason });
 
+  // This token — not just the locked=0 flag — is what proves the caller
+  // of /register is the same person who just solved the OTP. It's short
+  // lived so an abandoned "verified but never saved" edit session can't be
+  // hijacked by someone else who later finds the tag_id.
   const editToken = crypto.randomBytes(24).toString('hex');
-  await pool.query(`UPDATE profiles SET locked = 0 WHERE tag_id = $1`, [tagId]);
+  const editTokenExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+  await pool.query(
+    `UPDATE profiles SET locked = 0, edit_token = $1, edit_token_expires_at = $2 WHERE tag_id = $3`,
+    [editToken, editTokenExpiresAt, tagId]
+  );
   res.json({ success: true, editToken, note: 'Profile unlocked for editing. Re-locks on next save.' });
 });
 
+// This is the ONLY profile route reachable with no login at all — by
+// design, it's what the public tap page shows anyone holding the
+// wristband. It must never return parent contact info, raw emergency
+// contact details, or anything beyond a name/photo/class/health-summary.
 app.get('/api/profile/:tagId', async (req, res) => {
   const profileRes = await pool.query(`SELECT * FROM profiles WHERE tag_id = $1`, [req.params.tagId]);
   const profile = profileRes.rows[0];
   if (!profile) return res.status(404).json({ error: 'Not found' });
 
-  const full = req.query.full === '1';
-  const contacts = JSON.parse(profile.emergency_contacts || '[]');
   const health = JSON.parse(profile.health_info || '{}');
-
-  if (full) return res.json({ ...profile, emergency_contacts: contacts, health_info: health });
+  const contacts = JSON.parse(profile.emergency_contacts || '[]');
 
   res.json({
     tag_id: profile.tag_id, child_name: profile.child_name, photo_url: profile.photo_url, class_name: profile.class_name,
@@ -403,12 +467,80 @@ app.get('/api/profile/:tagId', async (req, res) => {
   });
 });
 
+// Full profile (parent phone/email, raw emergency contacts, full health
+// info) now requires an admin session, scoped to that admin's own school
+// (super_admin can see any). This used to be reachable by anyone with no
+// login at all via ?full=1 on the public route above — that was a real
+// data leak of children's PII, closed here.
+app.get('/api/admin/profile/:tagId/full', requireAdmin, async (req, res) => {
+  const profileRes = await pool.query(`SELECT * FROM profiles WHERE tag_id = $1`, [req.params.tagId]);
+  const profile = profileRes.rows[0];
+  if (!profile) return res.status(404).json({ error: 'Not found' });
+  if (req.admin.role !== 'super_admin' && profile.school_id !== req.admin.school_id) {
+    return res.status(403).json({ error: "Not authorized for this student's school" });
+  }
+  const contacts = JSON.parse(profile.emergency_contacts || '[]');
+  const health = JSON.parse(profile.health_info || '{}');
+  res.json({ ...profile, emergency_contacts: contacts, health_info: health });
+});
+
 app.post('/api/scan/:tagId', rateLimit(20, 15), async (req, res) => {
   const { tagId } = req.params;
   const { lat, lng, role } = req.body;
   await pool.query(`INSERT INTO scan_logs (tag_id, location_lat, location_lng, scanner_role) VALUES ($1, $2, $3, $4)`,
     [tagId, lat ?? null, lng ?? null, role || 'public']);
   res.json({ success: true });
+});
+
+// ---------- Call Guardian relay ----------
+// The parent's phone number is looked up and dialed entirely server-side.
+// It is NEVER sent to the browser at any point — the public page only ever
+// submits the VISITOR's own callback number. If Twilio credentials are
+// configured, Twilio calls the visitor first and bridges them to the
+// parent once they answer, so neither party's phone ever displays the
+// other's real number.
+const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
+const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
+const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
+let twilioClient = null;
+if (TWILIO_ACCOUNT_SID && TWILIO_AUTH_TOKEN && TWILIO_PHONE_NUMBER) {
+  twilioClient = require('twilio')(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
+} else {
+  console.warn('⚠️  TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_PHONE_NUMBER not set — Call Guardian will report itself as "not configured" until all three are set.');
+}
+
+function normalizePhoneForDial(raw) {
+  const cleaned = (raw || '').replace(/[^0-9+]/g, '');
+  // Basic E.164-ish sanity check — reject anything that isn't a plausible
+  // phone number before it ever gets near a TwiML string.
+  return /^\+?[0-9]{7,15}$/.test(cleaned) ? cleaned : null;
+}
+
+app.post('/api/call-guardian/:tagId', rateLimit(10, 15), async (req, res) => {
+  const { tagId } = req.params;
+  const callerPhone = normalizePhoneForDial(req.body.caller_phone);
+  if (!callerPhone) return res.status(400).json({ error: 'A valid caller_phone is required' });
+
+  const profileRes = await pool.query(`SELECT parent_phone FROM profiles WHERE tag_id = $1`, [tagId]);
+  const profile = profileRes.rows[0];
+  const parentPhone = profile ? normalizePhoneForDial(profile.parent_phone) : null;
+  if (!parentPhone) return res.status(404).json({ error: 'No guardian phone on file for this tag' });
+
+  if (!twilioClient) {
+    return res.json({ success: false, reason: 'not_configured' });
+  }
+
+  try {
+    await twilioClient.calls.create({
+      to: callerPhone,
+      from: TWILIO_PHONE_NUMBER,
+      twiml: `<Response><Say>Connecting you to the guardian now.</Say><Dial>${parentPhone}</Dial></Response>`
+    });
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Call Guardian relay failed:', err.message);
+    res.status(500).json({ error: 'Failed to place call' });
+  }
 });
 
 // ---------- Gate logs ----------
@@ -425,7 +557,7 @@ if (!process.env.GATE_DEVICE_KEY) {
 }
 
 app.post('/api/gate/:tagId', rateLimit(20, 15), async (req, res) => {
-  if (req.body.key !== GATE_DEVICE_KEY) return res.status(401).json({ error: 'Invalid or missing device key' });
+  if (!timingSafeStringEqual(req.body.key, GATE_DEVICE_KEY)) return res.status(401).json({ error: 'Invalid or missing device key' });
   const { tagId } = req.params;
   const { lat, lng } = req.body;
 
@@ -564,7 +696,7 @@ app.get('/api/settings/language', async (req, res) => {
 
 app.post('/api/settings/language', async (req, res) => {
   const { language, adminKey } = req.body;
-  if (adminKey !== ADMIN_KEY) return res.status(401).json({ error: 'Invalid admin key' });
+  if (!timingSafeStringEqual(adminKey, ADMIN_KEY)) return res.status(401).json({ error: 'Invalid admin key' });
   if (!['en', 'mn', 'zh'].includes(language)) return res.status(400).json({ error: 'Unsupported language' });
   await pool.query(`UPDATE settings SET value = $1 WHERE key = 'site_language'`, [language]);
   res.json({ success: true, language });
