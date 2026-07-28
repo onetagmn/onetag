@@ -66,6 +66,15 @@
      story opens already mid-descent rather than static. */
   .story-stage-photo[data-stage="0"] { transform: scale(1.35) translateY(-2%) rotateY(0deg) translateZ(0); }
   .story-stage-photo[data-stage="0"].active { transform: scale(1) translateY(0%) rotateY(0deg) translateZ(0); }
+  /* Product closer (stage 8) also skips the rotateY tilt every other scene
+     uses. It's the last frame before the sticky pin releases into the CTA
+     section — a fast scroll can land mid-rotation right as that release
+     happens, and rotateY's perspective foreshortening pulls the image in
+     from the top/bottom edges for an instant, exposing the dark
+     .scroll-story background behind it. Same fix as stage 0, same reason:
+     both sit at a sticky boundary, so both get a plain scale-only crossfade. */
+  .story-stage-photo[data-stage="8"] { transform: scale(1.08) translateZ(0); }
+  .story-stage-photo[data-stage="8"].active { transform: scale(1) translateZ(0); }
   /* Whip-blur pulse on every cut, mimicking a real camera swish rather
      than a flat crossfade. */
   .story-sticky { transition: filter 0.25s ease; }
@@ -196,6 +205,9 @@
     background-size: 22px 22px;
     margin-bottom: 24px; display: flex; align-items: center; justify-content: center;
   }
+  .gps-placeholder { position: absolute; inset: 0; z-index: 0; opacity: 1; transition: opacity 0.4s ease; }
+  .gps-placeholder img { width: 100%; height: 100%; object-fit: cover; }
+  .gps-placeholder.hide { opacity: 0; pointer-events: none; }
   .gps-map { position: absolute; inset: 0; z-index: 1; opacity: 0; transition: opacity 0.4s ease; }
   .gps-map.show { opacity: 1; }
   .gps-map .leaflet-control-attribution { font-size: 9px; }
@@ -442,6 +454,7 @@
     <p class="section-sub" data-i18n="gps_sub">Real GPS, not a guess. Tap below to see it work.</p>
     <div class="gps-demo">
       <div class="gps-stage">
+        <div class="gps-placeholder" id="gpsPlaceholder"><img src="/assets/gps-locate-screen.jpg" alt="Preview of the OneTag live location screen"></div>
         <div id="gpsMap" class="gps-map"></div>
         <div class="gps-pin" id="gpsPin">
           <div class="pulse-ring"></div>
@@ -1010,6 +1023,7 @@
   const gpsResultSmall = document.getElementById('gpsResultSmall');
   const gpsMapEl = document.getElementById('gpsMap');
   const gpsDeniedNote = document.getElementById('gpsDeniedNote');
+  const gpsPlaceholder = document.getElementById('gpsPlaceholder');
   let gpsMap = null, gpsMarker = null, gpsCircle = null;
 
   function currentDict() {
@@ -1026,6 +1040,7 @@
     gpsPin.classList.remove('show');
     gpsDeniedNote.classList.remove('show');
     gpsMapEl.classList.remove('show');
+    gpsPlaceholder.classList.add('hide'); // swap the phone-in-hand preview out once a real search starts
     gpsPin.classList.add('show'); // pulsing "searching" state while we wait for a real fix
     const startTime = performance.now();
     let tickerActive = true;
@@ -1075,6 +1090,7 @@
         gpsPin.classList.remove('show');
         gpsTimer.textContent = '';
         gpsDeniedNote.classList.add('show');
+        gpsPlaceholder.classList.remove('hide'); // location failed/denied — show the preview again rather than an empty box
         gpsBtn.disabled = false;
       },
       { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
