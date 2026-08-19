@@ -135,6 +135,16 @@ async function initSchema() {
       location_lng DOUBLE PRECISION,
       scanner_role TEXT DEFAULT 'public'
     );
+
+    -- Offline support: a gate tap or a public "found this child" scan can
+    -- happen while the device has no connectivity, then get queued and
+    -- submitted later once it reconnects. Without this column the row's
+    -- "timestamp" above would record when the server RECEIVED it (e.g. when
+    -- wifi came back) rather than when it actually happened. The dedup /
+    -- in-out logic in server.js intentionally keeps using "timestamp", not
+    -- this column, so behavior for already-online devices is unchanged.
+    ALTER TABLE gate_logs ADD COLUMN IF NOT EXISTS client_timestamp TIMESTAMP;
+    ALTER TABLE scan_logs ADD COLUMN IF NOT EXISTS client_timestamp TIMESTAMP;
   `);
 }
 

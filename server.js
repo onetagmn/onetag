@@ -486,9 +486,10 @@ app.get('/api/admin/profile/:tagId/full', requireAdmin, async (req, res) => {
 
 app.post('/api/scan/:tagId', rateLimit(20, 15), async (req, res) => {
   const { tagId } = req.params;
-  const { lat, lng, role } = req.body;
-  await pool.query(`INSERT INTO scan_logs (tag_id, location_lat, location_lng, scanner_role) VALUES ($1, $2, $3, $4)`,
-    [tagId, lat ?? null, lng ?? null, role || 'public']);
+  const { lat, lng, role, client_timestamp } = req.body;
+  const clientTs = client_timestamp && !isNaN(Date.parse(client_timestamp)) ? client_timestamp : null;
+  await pool.query(`INSERT INTO scan_logs (tag_id, location_lat, location_lng, scanner_role, client_timestamp) VALUES ($1, $2, $3, $4, $5)`,
+    [tagId, lat ?? null, lng ?? null, role || 'public', clientTs]);
   res.json({ success: true });
 });
 
@@ -559,15 +560,25 @@ if (!process.env.GATE_DEVICE_KEY) {
 app.post('/api/gate/:tagId', rateLimit(20, 15), async (req, res) => {
   if (!timingSafeStringEqual(req.body.key, GATE_DEVICE_KEY)) return res.status(401).json({ error: 'Invalid or missing device key' });
   const { tagId } = req.params;
-  const { lat, lng } = req.body;
+  const { lat, lng, client_timestamp } = req.body;
+  // Offline-queued taps replay this later with the real moment the tap
+  // happened. Only accept a value that actually parses as a date — anything
+  // else silently falls back to null (server-received time still applies
+  // via the "timestamp" column's own DEFAULT NOW()).
+  const clientTs = client_timestamp && !isNaN(Date.parse(client_timestamp)) ? client_timestamp : null;
 
   const todaysRes = await pool.query(`
     SELECT * FROM gate_logs WHERE tag_id = $1 AND timestamp::date = CURRENT_DATE ORDER BY timestamp ASC
   `, [tagId]);
   const todaysLogs = todaysRes.rows;
 
+  // NOTE: the in/out decision and the 30-minute gap check below both still
+  // key off "timestamp" (server receipt time), not client_timestamp — a
+  // device queuing offline taps must replay them in the order they actually
+  // happened (a plain FIFO queue) so this logic keeps behaving exactly like
+  // it does for a device that was online the whole time.
   if (todaysLogs.length === 0) {
-    await pool.query(`INSERT INTO gate_logs (tag_id, direction, location_lat, location_lng) VALUES ($1, 'in', $2, $3)`, [tagId, lat ?? null, lng ?? null]);
+    await pool.query(`INSERT INTO gate_logs (tag_id, direction, location_lat, location_lng, client_timestamp) VALUES ($1, 'in', $2, $3, $4)`, [tagId, lat ?? null, lng ?? null, clientTs]);
     return res.json({ success: true, ignored: false, direction: 'in' });
   }
   if (todaysLogs.length >= 2) {
@@ -580,8 +591,27 @@ app.post('/api/gate/:tagId', rateLimit(20, 15), async (req, res) => {
     return res.json({ success: true, ignored: true, message: `Too soon after arrival (${Math.round(minutesSinceIn)} min ago) to be a real departure — this tap was not logged.` });
   }
 
-  await pool.query(`INSERT INTO gate_logs (tag_id, direction, location_lat, location_lng) VALUES ($1, 'out', $2, $3)`, [tagId, lat ?? null, lng ?? null]);
+  await pool.query(`INSERT INTO gate_logs (tag_id, direction, location_lat, location_lng, client_timestamp) VALUES ($1, 'out', $2, $3, $4)`, [tagId, lat ?? null, lng ?? null, clientTs]);
   res.json({ success: true, ignored: false, direction: 'out' });
+});
+
+// Lets a gate-listener device prefetch its own school's UID -> tag_id
+// mapping so it can resolve wristband taps to children entirely offline,
+// instead of only caching mappings opportunistically as they're first
+// seen. Gated by the same GATE_DEVICE_KEY the device already uses to
+// write attendance — reading its own school's tag/UID pairs is a strictly
+// smaller trust ask than that write access already grants. Returns only
+// tag_id + uid, never names, photos, health info, or contacts.
+app.get('/api/gate/roster', rateLimit(30, 15), async (req, res) => {
+  if (!timingSafeStringEqual(req.query.key, GATE_DEVICE_KEY)) return res.status(401).json({ error: 'Invalid or missing device key' });
+  const { school_id } = req.query;
+  if (!school_id) return res.status(400).json({ error: 'school_id is required' });
+  const result = await pool.query(`
+    SELECT tags.tag_id, tags.uid FROM tags
+    JOIN profiles ON profiles.tag_id = tags.tag_id
+    WHERE profiles.school_id = $1 AND tags.uid IS NOT NULL
+  `, [school_id]);
+  res.json(result.rows);
 });
 
 // NOTE: /api/gate/:tagId/history and /api/scan/:tagId/history were removed —
