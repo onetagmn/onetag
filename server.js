@@ -644,10 +644,10 @@ app.get('/api/gate-logs', requireAdmin, async (req, res) => {
       gate_logs.tag_id, gate_logs.timestamp::date::text AS day,
       profiles.child_name, profiles.class_name,
       COALESCE(schools.name, profiles.school_name_other) AS school_name,
-      MAX(CASE WHEN direction = 'in' THEN timestamp END) AS in_time,
+      MAX(CASE WHEN direction = 'in' THEN COALESCE(client_timestamp, timestamp) END) AS in_time,
       MAX(CASE WHEN direction = 'in' THEN location_lat END) AS in_lat,
       MAX(CASE WHEN direction = 'in' THEN location_lng END) AS in_lng,
-      MAX(CASE WHEN direction = 'out' THEN timestamp END) AS out_time,
+      MAX(CASE WHEN direction = 'out' THEN COALESCE(client_timestamp, timestamp) END) AS out_time,
       MAX(CASE WHEN direction = 'out' THEN location_lat END) AS out_lat,
       MAX(CASE WHEN direction = 'out' THEN location_lng END) AS out_lng
     FROM gate_logs
