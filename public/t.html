@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OneTag</title>
+<style>
+  :root {
+    --blue: #0B5FFF; --blue-dark: #0847C7; --sky: #DCEEFF; --green: #32C36C;
+    --amber: #F7A81B; --red: #E5484D;
+    --white: #FFFFFF; --bg-light: #F7F9FC; --ink: #1E293B; --muted: #64748B; --line: #E4E9F0;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg-light); color: var(--ink); margin: 0; padding: 20px;
+    display: flex; justify-content: center;
+  }
+  .card { width: 100%; max-width: 420px; }
+  .logo-row { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 17px; margin-bottom: 18px; }
+  .logo-row .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--blue); }
+
+  .conn-banner {
+    display: none; align-items: center; gap: 8px; font-size: 13px; font-weight: 600;
+    padding: 10px 14px; border-radius: 10px; margin-bottom: 14px;
+    background: rgba(247,168,27,0.12); color: #9A6B00; border: 1px solid rgba(247,168,27,0.3);
+  }
+  .conn-banner.show { display: flex; }
+
+  .profile-card {
+    background: #fff; border-radius: 18px; padding: 22px; box-shadow: 0 12px 30px -12px rgba(30,41,59,0.15);
+    text-align: center; margin-bottom: 16px;
+  }
+  .photo { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; margin: 0 auto 14px; background: var(--sky); display: block; }
+  .child-name { font-size: 21px; font-weight: 800; margin-bottom: 2px; }
+  .child-sub { color: var(--muted); font-size: 14px; margin-bottom: 16px; }
+
+  .health-grid { display: flex; flex-direction: column; gap: 8px; text-align: left; margin-bottom: 4px; }
+  .health-row {
+    display: flex; justify-content: space-between; padding: 10px 12px; border-radius: 10px;
+    background: var(--bg-light); font-size: 13.5px;
+  }
+  .health-row .k { color: var(--muted); font-weight: 600; }
+  .health-row .v { font-weight: 700; text-align: right; max-width: 62%; }
+
+  .call-section { background: #fff; border-radius: 18px; padding: 20px; box-shadow: 0 12px 30px -12px rgba(30,41,59,0.15); }
+  .call-section h3 { margin: 0 0 4px; font-size: 15px; }
+  .call-section p.sub { margin: 0 0 14px; color: var(--muted); font-size: 13px; }
+  .call-section input {
+    width: 100%; padding: 12px 14px; border-radius: 10px; border: 1.5px solid var(--line);
+    font-size: 15px; margin-bottom: 10px; outline: none;
+  }
+  .call-section input:focus { border-color: var(--blue); }
+  .call-btn {
+    width: 100%; padding: 14px; border-radius: 10px; border: none; background: var(--blue);
+    color: #fff; font-weight: 700; font-size: 15px; cursor: pointer;
+  }
+  .call-btn:disabled { opacity: 0.6; cursor: default; }
+  .call-btn.retry { background: var(--amber); }
+
+  .call-status { margin-top: 12px; font-size: 13.5px; text-align: center; padding: 10px; border-radius: 10px; display: none; }
+  .call-status.show { display: block; }
+  .call-status.ok { background: rgba(50,195,108,0.12); color: #1a7a44; }
+  .call-status.err { background: rgba(229,72,77,0.12); color: #b3282c; }
+  .call-status.wait { background: rgba(247,168,27,0.12); color: #9A6B00; }
+
+  .loading, .not-found { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .spinner { width: 30px; height: 30px; border: 3px solid var(--sky); border-top-color: var(--blue); border-radius: 50%;
+    margin: 0 auto 14px; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .scan-note { text-align: center; font-size: 11.5px; color: var(--muted); margin-top: 14px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo-row"><span class="dot"></span> OneTag</div>
+  <div id="connBanner" class="conn-banner">⚠ Weak or no connection — trying again automatically…</div>
+  <div id="content">
+    <div class="loading"><div class="spinner"></div>Loading child information…</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const params = new URLSearchParams(location.search);
+  const tagId = params.get('id');
+  const content = document.getElementById('content');
+  const connBanner = document.getElementById('connBanner');
+
+  if (!tagId) {
+    content.innerHTML = '<div class="not-found">No tag specified.</div>';
+    return;
+  }
+
+  // ---------- Fetch profile with retry-with-backoff (handles a flaky
+  // connection at the moment of the tap; a genuine 404 does not retry) ----------
+  async function fetchProfile(attempt) {
+    attempt = attempt || 0;
+    try {
+      const res = await fetch(`/api/profile/${encodeURIComponent(tagId)}`);
+      if (res.status === 404) { renderNotFound(); return; }
+      if (!res.ok) throw new Error('http_' + res.status);
+      connBanner.classList.remove('show');
+      const profile = await res.json();
+      renderProfile(profile);
+    } catch (e) {
+      if (attempt >= 5) { renderNotFound(true); return; }
+      connBanner.classList.add('show');
+      setTimeout(() => fetchProfile(attempt + 1), Math.min(1000 * Math.pow(1.7, attempt), 8000));
+    }
+  }
+
+  function renderNotFound(networkIssue) {
+    content.innerHTML = `<div class="not-found">${networkIssue
+      ? "Couldn't load this tag's information. Check your connection and reload this page."
+      : 'This tag is not registered.'}</div>`;
+  }
+
+  function renderProfile(profile) {
+    const rows = [];
+    if (profile.class_name) rows.push(['Class', profile.class_name]);
+    const h = profile.health_summary || {};
+    if (h.blood_type) rows.push(['Blood type', h.blood_type]);
+    if (h.allergies) rows.push(['Allergies', h.allergies]);
+    if (h.conditions) rows.push(['Conditions', h.conditions]);
+
+    content.innerHTML = `
+      <div class="profile-card">
+        <img class="photo" src="${profile.photo_url || ''}" alt="" onerror="this.style.visibility='hidden'">
+        <div class="child-name">${escapeHtml(profile.child_name || 'Unknown')}</div>
+        <div class="child-sub">OneTag ID ${escapeHtml(profile.tag_id)}</div>
+        <div class="health-grid">
+          ${rows.map(([k, v]) => `<div class="health-row"><span class="k">${k}</span><span class="v">${escapeHtml(v)}</span></div>`).join('')}
+        </div>
+      </div>
+      ${profile.contact_available ? `
+      <div class="call-section" id="callSection">
+        <h3>Call this child's guardian</h3>
+        <p class="sub">Enter your number — we'll connect you to the guardian without sharing either number directly.</p>
+        <input id="callerPhone" type="tel" placeholder="Your phone number" autocomplete="tel">
+        <button id="callBtn" class="call-btn">Call Guardian Now</button>
+        <div id="callStatus" class="call-status"></div>
+      </div>` : ''}
+      <div class="scan-note" id="scanNote"></div>
+    `;
+
+    if (profile.contact_available) wireCallButton();
+    logScanBestEffort();
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  // ---------- Call Guardian: requires a LIVE connection — a phone call can't
+  // be queued for later, so we're honest about that rather than pretending
+  // this works offline. ----------
+  function wireCallButton() {
+    const btn = document.getElementById('callBtn');
+    const status = document.getElementById('callStatus');
+    btn.addEventListener('click', async () => {
+      const phone = document.getElementById('callerPhone').value.trim();
+      if (!phone) return;
+      btn.disabled = true;
+      status.className = 'call-status wait show';
+      status.textContent = 'Connecting…';
+      try {
+        const res = await fetch(`/api/call-guardian/${encodeURIComponent(tagId)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ caller_phone: phone })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          status.className = 'call-status ok show';
+          status.textContent = "Connecting you now — you'll receive a call in a few seconds.";
+        } else if (res.ok && data.reason === 'not_configured') {
+          status.className = 'call-status err show';
+          status.textContent = 'Calling is not available for this tag right now. Please contact the school directly, or call local emergency services if this is urgent.';
+        } else {
+          status.className = 'call-status err show';
+          status.textContent = (data.error || 'Could not place the call.') + ' You can try again.';
+          btn.textContent = 'Try Again'; btn.classList.add('retry'); btn.disabled = false;
+        }
+      } catch (e) {
+        status.className = 'call-status err show';
+        status.textContent = 'No connection right now — a live signal is needed to place the call. Try moving to an area with signal, or call local emergency services if this is urgent.';
+        btn.textContent = 'Try Again'; btn.classList.add('retry'); btn.disabled = false;
+      }
+    });
+  }
+
+  // ---------- Scan log: fire-and-forget, queued+retried in the background if
+  // it fails. This never blocks or delays the Call Guardian button, which is
+  // the actually time-critical action on this page. ----------
+  const SCAN_QUEUE_KEY = 'onetag_scan_queue';
+
+  function getPositionBestEffort(timeoutMs) {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) return resolve(null);
+      const timer = setTimeout(() => resolve(null), timeoutMs);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => { clearTimeout(timer); resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }); },
+        () => { clearTimeout(timer); resolve(null); },
+        { maximumAge: 30000, timeout: timeoutMs }
+      );
+    });
+  }
+
+  function readQueue() { try { return JSON.parse(localStorage.getItem(SCAN_QUEUE_KEY) || '[]'); } catch (e) { return []; } }
+  function writeQueue(q) { localStorage.setItem(SCAN_QUEUE_KEY, JSON.stringify(q)); }
+
+  async function sendScan(entry) {
+    const res = await fetch(`/api/scan/${encodeURIComponent(entry.tagId)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lat: entry.lat, lng: entry.lng, role: 'public', client_timestamp: entry.clientTimestamp })
+    });
+    if (!res.ok) throw new Error('http_' + res.status);
+  }
+
+  async function flushScanQueue() {
+    const q = readQueue();
+    if (!q.length) return;
+    const remaining = [];
+    for (const entry of q) {
+      try { await sendScan(entry); } catch (e) { remaining.push(entry); }
+    }
+    writeQueue(remaining);
+  }
+
+  async function logScanBestEffort() {
+    // Flush anything left over from a previous visit first (e.g. this same
+    // browser was used to scan another tag while offline earlier).
+    flushScanQueue();
+
+    const pos = await getPositionBestEffort(4000);
+    const entry = { tagId, lat: pos ? pos.lat : null, lng: pos ? pos.lng : null, clientTimestamp: new Date().toISOString() };
+    try {
+      await sendScan(entry);
+    } catch (e) {
+      const q = readQueue();
+      q.push(entry);
+      writeQueue(q);
+      window.addEventListener('online', flushScanQueue, { once: true });
+      setTimeout(flushScanQueue, 15000);
+    }
+  }
+
+  fetchProfile();
+})();
+</script>
+</body>
+</html>

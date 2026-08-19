@@ -2,208 +2,435 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>OneTag Gate Reader</title>
-<meta name="robots" content="noindex, nofollow">
 <style>
+  :root {
+    --blue: #0B5FFF; --blue-dark: #0847C7; --sky: #DCEEFF; --green: #32C36C;
+    --amber: #F7A81B; --red: #E5484D;
+    --white: #FFFFFF; --bg: #0E2338; --ink: #1E293B; --muted: #64748B; --line: #24405C;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
   body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: #0E2A32;
-    color: white;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    font-family: 'Inter', -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg); color: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 24px; overflow: hidden;
   }
-  h1 { font-size: 20px; margin-bottom: 6px; }
-  .hint { color: #9fb3b8; font-size: 13px; margin-bottom: 30px; }
-  #catcher {
-    position: fixed;
-    top: -1000px; /* kept off-screen but focused, so it silently catches keystrokes */
+  .logo { font-weight: 800; font-size: 20px; letter-spacing: 0.02em; opacity: 0.85; margin-bottom: 6px; }
+  .status-banner {
+    width: 100%; max-width: 560px; border-radius: 16px; padding: 18px 20px;
+    font-size: 16px; font-weight: 700; margin-bottom: 22px; transition: background 0.3s ease, color 0.3s ease;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
   }
-  .status {
-    font-size: 48px;
-    font-weight: 800;
-    margin-bottom: 10px;
+  .status-banner.online { background: rgba(50,195,108,0.15); color: var(--green); border: 1.5px solid rgba(50,195,108,0.35); }
+  .status-banner.offline { background: rgba(247,168,27,0.15); color: var(--amber); border: 1.5px solid rgba(247,168,27,0.35); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: currentColor; flex: none; }
+  .status-banner.online .dot { animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+  .tap-target {
+    width: 210px; height: 210px; border-radius: 50%;
+    border: 3px solid rgba(255,255,255,0.18);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 24px; position: relative;
   }
-  .status.in { color: #6FCF97; }
-  .status.out { color: #F2A65A; }
-  .status.error { color: #EB5757; }
-  .detail { font-size: 16px; color: #cfe0e3; }
-  .log {
-    margin-top: 40px;
-    width: 480px;
-    max-height: 300px;
-    overflow-y: auto;
-    font-size: 13px;
-    color: #9fb3b8;
+  .tap-target svg { width: 84px; height: 84px; opacity: 0.55; }
+  .tap-target.flash { animation: flashRing 0.6s ease; }
+  @keyframes flashRing { 0% { box-shadow: 0 0 0 0 rgba(50,195,108,0.55); } 100% { box-shadow: 0 0 0 26px rgba(50,195,108,0); } }
+  .hint { color: rgba(255,255,255,0.55); font-size: 14px; margin-bottom: 28px; max-width: 360px; }
+
+  .manual-entry { display: flex; gap: 8px; width: 100%; max-width: 360px; margin-bottom: 18px; }
+  .manual-entry input {
+    flex: 1; padding: 12px 14px; border-radius: 10px; border: 1.5px solid var(--line);
+    background: rgba(255,255,255,0.06); color: #fff; font-size: 15px; outline: none;
   }
-  .log div { padding: 4px 0; border-bottom: 1px solid #1c3d47; }
-  #setupScreen input { font-size: 16px; padding: 10px 14px; border-radius: 8px; border: none; width: 320px; margin-bottom: 12px; }
-  #setupScreen button { font-size: 15px; padding: 10px 20px; border-radius: 8px; border: none; background: #6FCF97; color: #0E2A32; font-weight: 700; cursor: pointer; }
-  #setupScreen p.small { color: #9fb3b8; font-size: 12px; max-width: 420px; text-align: center; }
-  #changeKeyLink { position: fixed; bottom: 10px; right: 14px; color: #4b6a70; font-size: 11px; cursor: pointer; }
+  .manual-entry input:focus { border-color: var(--blue); }
+  .manual-entry button {
+    padding: 12px 18px; border-radius: 10px; border: none; background: var(--blue);
+    color: #fff; font-weight: 700; font-size: 14px; cursor: pointer;
+  }
+
+  .log { width: 100%; max-width: 560px; margin-top: 8px; text-align: left; }
+  .log-row {
+    display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px;
+    background: rgba(255,255,255,0.04); margin-bottom: 6px; font-size: 13.5px;
+  }
+  .log-row .badge { flex: none; font-size: 11px; font-weight: 800; letter-spacing: 0.03em; padding: 2px 7px; border-radius: 6px; }
+  .badge.in { background: rgba(50,195,108,0.2); color: var(--green); }
+  .badge.out { background: rgba(11,95,255,0.2); color: #7FA8FF; }
+  .badge.queued { background: rgba(247,168,27,0.2); color: var(--amber); }
+  .badge.failed { background: rgba(229,72,77,0.2); color: var(--red); }
+  .badge.ignored { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.55); }
+  .log-row .name { flex: 1; font-weight: 600; }
+  .log-row .time { color: rgba(255,255,255,0.4); font-size: 12px; }
+
+  .footer-note { margin-top: 22px; font-size: 12px; color: rgba(255,255,255,0.35); }
+  .setup-screen { max-width: 380px; }
+  .setup-screen input { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1.5px solid var(--line);
+    background: rgba(255,255,255,0.06); color: #fff; font-size: 14px; margin-bottom: 10px; outline: none; }
+  .setup-screen button { width: 100%; padding: 12px; border-radius: 10px; border: none; background: var(--blue);
+    color: #fff; font-weight: 700; font-size: 14px; cursor: pointer; margin-top: 6px; }
+  .setup-screen p { color: rgba(255,255,255,0.5); font-size: 13px; line-height: 1.5; }
 </style>
 </head>
 <body>
-  <!-- One-time setup screen: the device key is entered ONCE per physical
-       device by whoever installs it, then stored only in that browser's
-       localStorage. It is never hardcoded in this file or committed to
-       git — a key that ships in a public static HTML file is a key that
-       anyone in the world can read straight off the server. -->
-  <div id="setupScreen" style="display:none; flex-direction:column; align-items:center; text-align:center;">
-    <h1>Gate Reader Setup</h1>
-    <p class="hint">Enter this device's gate key once (ask your OneTag admin). It's saved only on this device.</p>
-    <input type="password" id="setupKeyInput" placeholder="Gate device key" autocomplete="off">
-    <button id="setupSaveBtn">Save & Start</button>
-    <p class="small">This key is what stops anyone else from sending fake "arrived/left" pings for a child who was never actually there — don't share it outside school staff who manage this reader.</p>
+
+<div id="setupScreen" class="setup-screen" style="display:none;">
+  <div class="logo">OneTag · Gate Reader Setup</div>
+  <p>Enter this device's school and the gate device key once. They're saved on this device — you won't need to enter them again.</p>
+  <input id="setupSchoolId" placeholder="School ID (e.g. SCH-A1B2C3)">
+  <input id="setupKey" placeholder="Gate device key" type="password">
+  <button id="setupSave">Save &amp; start</button>
+</div>
+
+<div id="mainScreen" style="display:none; width:100%; display:flex; flex-direction:column; align-items:center;">
+  <div class="logo">OneTag Gate Reader</div>
+  <div id="statusBanner" class="status-banner offline"><span class="dot"></span><span id="statusText">Starting…</span></div>
+
+  <div id="tapTarget" class="tap-target">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 12a6 6 0 0 1 12 0M8.5 12a3.5 3.5 0 0 1 7 0M12 12v.01M4 12a8 8 0 0 1 16 0"/></svg>
+  </div>
+  <div class="hint" id="hintText">Hold a wristband near the reader, or scan with the attached USB reader.</div>
+
+  <div class="manual-entry">
+    <input id="manualInput" placeholder="Or type tag / UID and press Enter" autocomplete="off">
+    <button id="manualBtn">Log</button>
   </div>
 
-  <div id="readerScreen" style="display:none; flex-direction:column; align-items:center;">
-    <h1>OneTag Gate Reader</h1>
-    <p class="hint">Keep this window open and focused. Tap wristbands on the reader below.</p>
-    <div class="status" id="status">Ready</div>
-    <div class="detail" id="detail">Waiting for a tap...</div>
-    <div class="log" id="log"></div>
-
-    <!-- This input silently captures whatever the reader "types" -->
-    <input type="text" id="catcher" autofocus>
-  </div>
-  <div id="changeKeyLink">change device key</div>
+  <div class="log" id="logList"></div>
+  <div class="footer-note" id="footerNote"></div>
+</div>
 
 <script>
-// ---- CONFIG ----
-const API_BASE = 'https://onetag-0b04.onrender.com'; // your deployed Render URL
-const KEY_STORAGE = 'onetag_gate_device_key';
+(function () {
+  'use strict';
 
-const setupScreen = document.getElementById('setupScreen');
-const readerScreen = document.getElementById('readerScreen');
-let GATE_DEVICE_KEY = localStorage.getItem(KEY_STORAGE) || '';
+  // ---------- Config (per-device, saved once) ----------
+  const params = new URLSearchParams(location.search);
+  let CONFIG = JSON.parse(localStorage.getItem('onetag_gate_config') || 'null');
+  if (params.get('school_id') && params.get('key')) {
+    CONFIG = { schoolId: params.get('school_id'), key: params.get('key') };
+    localStorage.setItem('onetag_gate_config', JSON.stringify(CONFIG));
+  }
 
-function showSetup() {
-  setupScreen.style.display = 'flex';
-  readerScreen.style.display = 'none';
-  if (focusInterval) { clearInterval(focusInterval); focusInterval = null; }
-  document.getElementById('setupKeyInput').focus();
-}
-let focusInterval = null;
-function showReader() {
+  const setupScreen = document.getElementById('setupScreen');
+  const mainScreen = document.getElementById('mainScreen');
+
+  if (!CONFIG) {
+    setupScreen.style.display = 'block';
+    document.getElementById('setupSave').onclick = function () {
+      const schoolId = document.getElementById('setupSchoolId').value.trim();
+      const key = document.getElementById('setupKey').value.trim();
+      if (!schoolId || !key) return;
+      CONFIG = { schoolId, key };
+      localStorage.setItem('onetag_gate_config', JSON.stringify(CONFIG));
+      location.reload();
+    };
+    return;
+  }
   setupScreen.style.display = 'none';
-  readerScreen.style.display = 'flex';
-  catcher.focus();
-  // Keep focus on the hidden input at all times so keystrokes from the
-  // reader always land here — only while the reader screen is actually
-  // showing, so it doesn't fight with typing into the setup key field.
-  if (!focusInterval) focusInterval = setInterval(() => catcher.focus(), 500);
-}
-document.getElementById('setupSaveBtn').onclick = () => {
-  const val = document.getElementById('setupKeyInput').value.trim();
-  if (!val) return;
-  GATE_DEVICE_KEY = val;
-  localStorage.setItem(KEY_STORAGE, val);
-  showReader();
-};
-document.getElementById('changeKeyLink').onclick = () => {
-  localStorage.removeItem(KEY_STORAGE);
-  document.getElementById('setupKeyInput').value = '';
-  showSetup();
-};
+  mainScreen.style.display = 'flex';
 
-const catcher = document.getElementById('catcher');
-const statusEl = document.getElementById('status');
-const detailEl = document.getElementById('detail');
-const logEl = document.getElementById('log');
+  // ---------- IndexedDB: queue + roster cache ----------
+  const DB_NAME = 'onetag-gate';
+  const DB_VERSION = 1;
+  let dbPromise = new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains('queue')) {
+        db.createObjectStore('queue', { keyPath: 'id', autoIncrement: true });
+      }
+      if (!db.objectStoreNames.contains('roster')) {
+        db.createObjectStore('roster', { keyPath: 'uid' });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
 
-if (GATE_DEVICE_KEY) { showReader(); } else { showSetup(); }
+  async function idb(storeName, mode, fn) {
+    const db = await dbPromise;
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, mode);
+      const store = tx.objectStore(storeName);
+      const opResult = fn(store);
+      // fn typically returns an IDBRequest (e.g. store.add(...)) — its
+      // .result (the generated key, for add()) is only populated once that
+      // request succeeds, which happens before tx.oncomplete fires.
+      let resolvedValue = opResult;
+      if (opResult && typeof opResult === 'object' && 'onsuccess' in opResult) {
+        opResult.onsuccess = () => { resolvedValue = opResult.result; };
+        opResult.onerror = () => reject(opResult.error);
+      }
+      tx.oncomplete = () => resolve(resolvedValue);
+      tx.onerror = () => reject(tx.error);
+    });
+  }
 
-// Detect this gate's location once when the page loads, so the same hosted
-// file works at every gate without any per-location editing. A URL like
-// ?lat=47.91&lng=106.91 always wins if present (useful for precision or if
-// the browser's own GPS fix would be inaccurate indoors). Otherwise we ask
-// the browser once and cache the result for the rest of this session.
-let gateLat = null, gateLng = null;
-const urlParams = new URLSearchParams(window.location.search);
-if (urlParams.has('lat') && urlParams.has('lng')) {
-  gateLat = parseFloat(urlParams.get('lat'));
-  gateLng = parseFloat(urlParams.get('lng'));
-  detailEl.textContent = `Location set from URL: ${gateLat}, ${gateLng}`;
-} else if (navigator.geolocation) {
-  detailEl.textContent = 'Detecting this gate\'s location...';
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      gateLat = pos.coords.latitude;
-      gateLng = pos.coords.longitude;
-      detailEl.textContent = 'Ready — location detected. Waiting for a tap...';
-    },
-    () => { detailEl.textContent = 'Ready — location unavailable, taps will log without GPS.'; },
-    { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
-  );
-}
+  function queueAdd(entry) {
+    return idb('queue', 'readwrite', store => store.add(entry));
+  }
+  function queueAll() {
+    return new Promise(async (resolve) => {
+      const db = await dbPromise;
+      const tx = db.transaction('queue', 'readonly');
+      const store = tx.objectStore('queue');
+      const items = [];
+      store.openCursor().onsuccess = (e) => {
+        const cur = e.target.result;
+        if (cur) { items.push(cur.value); cur.continue(); } else { resolve(items); }
+      };
+    });
+  }
+  function queueRemove(id) {
+    return idb('queue', 'readwrite', store => store.delete(id));
+  }
+  function queueUpdate(entry) {
+    return idb('queue', 'readwrite', store => store.put(entry));
+  }
+  function rosterGet(uid) {
+    return new Promise(async (resolve) => {
+      const db = await dbPromise;
+      const tx = db.transaction('roster', 'readonly');
+      const req = tx.objectStore('roster').get(uid);
+      req.onsuccess = () => resolve(req.result ? req.result.tagId : null);
+      req.onerror = () => resolve(null);
+    });
+  }
+  function rosterPut(uid, tagId) {
+    return idb('roster', 'readwrite', store => store.put({ uid, tagId }));
+  }
+  function rosterBulkPut(pairs) {
+    return idb('roster', 'readwrite', store => { pairs.forEach(p => store.put(p)); });
+  }
 
-function logLine(text) {
-  const div = document.createElement('div');
-  div.textContent = `${new Date().toLocaleTimeString()} — ${text}`;
-  logEl.prepend(div);
-}
+  // ---------- UI helpers ----------
+  const statusBanner = document.getElementById('statusBanner');
+  const statusText = document.getElementById('statusText');
+  const logList = document.getElementById('logList');
+  const footerNote = document.getElementById('footerNote');
+  const tapTarget = document.getElementById('tapTarget');
 
-async function handleUid(rawUid) {
-  // The reader outputs the UID as hex characters (format depends on its
-  // configuration — commonly no separators, e.g. "046DA494C82A81").
-  // We normalize it to match how write-tags.js recorded it (colon-separated).
-  const clean = rawUid.trim().replace(/[^0-9A-Fa-f]/g, '');
-  if (!clean) return;
-  const formatted = clean.match(/.{1,2}/g).join(':').toUpperCase();
-
-  try {
-    const lookup = await fetch(`${API_BASE}/api/tag/by-uid/${formatted}`);
-    if (!lookup.ok) {
-      statusEl.textContent = 'Unknown tag';
-      statusEl.className = 'status error';
-      detailEl.textContent = `UID ${formatted} isn't registered to any child yet.`;
-      logLine(`✘ Unknown UID: ${formatted}`);
-      return;
+  function setOnlineUI(pendingCount) {
+    if (navigator.onLine && pendingCount === 0) {
+      statusBanner.className = 'status-banner online';
+      statusText.textContent = 'Online · all taps synced';
+    } else if (navigator.onLine && pendingCount > 0) {
+      statusBanner.className = 'status-banner online';
+      statusText.textContent = `Online · syncing ${pendingCount} queued tap${pendingCount === 1 ? '' : 's'}…`;
+    } else {
+      statusBanner.className = 'status-banner offline';
+      statusText.textContent = `Offline · ${pendingCount} tap${pendingCount === 1 ? '' : 's'} queued — will sync automatically`;
     }
-    const { tag_id } = await lookup.json();
+  }
 
-    // Direction is now decided by the server (first tap of the day = in,
-    // next = out, anything further that day is ignored) — we just send the
-    // location and read back what happened.
-    const gateRes = await fetch(`${API_BASE}/api/gate/${tag_id}`, {
+  function prependLog(name, badge, timeStr) {
+    const row = document.createElement('div');
+    row.className = 'log-row';
+    row.innerHTML = `<span class="badge ${badge.cls}">${badge.label}</span><span class="name">${name}</span><span class="time">${timeStr}</span>`;
+    logList.prepend(row);
+    while (logList.children.length > 12) logList.removeChild(logList.lastChild);
+    return row;
+  }
+
+  function flashTap() {
+    tapTarget.classList.remove('flash');
+    void tapTarget.offsetWidth;
+    tapTarget.classList.add('flash');
+  }
+
+  // Maps a queue entry's IndexedDB id -> its log row DOM element, so the UI
+  // can be updated once a queued tap syncs. Kept in memory only (not
+  // persisted) — entries queued in a previous page load simply sync
+  // silently without a matching row to update, which is fine since the
+  // status banner still reflects the true queued/synced count either way.
+  const rowsById = new Map();
+
+  // ---------- Roster prefetch (best-effort, makes offline UID resolution work from the start) ----------
+  async function refreshRoster() {
+    if (!navigator.onLine) return;
+    try {
+      const res = await fetch(`/api/gate/roster?school_id=${encodeURIComponent(CONFIG.schoolId)}&key=${encodeURIComponent(CONFIG.key)}`);
+      if (!res.ok) return;
+      const rows = await res.json();
+      await rosterBulkPut(rows.filter(r => r.uid).map(r => ({ uid: r.uid, tagId: r.tag_id })));
+      footerNote.textContent = `Roster cached: ${rows.length} tags · last synced ${new Date().toLocaleTimeString()}`;
+    } catch (e) { /* offline or unreachable — cached roster from last success still applies */ }
+  }
+
+  // ---------- Best-effort geolocation (short timeout — never blocks logging the tap) ----------
+  function getPositionBestEffort(timeoutMs) {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) return resolve(null);
+      const timer = setTimeout(() => resolve(null), timeoutMs);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => { clearTimeout(timer); resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }); },
+        () => { clearTimeout(timer); resolve(null); },
+        { maximumAge: 60000, timeout: timeoutMs }
+      );
+    });
+  }
+
+  // ---------- Resolve a raw UID to a tag_id, using cache first then network ----------
+  async function resolveTagId(uid) {
+    const cached = await rosterGet(uid);
+    if (cached) return cached;
+    if (!navigator.onLine) return null;
+    try {
+      const res = await fetch(`/api/tag/by-uid/${encodeURIComponent(uid)}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      await rosterPut(uid, data.tag_id);
+      return data.tag_id;
+    } catch (e) { return null; }
+  }
+
+  // ---------- Submit one queue entry to the server ----------
+  async function submitEntry(entry) {
+    const res = await fetch(`/api/gate/${encodeURIComponent(entry.tagId)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lat: gateLat, lng: gateLng, key: GATE_DEVICE_KEY })
+      body: JSON.stringify({
+        key: CONFIG.key,
+        lat: entry.lat, lng: entry.lng,
+        client_timestamp: entry.clientTimestamp
+      })
     });
-    const gateResult = await gateRes.json();
+    if (!res.ok) throw new Error('http_' + res.status);
+    return res.json();
+  }
 
-    if (gateResult.ignored) {
-      statusEl.textContent = 'Already logged';
-      statusEl.className = 'status'; // neutral, not in/out colored
-      detailEl.textContent = `${tag_id} already has both in & out recorded today — this tap didn't change anything.`;
-      logLine(`— ${tag_id} — extra tap ignored`);
-      return;
+  // ---------- Flush the queue: resolve any unresolved UIDs, then submit ----------
+  let flushing = false;
+  async function flushQueue() {
+    if (flushing) return;
+    flushing = true;
+    try {
+      const items = await queueAll();
+      for (const entry of items) {
+        if (!entry.tagId) {
+          const tagId = await resolveTagId(entry.uid);
+          if (!tagId) continue; // still can't resolve — leave queued, try again next flush
+          entry.tagId = tagId;
+          await queueUpdate(entry);
+        }
+        if (!navigator.onLine) continue;
+        try {
+          const result = await submitEntry(entry);
+          await queueRemove(entry.id);
+          const row = rowsById.get(entry.id);
+          if (row) {
+            const badge = row.querySelector('.badge');
+            badge.className = 'badge ' + (result.ignored ? 'ignored' : (result.direction || 'in'));
+            badge.textContent = result.ignored ? 'SKIPPED' : result.direction.toUpperCase();
+            rowsById.delete(entry.id);
+          }
+        } catch (e) {
+          entry.attempts = (entry.attempts || 0) + 1;
+          await queueUpdate(entry);
+        }
+      }
+    } finally {
+      flushing = false;
+      const remaining = await queueAll();
+      setOnlineUI(remaining.length);
+    }
+  }
+
+  // ---------- Handle a tap (from NFC or manual entry) ----------
+  async function handleTap(rawInput) {
+    flashTap();
+    const isLikelyTagId = /^OT-/i.test(rawInput.trim());
+    const uid = isLikelyTagId ? null : rawInput.trim().toUpperCase();
+    const knownTagId = isLikelyTagId ? rawInput.trim().toUpperCase() : null;
+
+    const pos = await getPositionBestEffort(4000);
+    const entry = {
+      uid, tagId: knownTagId,
+      lat: pos ? pos.lat : null, lng: pos ? pos.lng : null,
+      clientTimestamp: new Date().toISOString(),
+      attempts: 0
+    };
+
+    if (!entry.tagId && entry.uid) {
+      entry.tagId = await resolveTagId(entry.uid);
     }
 
-    const direction = gateResult.direction;
-    statusEl.textContent = direction.toUpperCase();
-    statusEl.className = `status ${direction}`;
-    detailEl.textContent = `${tag_id} logged at ${new Date().toLocaleTimeString()}`;
-    logLine(`✔ ${tag_id} — ${direction}`);
-  } catch (err) {
-    statusEl.textContent = 'Error';
-    statusEl.className = 'status error';
-    detailEl.textContent = err.message;
-    logLine(`✘ Error: ${err.message}`);
-  }
-}
+    const label = entry.tagId || entry.uid || 'Unknown tag';
+    const row = prependLog(label, { cls: 'queued', label: 'QUEUED' }, new Date().toLocaleTimeString());
 
-catcher.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    const value = catcher.value;
-    catcher.value = '';
-    handleUid(value);
+    const id = await queueAdd({ uid: entry.uid, tagId: entry.tagId, lat: entry.lat, lng: entry.lng, clientTimestamp: entry.clientTimestamp, attempts: 0 });
+    rowsById.set(id, row);
+
+    const items = await queueAll();
+    setOnlineUI(items.length);
+    flushQueue();
   }
-});
+
+  // ---------- Manual entry / keyboard-wedge USB NFC reader input ----------
+  const manualInput = document.getElementById('manualInput');
+  document.getElementById('manualBtn').onclick = submitManual;
+  manualInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitManual(); });
+  function submitManual() {
+    const val = manualInput.value.trim();
+    if (!val) return;
+    manualInput.value = '';
+    handleTap(val);
+  }
+  // Auto-focus so a USB keyboard-wedge NFC reader (which just "types" the UID + Enter)
+  // works without staff needing to click into the field first.
+  setInterval(() => { if (document.activeElement !== manualInput) manualInput.focus(); }, 2000);
+  manualInput.focus();
+
+  // ---------- Web NFC (Chrome for Android) ----------
+  document.getElementById('hintText').textContent =
+    ('NDEFReader' in window)
+      ? 'Hold a wristband near the reader.'
+      : 'Scan with the attached USB reader, or type the tag/UID below.';
+
+  if ('NDEFReader' in window) {
+    try {
+      const reader = new NDEFReader();
+      reader.scan().then(() => {
+        reader.onreading = (event) => {
+          const uid = event.serialNumber ? event.serialNumber.replace(/:/g, '').toUpperCase() : null;
+          if (uid) handleTap(uid);
+        };
+      }).catch(() => { /* permission denied or unsupported — manual/USB entry still works */ });
+    } catch (e) { /* Web NFC not actually usable here — fall back silently */ }
+  }
+
+  // ---------- Connectivity + periodic sync ----------
+  window.addEventListener('online', () => { refreshRoster(); flushQueue(); });
+  window.addEventListener('offline', async () => setOnlineUI((await queueAll()).length));
+  setInterval(async () => { flushQueue(); }, 20000);
+  setInterval(refreshRoster, 15 * 60 * 1000);
+
+  // ---------- Background Sync (best-effort; lets queued taps flush even if the
+  // page/device was reloaded while offline and Chrome wakes the service worker
+  // briefly on reconnect) ----------
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/gate-listener-sw.js').then((reg) => {
+      if ('sync' in reg) {
+        window.addEventListener('online', () => reg.sync.register('onetag-gate-flush').catch(() => {}));
+      }
+    }).catch(() => {});
+    navigator.serviceWorker.addEventListener('message', (e) => {
+      if (e.data === 'onetag-gate-flush') flushQueue();
+    });
+  }
+
+  // ---------- Initial boot ----------
+  (async function boot() {
+    const items = await queueAll();
+    setOnlineUI(items.length);
+    await refreshRoster();
+    flushQueue();
+  })();
+})();
 </script>
 </body>
 </html>
