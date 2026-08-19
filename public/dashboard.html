@@ -209,9 +209,12 @@ function renderScan() {
   const classVal = document.getElementById('scanClassFilter').value;
   const nameVal = document.getElementById('scanNameFilter').value;
   const dateVal = document.getElementById('scanDateFilter').value;
+  // Prefer client_timestamp (the real moment the tap happened, captured on
+  // the visitor's phone) over timestamp (when the server received it) —
+  // they only differ when the tap was queued offline and synced later.
   // r.timestamp is a full datetime — convert to local date so the filter
   // matches what's actually shown in the Time column (also local time).
-  const rows = applyFilters(scanRows, schoolVal, classVal, nameVal, dateVal, r => localDateStr(r.timestamp));
+  const rows = applyFilters(scanRows, schoolVal, classVal, nameVal, dateVal, r => localDateStr(r.client_timestamp || r.timestamp));
 
   if (!rows.length) {
     content.innerHTML = '<div class="empty">No scans match these filters.</div>';
@@ -223,7 +226,7 @@ function renderScan() {
       <tbody>
         ${rows.map(r => `
           <tr>
-            <td>${new Date(r.timestamp).toLocaleString()}</td>
+            <td>${new Date(r.client_timestamp || r.timestamp).toLocaleString()}</td>
             <td>${r.school_name ? esc(r.school_name) : '<span class="no-loc">—</span>'}</td>
             <td>${r.class_name ? esc(r.class_name) : '<span class="no-loc">—</span>'}</td>
             <td>${r.child_name ? esc(r.child_name) : '<span class="no-loc">Unregistered</span>'}</td>

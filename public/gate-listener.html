@@ -342,6 +342,10 @@
 
   // ---------- Handle a tap (from NFC or manual entry) ----------
   async function handleTap(rawInput) {
+    // Captured immediately, before the (up to 4s) GPS wait below — so the
+    // stored time reflects the actual moment of the tap, not whenever
+    // geolocation happened to resolve afterward.
+    const tapObservedAt = new Date().toISOString();
     flashTap();
     const isLikelyTagId = /^OT-/i.test(rawInput.trim());
     const uid = isLikelyTagId ? null : rawInput.trim().toUpperCase();
@@ -351,7 +355,7 @@
     const entry = {
       uid, tagId: knownTagId,
       lat: pos ? pos.lat : null, lng: pos ? pos.lng : null,
-      clientTimestamp: new Date().toISOString(),
+      clientTimestamp: tapObservedAt,
       attempts: 0
     };
 

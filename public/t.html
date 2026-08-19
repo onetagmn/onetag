@@ -90,6 +90,16 @@
   const content = document.getElementById('content');
   const connBanner = document.getElementById('connBanner');
 
+  // Captured now, at the very first moment this page runs — NOT later,
+  // inside logScanBestEffort(). The profile fetch below can retry for
+  // several seconds on a bad connection, and GPS can take up to 4 more —
+  // stamping the time only after both finish would record "whenever the
+  // page finally finished loading," not the actual tap. This is still an
+  // approximation (the real tap happened an instant before the browser
+  // even started running this script), but it's the earliest moment we
+  // can observe, so it's as close as software can get.
+  const tapObservedAt = new Date().toISOString();
+
   if (!tagId) {
     content.innerHTML = '<div class="not-found">No tag specified.</div>';
     return;
@@ -238,7 +248,7 @@
     flushScanQueue();
 
     const pos = await getPositionBestEffort(4000);
-    const entry = { tagId, lat: pos ? pos.lat : null, lng: pos ? pos.lng : null, clientTimestamp: new Date().toISOString() };
+    const entry = { tagId, lat: pos ? pos.lat : null, lng: pos ? pos.lng : null, clientTimestamp: tapObservedAt };
     try {
       await sendScan(entry);
     } catch (e) {
