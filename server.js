@@ -1,11 +1,52 @@
 const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
+const multer = require('multer');
+const cloudinary = require('cloudinary').v2;
 const { pool, initSchema, withTransaction } = require('./db');
 const { sendOtp, verifyOtp } = require('./otp');
 
 const app = express();
 app.use(express.json());
+
+// ---------- Scene photo uploads (super-admin "Website content" dashboard) ----------
+// Render's own disk resets on every deploy, so an uploaded file can't live
+// there — it goes to Cloudinary's free tier instead, a real persistent,
+// CDN-backed image host. Configure by creating a free account at
+// cloudinary.com and setting these three Render environment variables
+// (Cloudinary dashboard → copy each value from the "API Environment
+// variable" box):
+//   CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
+// Until those are set, everything else in the app works normally — only
+// the "replace this photo" button on the content dashboard returns a clear
+// "not configured" error instead of silently failing.
+const CLOUDINARY_CONFIGURED = !!(process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET);
+if (CLOUDINARY_CONFIGURED) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+} else {
+  console.warn('⚠️  CLOUDINARY_CLOUD_NAME / CLOUDINARY_API_KEY / CLOUDINARY_API_SECRET not set — scene photo uploads from the dashboard will report "not configured" until all three are set.');
+}
+const sceneUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB — plenty for a full-bleed hero photo, small enough to keep uploads fast
+  fileFilter: (req, file, cb) => {
+    if (!file.mimetype.startsWith('image/')) return cb(new Error('Only image files are allowed'));
+    cb(null, true);
+  }
+});
+function uploadBufferToCloudinary(buffer) {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: 'onetag-site', resource_type: 'image' },
+      (err, result) => (err ? reject(err) : resolve(result))
+    );
+    stream.end(buffer);
+  });
+}
 // Render sits behind a reverse proxy — without this, req.ip resolves to
 // Render's internal proxy address for every request, making the
 // per-IP rate limiting below effectively share one bucket across everyone.
@@ -727,7 +768,7 @@ app.get('/api/settings/language', async (req, res) => {
 app.post('/api/settings/language', async (req, res) => {
   const { language, adminKey } = req.body;
   if (!timingSafeStringEqual(adminKey, ADMIN_KEY)) return res.status(401).json({ error: 'Invalid admin key' });
-  if (!['en', 'mn', 'zh'].includes(language)) return res.status(400).json({ error: 'Unsupported language' });
+  if (!['en', 'mn', 'zh', 'jp'].includes(language)) return res.status(400).json({ error: 'Unsupported language' });
   await pool.query(`UPDATE settings SET value = $1 WHERE key = 'site_language'`, [language]);
   res.json({ success: true, language });
 });
@@ -787,6 +828,76 @@ app.get('/api/parent/history', async (req, res) => {
     history.push({ tag_id: p.tag_id, child_name: p.child_name, gate_logs: gateRes.rows, scan_logs: scanRes.rows });
   }
   res.json(history);
+});
+
+// ---------- Editable homepage content ("Website content" dashboard) ----------
+// Backs home.html's text (mn/en/jp), the 9 scroll-story scene photos, and
+// section/card visibility toggles. See site-content-seed.js for what a
+// fresh row looks like and db.js for the table + seeding.
+
+// Public — home.html fetches this on every load (no login: it's the same
+// page a public visitor already sees). Shaped for direct use by the page's
+// existing i18n code rather than as a raw table dump.
+app.get('/api/site-content', async (req, res) => {
+  const result = await pool.query(`SELECT key, kind, mn, en, jp, image_url, visible FROM site_content`);
+  const texts = {}, images = {}, blocks = {};
+  for (const row of result.rows) {
+    if (row.kind === 'text') texts[row.key] = { mn: row.mn, en: row.en, jp: row.jp };
+    else if (row.kind === 'image') images[row.key] = { url: row.image_url };
+    else if (row.kind === 'block') blocks[row.key] = { visible: row.visible };
+  }
+  res.json({ texts, images, blocks });
+});
+
+// Admin — full rows (incl. labels) for building the dashboard UI.
+app.get('/api/admin/site-content', requireSuperAdmin, async (req, res) => {
+  const result = await pool.query(`SELECT key, kind, label, mn, en, jp, image_url, visible, updated_at FROM site_content ORDER BY kind, key`);
+  res.json(result.rows);
+});
+
+app.put('/api/admin/site-content/text/:key', requireSuperAdmin, async (req, res) => {
+  const { key } = req.params;
+  const { mn, en, jp } = req.body;
+  const result = await pool.query(
+    `UPDATE site_content SET mn = $1, en = $2, jp = $3, updated_at = NOW() WHERE key = $4 AND kind = 'text'`,
+    [mn ?? null, en ?? null, jp ?? null, key]
+  );
+  if (result.rowCount === 0) return res.status(404).json({ error: 'Unknown text key' });
+  res.json({ success: true });
+});
+
+app.put('/api/admin/site-content/block/:key', requireSuperAdmin, async (req, res) => {
+  const { key } = req.params;
+  const { visible } = req.body;
+  if (typeof visible !== 'boolean') return res.status(400).json({ error: 'visible (boolean) is required' });
+  const result = await pool.query(
+    `UPDATE site_content SET visible = $1, updated_at = NOW() WHERE key = $2 AND kind = 'block'`,
+    [visible, key]
+  );
+  if (result.rowCount === 0) return res.status(404).json({ error: 'Unknown block key' });
+  res.json({ success: true, visible });
+});
+
+app.post('/api/admin/site-content/image/:key', requireSuperAdmin, (req, res) => {
+  sceneUpload.single('photo')(req, res, async (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    if (!CLOUDINARY_CONFIGURED) {
+      return res.status(503).json({ error: 'Image uploads are not configured yet — set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in Render, then redeploy.' });
+    }
+    if (!req.file) return res.status(400).json({ error: 'No photo file was uploaded' });
+    const { key } = req.params;
+    const existing = await pool.query(`SELECT key FROM site_content WHERE key = $1 AND kind = 'image'`, [key]);
+    if (!existing.rows[0]) return res.status(404).json({ error: 'Unknown image key' });
+
+    try {
+      const uploaded = await uploadBufferToCloudinary(req.file.buffer);
+      await pool.query(`UPDATE site_content SET image_url = $1, updated_at = NOW() WHERE key = $2`, [uploaded.secure_url, key]);
+      res.json({ success: true, url: uploaded.secure_url });
+    } catch (uploadErr) {
+      console.error('Cloudinary upload failed:', uploadErr.message);
+      res.status(502).json({ error: 'Upload to image host failed — please try again.' });
+    }
+  });
 });
 
 const PORT = process.env.PORT || 3000;

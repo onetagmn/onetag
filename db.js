@@ -4,6 +4,7 @@
 // persists independently of the web service.
 
 const { Pool } = require('pg');
+const { TEXT_SEED, IMAGE_SEED, BLOCK_SEED } = require('./site-content-seed');
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -145,7 +146,49 @@ async function initSchema() {
     -- this column, so behavior for already-online devices is unchanged.
     ALTER TABLE gate_logs ADD COLUMN IF NOT EXISTS client_timestamp TIMESTAMP;
     ALTER TABLE scan_logs ADD COLUMN IF NOT EXISTS client_timestamp TIMESTAMP;
+
+    -- Editable homepage content (super-admin "Website content" dashboard).
+    -- One row per data-i18n text key, per scroll-story photo, or per
+    -- hideable section/card. "kind" says which of the three this row is;
+    -- only the columns relevant to that kind are ever used for it (a
+    -- 'text' row ignores image_url/visible, an 'image' row ignores
+    -- mn/en/jp/visible, a 'block' row ignores mn/en/jp/image_url). Kept as
+    -- one table rather than three so the admin page can fetch everything
+    -- in a single query.
+    CREATE TABLE IF NOT EXISTS site_content (
+      key TEXT PRIMARY KEY,
+      kind TEXT NOT NULL CHECK (kind IN ('text', 'image', 'block')),
+      label TEXT,
+      mn TEXT,
+      en TEXT,
+      jp TEXT,
+      image_url TEXT,
+      visible BOOLEAN NOT NULL DEFAULT true,
+      updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    );
   `);
+
+  // Seed default values once. ON CONFLICT DO NOTHING means this only ever
+  // fills in rows that don't exist yet — it can never overwrite a real
+  // edit made later from the dashboard, so it's safe to run on every boot.
+  for (const [key, langs] of Object.entries(TEXT_SEED)) {
+    await pool.query(
+      `INSERT INTO site_content (key, kind, mn, en, jp) VALUES ($1, 'text', $2, $3, $4) ON CONFLICT (key) DO NOTHING`,
+      [key, langs.mn, langs.en, langs.jp]
+    );
+  }
+  for (const img of IMAGE_SEED) {
+    await pool.query(
+      `INSERT INTO site_content (key, kind, label, image_url) VALUES ($1, 'image', $2, $3) ON CONFLICT (key) DO NOTHING`,
+      [img.key, img.label, img.url]
+    );
+  }
+  for (const block of BLOCK_SEED) {
+    await pool.query(
+      `INSERT INTO site_content (key, kind, label, visible) VALUES ($1, 'block', $2, true) ON CONFLICT (key) DO NOTHING`,
+      [block.key, block.label]
+    );
+  }
 }
 
 // Runs a set of queries inside a transaction using a single client —
