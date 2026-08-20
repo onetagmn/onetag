@@ -12,15 +12,15 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <!-- The scroll-story section (.scroll-story) has a dark navy background
      (#0E2338) showing behind the active photo until that photo's image
-     file finishes downloading. Neither the very first photo (stage 0,
-     visible immediately on page load) nor the very last one (stage 8, at
-     the end of the story) had any preload hint, so on a slower connection
-     the browser hadn't even started fetching them yet by the time they
-     needed to be visible — reading as a "black gap" at both the top and
-     the end of the story. Preloading both here fixes it at the source
-     rather than papering over it with a fallback color. -->
-<link rel="preload" as="image" href="/assets/scene4-aerial.jpg" fetchpriority="high" data-story-stage="0">
-<link rel="preload" as="image" href="/assets/scene1-product.jpg" data-story-stage="8">
+     file finishes downloading. Neither the opening photo (visible
+     immediately on page load) nor the closing one (at the end of the
+     story) having a preload hint reads as a "black gap" at both the top
+     and the end of the story on a slower connection. Since which photo is
+     first/last now depends on the (admin-editable) scene list rather than
+     a fixed stage number, these preload links are injected by JS once
+     that list is known — see "Build the scroll-story from scene data"
+     further down this script — instead of being hardcoded here. -->
+
 <style>
   :root {
     --blue: #0B5FFF; --blue-dark: #0847C7; --sky: #DCEEFF; --green: #32C36C;
@@ -96,20 +96,24 @@
   }
   .story-stage-photo.active { opacity: 1; transform: scale(1) rotateY(0deg) translateZ(0); z-index: 2; }
   .story-stage-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  /* Aerial (stage 0 — now the opening shot) gets a distinct descending-zoom
-     instead of the tilt: entering more zoomed-out and pushing in, so the
-     story opens already mid-descent rather than static. */
-  .story-stage-photo[data-stage="0"] { transform: scale(1.35) translateY(-2%) rotateY(0deg) translateZ(0); }
-  .story-stage-photo[data-stage="0"].active { transform: scale(1) translateY(0%) rotateY(0deg) translateZ(0); }
-  /* Product closer (stage 8) also skips the rotateY tilt every other scene
-     uses. It's the last frame before the sticky pin releases into the CTA
+  /* The opening scene gets a distinct descending-zoom instead of the tilt:
+     entering more zoomed-out and pushing in, so the story opens already
+     mid-descent rather than static. Applied by position (whichever scene
+     JS renders first), via a class rather than a fixed data-stage index —
+     scenes can be added/deleted/reordered from the dashboard now, so
+     "the opening scene" isn't always the same stage number. */
+  .story-stage-photo.story-stage-first { transform: scale(1.35) translateY(-2%) rotateY(0deg) translateZ(0); }
+  .story-stage-photo.story-stage-first.active { transform: scale(1) translateY(0%) rotateY(0deg) translateZ(0); }
+  /* The closing scene also skips the rotateY tilt every other scene uses.
+     It's the last frame before the sticky pin releases into the CTA
      section — a fast scroll can land mid-rotation right as that release
      happens, and rotateY's perspective foreshortening pulls the image in
      from the top/bottom edges for an instant, exposing the dark
-     .scroll-story background behind it. Same fix as stage 0, same reason:
-     both sit at a sticky boundary, so both get a plain scale-only crossfade. */
-  .story-stage-photo[data-stage="8"] { transform: scale(1.08) translateZ(0); }
-  .story-stage-photo[data-stage="8"].active { transform: scale(1) translateZ(0); }
+     .scroll-story background behind it. Same fix as the opening scene,
+     same reason: both sit at a sticky boundary, so both get a plain
+     scale-only crossfade. Also applied by position, not a fixed index. */
+  .story-stage-photo.story-stage-last { transform: scale(1.08) translateZ(0); }
+  .story-stage-photo.story-stage-last.active { transform: scale(1) translateZ(0); }
   /* Whip-blur pulse on every cut, mimicking a real camera swish rather
      than a flat crossfade. */
   .story-sticky { transition: filter 0.25s ease; }
@@ -385,39 +389,14 @@
 
 <section class="scroll-story" id="scrollStory">
   <div class="story-sticky">
-    <div class="story-stage-photo active stage-morning" data-stage="0"><img src="/assets/scene4-aerial.jpg" alt="Aerial view of children arriving at school" fetchpriority="high"></div>
-    <div class="story-stage-photo stage-morning" data-stage="1"><img src="/assets/scene5-crane.jpg" alt="Descending toward the school gate"></div>
-    <div class="story-stage-photo stage-morning" data-stage="2"><img src="/assets/scene7-tap-morning.jpg" alt="Child tapping the wristband at the school gate in the morning"></div>
-    <div class="story-stage-photo" data-stage="3"><img src="/assets/scene8-dashboard.jpg" alt="School staff viewing the arrival dashboard"></div>
-    <div class="story-stage-photo stage-dusk" data-stage="4"><img src="/assets/scene9-tap-dusk.jpg" alt="Child tapping the wristband while leaving school in the afternoon"></div>
-    <div class="story-stage-photo stage-dusk" data-stage="5"><img src="/assets/scene10-phone-notif.jpg" alt="Parent's phone showing a safe departure notification"></div>
-    <div class="story-stage-photo" data-stage="6"><img src="/assets/scene12-map.jpg" alt="Full-screen real-time location map"></div>
-    <div class="story-stage-photo" data-stage="7">
-      <img src="/assets/scene2-hud-v3.jpg" alt="OneTag wristband — what it saves">
-      <svg class="hud-svg" id="hudSvg" viewBox="0 0 100 100" preserveAspectRatio="none">
-        <line class="hud-svg-line" data-hud="0" x1="38" y1="38" x2="14" y2="16"></line>
-        <line class="hud-svg-line" data-hud="1" x1="62" y1="38" x2="86" y2="16"></line>
-        <line class="hud-svg-line" data-hud="2" x1="29" y1="50" x2="9" y2="50"></line>
-        <line class="hud-svg-line" data-hud="3" x1="71" y1="50" x2="91" y2="50"></line>
-        <line class="hud-svg-line" data-hud="4" x1="40" y1="61" x2="16" y2="82"></line>
-        <line class="hud-svg-line" data-hud="5" x1="60" y1="61" x2="84" y2="82"></line>
-        <circle class="hud-svg-dot" data-hud="0" cx="38" cy="38" r="0.7"></circle>
-        <circle class="hud-svg-dot" data-hud="1" cx="62" cy="38" r="0.7"></circle>
-        <circle class="hud-svg-dot" data-hud="2" cx="29" cy="50" r="0.7"></circle>
-        <circle class="hud-svg-dot" data-hud="3" cx="71" cy="50" r="0.7"></circle>
-        <circle class="hud-svg-dot" data-hud="4" cx="40" cy="61" r="0.7"></circle>
-        <circle class="hud-svg-dot" data-hud="5" cx="60" cy="61" r="0.7"></circle>
-      </svg>
-      <div class="hud-labels" id="hudLabels">
-        <div class="hud-label" data-hud="0" style="top:16%; left:14%; transform:translate(-50%,-50%);"><span class="hud-text" data-i18n="label_name">Name</span></div>
-        <div class="hud-label" data-hud="1" style="top:16%; left:86%; transform:translate(-50%,-50%);"><span class="hud-text" data-i18n="label_allergies">Allergies</span></div>
-        <div class="hud-label" data-hud="2" style="top:50%; left:9%; transform:translate(-50%,-50%);"><span class="hud-text" data-i18n="label_blood">Blood Type</span></div>
-        <div class="hud-label" data-hud="3" style="top:50%; left:91%; transform:translate(-50%,-50%);"><span class="hud-text" data-i18n="label_contact">Emergency Contact</span></div>
-        <div class="hud-label" data-hud="4" style="top:82%; left:16%; transform:translate(-50%,-50%);"><span class="hud-text" data-i18n="label_school">School</span></div>
-        <div class="hud-label" data-hud="5" style="top:82%; left:84%; transform:translate(-50%,-50%);"><span class="hud-text" data-i18n="label_class">Class</span></div>
-      </div>
-    </div>
-    <div class="story-stage-photo" data-stage="8"><img src="/assets/scene1-product.jpg" alt="OneTag wristband"></div>
+    <!-- Story photos + captions below are built entirely by JS from
+         siteOverrides.scenes (falling back to FALLBACK_SCENES if that
+         fetch fails) — see the "Build the scroll-story from scene data"
+         block further down this script. There's no fixed stage count
+         anymore: the super-admin dashboard can add, delete, and reorder
+         scenes, so the markup has to be able to render any number of
+         them, not just 9. -->
+    <div id="storyStagePhotos"></div>
 
     <div class="story-progress" id="storyProgress"></div>
 
@@ -431,19 +410,7 @@
     </button>
     <div class="story-overlay"></div>
 
-    <div class="story-caption-wrap">
-      <div class="story-caption active" data-stage="0">
-        <h1 data-i18n="hero_h1">Safe every school day. Found in seconds, wherever they are.</h1>
-      </div>
-      <div class="story-caption" data-stage="1"><h2 data-i18n="story_crane">Closing in on the gate.</h2></div>
-      <div class="story-caption" data-stage="2"><h2 data-i18n="intro_2">Tap at the school gate every morning...</h2></div>
-      <div class="story-caption" data-stage="3"><h2 data-i18n="story_8">The school knows the instant they're in.</h2></div>
-      <div class="story-caption" data-stage="4"><h2 data-i18n="intro_3">...and every afternoon.</h2></div>
-      <div class="story-caption" data-stage="5"><h2 data-i18n="story_10">Left safely. You know the moment it happens.</h2></div>
-      <div class="story-caption" data-stage="6"><h2 data-i18n="intro_5">Real-time GPS finds them in seconds, not searches.</h2></div>
-      <div class="story-caption" data-stage="7"><h2 data-i18n="story_2">Everything that matters, saved in seconds.</h2></div>
-      <div class="story-caption" data-stage="8"><h2 data-i18n="story_close_product">One wristband. Every school day.</h2></div>
-    </div>
+    <div class="story-caption-wrap" id="storyCaptionWrap"></div>
 
     <div class="story-scroll-hint" id="storyScrollHint" data-i18n="scroll_hint">Scroll to see how it works ↓</div>
   </div>
@@ -1087,7 +1054,7 @@
   // is slow, offline, or the site-content feature isn't deployed yet — a
   // visitor should never see a broken page just because this one extra
   // fetch didn't come back in time.
-  let siteOverrides = { texts: {}, images: {}, blocks: {} };
+  let siteOverrides = { texts: {}, blocks: {}, scenes: null };
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 3000);
@@ -1103,26 +1070,118 @@
     }
   }
 
-  // Scene photo overrides — swap the <img src> for any story stage the
-  // dashboard has a replacement for, and keep the two <link rel=preload>
-  // tags (stage 0 + stage 8, the two the story shows first/most) pointed at
-  // whatever is actually going to load, so a replaced photo still benefits
-  // from the preload instead of the browser preloading a file nothing uses.
-  for (const [key, img] of Object.entries(siteOverrides.images || {})) {
-    if (!img.url) continue;
-    const m = /^story_stage_(\d)$/.exec(key);
-    if (!m) continue;
-    const stageEl = document.querySelector(`.story-stage-photo[data-stage="${m[1]}"] img`);
-    if (stageEl) stageEl.src = img.url;
-    const preloadLink = document.querySelector(`link[rel="preload"][data-story-stage="${m[1]}"]`);
-    if (preloadLink) preloadLink.href = img.url;
+  // ---- Build the scroll-story from scene data ----
+  // The story used to be 9 fixed stages baked into the HTML. Now the
+  // super-admin dashboard can add, delete, and reorder photos, so the
+  // whole thing is built here from a scene list instead: whatever the API
+  // returned, or this hardcoded copy of the original 9 if the fetch above
+  // failed (offline, slow, or the feature isn't deployed yet) — the story
+  // must always render something, never a blank/broken hero.
+  const FALLBACK_SCENES = [
+    { image_url: '/assets/scene4-aerial.jpg', scene_type: 'photo', caption: { en: "Safe every school day. Found in seconds, wherever they are.", mn: "Сургуулийн өдөр бүр аюулгүй. Секундын дотор олдоно, хаана ч байсан.", jp: "毎日安心して登校。数秒で居場所がわかります。" } },
+    { image_url: '/assets/scene5-crane.jpg', scene_type: 'photo', caption: { en: "Another school morning begins.", mn: "Сургуулийн өглөө дахин эхэлж байна.", jp: "また学校の朝が始まります。" } },
+    { image_url: '/assets/scene7-tap-morning.jpg', scene_type: 'photo', caption: { en: "Tap at the school gate every morning...", mn: "Өглөө бүр сургуулийн хаалганд товшино...", jp: "毎朝、校門でタップ…" } },
+    { image_url: '/assets/scene8-dashboard.jpg', scene_type: 'photo', caption: { en: "The school knows the instant they're in.", mn: "Сургууль тэднийг ирсэн даруйд нь мэднэ.", jp: "登校した瞬間、学校はすぐに把握します。" } },
+    { image_url: '/assets/scene9-tap-dusk.jpg', scene_type: 'photo', caption: { en: "...and every afternoon.", mn: "...орой бүр мөн адил.", jp: "…そして毎日下校時にも。" } },
+    { image_url: '/assets/scene10-phone-notif.jpg', scene_type: 'photo', caption: { en: "Left safely. Parents know instantly.", mn: "Аюулгүй явлаа. Эцэг эх шууд мэднэ.", jp: "無事に下校。保護者はすぐに知ることができます。" } },
+    { image_url: '/assets/scene12-map.jpg', scene_type: 'photo', caption: { en: "In an emergency, one tap finds them in seconds — real-time GPS.", mn: "Онц үед нэг товшилтоор секундын дотор олно — бодит цагийн GPS.", jp: "緊急時も、ワンタップで数秒以内に位置を特定 — リアルタイムGPS。" } },
+    { image_url: '/assets/scene2-hud-v3.jpg', scene_type: 'registration_hud', caption: { en: "Everything that matters, saved in seconds.", mn: "Хэрэгтэй бүх мэдээлэл секундын дотор хадгалагдана.", jp: "大切な情報を、数秒で記録。" } },
+    { image_url: '/assets/scene1-product.jpg', scene_type: 'photo', caption: { en: "One wristband. Every school day.", mn: "Нэг бугуйвч. Сургуулийн өдөр бүр.", jp: "一つのリストバンドで、毎日の学校生活を。" } }
+  ];
+  const storyScenes = (siteOverrides.scenes && siteOverrides.scenes.length) ? siteOverrides.scenes : FALLBACK_SCENES;
+
+  // Per-scene captions aren't global i18n keys anymore (a given position
+  // can hold a different photo/caption after any edit), so they're kept
+  // here and applied by stage index inside applyLanguage() below, instead
+  // of going through the [data-i18n] mechanism the rest of the page uses.
+  const sceneCaptions = storyScenes.map(s => s.caption || {});
+  const registrationHudStage = storyScenes.findIndex(s => s.scene_type === 'registration_hud');
+
+  const HUD_LABEL_DEFS = [
+    { hud: '0', top: '16%', left: '14%', key: 'label_name', text: 'Name' },
+    { hud: '1', top: '16%', left: '86%', key: 'label_allergies', text: 'Allergies' },
+    { hud: '2', top: '50%', left: '9%', key: 'label_blood', text: 'Blood Type' },
+    { hud: '3', top: '50%', left: '91%', key: 'label_contact', text: 'Emergency Contact' },
+    { hud: '4', top: '82%', left: '16%', key: 'label_school', text: 'School' },
+    { hud: '5', top: '82%', left: '84%', key: 'label_class', text: 'Class' }
+  ];
+  function buildHudOverlayMarkup() {
+    const lines = HUD_LABEL_DEFS.map((d, i) => {
+      const positions = [
+        ['38', '38', '14', '16'], ['62', '38', '86', '16'], ['29', '50', '9', '50'],
+        ['71', '50', '91', '50'], ['40', '61', '16', '82'], ['60', '61', '84', '82']
+      ][i];
+      return `<line class="hud-svg-line" data-hud="${d.hud}" x1="${positions[0]}" y1="${positions[1]}" x2="${positions[2]}" y2="${positions[3]}"></line>`;
+    }).join('');
+    const dots = HUD_LABEL_DEFS.map((d, i) => {
+      const c = [['38', '38'], ['62', '38'], ['29', '50'], ['71', '50'], ['40', '61'], ['60', '61']][i];
+      return `<circle class="hud-svg-dot" data-hud="${d.hud}" cx="${c[0]}" cy="${c[1]}" r="0.7"></circle>`;
+    }).join('');
+    const labels = HUD_LABEL_DEFS.map(d =>
+      `<div class="hud-label" data-hud="${d.hud}" style="top:${d.top}; left:${d.left}; transform:translate(-50%,-50%);"><span class="hud-text" data-i18n="${d.key}">${d.text}</span></div>`
+    ).join('');
+    return `<svg class="hud-svg" id="hudSvg" viewBox="0 0 100 100" preserveAspectRatio="none">${lines}${dots}</svg><div class="hud-labels" id="hudLabels">${labels}</div>`;
   }
+
+  const stagePhotosContainer = document.getElementById('storyStagePhotos');
+  const captionWrap = document.getElementById('storyCaptionWrap');
+  storyScenes.forEach((scene, i) => {
+    const isFirst = i === 0, isLast = i === storyScenes.length - 1;
+
+    const photoEl = document.createElement('div');
+    photoEl.className = 'story-stage-photo' + (isFirst ? ' active story-stage-first' : '') + (isLast ? ' story-stage-last' : '');
+    photoEl.dataset.stage = String(i);
+    const img = document.createElement('img');
+    img.src = scene.image_url;
+    img.alt = '';
+    if (isFirst) img.setAttribute('fetchpriority', 'high');
+    photoEl.appendChild(img);
+    if (scene.scene_type === 'registration_hud') photoEl.insertAdjacentHTML('beforeend', buildHudOverlayMarkup());
+    stagePhotosContainer.appendChild(photoEl);
+
+    const captionEl = document.createElement('div');
+    captionEl.className = 'story-caption' + (isFirst ? ' active' : '');
+    captionEl.dataset.stage = String(i);
+    const heading = document.createElement(isFirst ? 'h1' : 'h2');
+    heading.textContent = (scene.caption && (scene.caption[DEFAULT_LANGUAGE] || scene.caption.en)) || '';
+    captionEl.appendChild(heading);
+    captionWrap.appendChild(captionEl);
+  });
+
+  // Story container height scales with however many scenes there are now
+  // (roughly one viewport-height of scroll per scene, same ratio the
+  // original fixed-9-stage version used), overriding the static 910vh /
+  // 740vh in the stylesheet — those stay in place only as a fallback for
+  // the instant before this runs.
+  const isMobileWidth = window.matchMedia('(max-width: 560px)').matches;
+  const vhPerScene = isMobileWidth ? 82 : 101;
+  document.getElementById('scrollStory').style.height = (storyScenes.length * vhPerScene) + 'vh';
+
+  // Preload the opening and closing photos — whichever those are now — the
+  // same way the old fixed <link rel=preload> tags did, just computed at
+  // runtime since "first" and "last" can change with any dashboard edit.
+  [storyScenes[0], storyScenes[storyScenes.length - 1]].forEach((scene, idx) => {
+    if (!scene || (idx === 1 && storyScenes.length === 1)) return; // don't double-preload a single-scene story
+    const link = document.createElement('link');
+    link.rel = 'preload'; link.as = 'image'; link.href = scene.image_url;
+    if (idx === 0) link.setAttribute('fetchpriority', 'high');
+    document.head.appendChild(link);
+  });
 
   function applyLanguage(lang) {
     const dict = translations[lang] || translations[DEFAULT_LANGUAGE];
     document.querySelectorAll('[data-i18n]').forEach(el => {
       const key = el.getAttribute('data-i18n');
       if (dict[key]) el.textContent = dict[key];
+    });
+    // Story captions come from sceneCaptions (per-scene data), not the
+    // global translations dict — see "Build the scroll-story from scene
+    // data" above.
+    document.querySelectorAll('.story-caption').forEach(el => {
+      const cap = sceneCaptions[parseInt(el.dataset.stage, 10)];
+      if (!cap) return;
+      const heading = el.querySelector('h1, h2');
+      if (heading) heading.textContent = cap[lang] || cap.en || cap.mn || '';
     });
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
       const key = el.getAttribute('data-i18n-placeholder');
@@ -1302,10 +1361,11 @@
   const storyProgressEl = document.getElementById('storyProgress');
   const storyScrollHint = document.getElementById('storyScrollHint');
   const STORY_STAGES = storyPhotos.length;
-  // Relative weights per stage, matching the order of .story-stage-photo
-  // elements above: aerial, crane, tap-AM, dashboard, tap-PM, phone-notif,
-  // full-map, registration (HUD), product.
-  const STORY_WEIGHTS = [11, 7, 11, 10, 10, 10, 11, 10, 11];
+  // Relative scroll-time weight per stage. The scene list is dashboard-
+  // editable now, so there's no fixed per-photo pacing to hardcode —
+  // every scene gets an equal share, except the opening and closing ones
+  // get a little more room to let their zoom animation read.
+  const STORY_WEIGHTS = storyScenes.map((s, i) => (i === 0 || i === storyScenes.length - 1) ? 12 : 10);
   const STORY_TOTAL_WEIGHT = STORY_WEIGHTS.reduce((a, b) => a + b, 0);
   const STORY_BOUNDARIES = []; // cumulative fraction (0-1) where each stage ENDS
   (function buildBoundaries() {
@@ -1355,8 +1415,8 @@
   let storyBlurTimer = null;
   function setStoryStage(stage) {
     if (stage === storyActiveStage) return;
-    const enteringHud = stage === 7 && storyActiveStage !== 7;
-    const leavingHud = storyActiveStage === 7 && stage !== 7;
+    const enteringHud = registrationHudStage >= 0 && stage === registrationHudStage && storyActiveStage !== registrationHudStage;
+    const leavingHud = registrationHudStage >= 0 && storyActiveStage === registrationHudStage && stage !== registrationHudStage;
     storyActiveStage = stage;
     storyPhotos.forEach((el, i) => el.classList.toggle('active', i === stage));
     storyCaptions.forEach((el) => el.classList.toggle('active', parseInt(el.dataset.stage, 10) === stage));
@@ -1364,11 +1424,10 @@
     if (enteringHud) triggerHudReveal();
     if (leavingHud) resetHudReveal();
     // The eyebrow badge and "Tap here" reveal button are pinned to the
-    // wristband's position in the *product* photo (stage 8, now the closing
-    // shot) — not stage 0, which is the aerial opener with no wristband in
-    // frame.
-    document.getElementById('storyEyebrowTop').classList.toggle('show', stage === 8);
-    document.getElementById('storyPreviewBtn').classList.toggle('show', stage === 8);
+    // wristband's position in the closing photo (the last scene) — not the
+    // opening one, which typically has no wristband in frame.
+    document.getElementById('storyEyebrowTop').classList.toggle('show', stage === STORY_STAGES - 1);
+    document.getElementById('storyPreviewBtn').classList.toggle('show', stage === STORY_STAGES - 1);
     // Quick blur+brighten pulse on every cut, mimicking a real camera
     // whip-pan instead of a flat crossfade between static photos.
     const storySticky = document.querySelector('.story-sticky');

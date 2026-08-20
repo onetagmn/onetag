@@ -42,6 +42,21 @@
   .img-row { display: flex; gap: 16px; align-items: center; }
   .img-row img { width: 140px; height: 90px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); background: #eee; }
   .img-row .img-controls { flex: 1; }
+  .scene-card { display: flex; gap: 16px; align-items: flex-start; }
+  .scene-thumb-col { flex-shrink: 0; text-align: center; }
+  .scene-thumb-col img { width: 150px; height: 96px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); background: #eee; display: block; }
+  .scene-pos { font-size: 11.5px; color: #6B7A7D; margin-top: 6px; font-weight: 700; }
+  .scene-move { display: flex; gap: 4px; justify-content: center; margin-top: 6px; }
+  .scene-move button { width: 26px; height: 24px; border: 1px solid var(--line); background: #fff; border-radius: 6px; cursor: pointer; font-size: 12px; line-height: 1; }
+  .scene-move button:disabled { opacity: 0.35; cursor: default; }
+  .scene-controls { flex: 1; min-width: 0; }
+  .scene-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+  .badge { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #EAF1FB; color: var(--steppe-light); text-transform: uppercase; letter-spacing: 0.03em; }
+  .scene-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; flex-wrap: wrap; gap: 8px; }
+  .btn.danger { background: var(--danger); }
+  .btn.ghost { background: #fff; color: var(--steppe); border: 1px solid var(--line); }
+  .replace-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .replace-row input[type="file"] { font-size: 12px; max-width: 200px; }
   .switch-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--line); }
   .switch-row:last-child { border-bottom: none; }
   .switch-label { font-size: 13.5px; }
@@ -77,8 +92,26 @@
     </div>
 
     <div class="panel" id="panel-images">
-      <p class="hint">These are the 9 photos in the scrolling story at the top of the homepage, in order. Landscape photos work best — see the size guide below.</p>
-      <div id="imagesList" class="empty">Loading...</div>
+      <p class="hint">These are the photos in the scrolling story at the top of the homepage, in order. Edit a caption, replace a photo, reorder with the arrows, or delete one. Add as many as you like — the story can be shorter or longer than the original set.</p>
+      <div id="topSceneBanner"></div>
+      <div id="scenesList" class="empty">Loading...</div>
+
+      <div class="card">
+        <h2>Add a new scene</h2>
+        <p class="hint">It's added at the end of the story. You can reorder it afterward with the arrows above.</p>
+        <label>Photo</label>
+        <input type="file" accept="image/*" id="newScenePhoto">
+        <div class="lang-row" style="margin-top:10px;">
+          <div><label>Mongolian caption</label><textarea id="newSceneMn" placeholder="Optional"></textarea></div>
+          <div><label>English caption</label><textarea id="newSceneEn" placeholder="Optional"></textarea></div>
+          <div><label>Japanese caption</label><textarea id="newSceneJp" placeholder="Optional"></textarea></div>
+        </div>
+        <div class="row-actions">
+          <span class="save-status" id="newSceneStatus">Added</span>
+          <button class="btn" id="addSceneBtn">Add scene</button>
+        </div>
+      </div>
+
       <div class="card">
         <h2>Photo size guide</h2>
         <p class="hint" style="margin-bottom:0;">
@@ -132,6 +165,7 @@ document.querySelectorAll('.tabbtn').forEach(btn => {
 });
 
 let allRows = [];
+let allScenes = [];
 
 async function loadAll() {
   let res;
@@ -148,8 +182,8 @@ async function loadAll() {
   }
   allRows = await res.json();
   renderTexts();
-  renderImages();
   renderBlocks();
+  loadScenes();
 }
 
 function renderTexts(filter) {
@@ -202,51 +236,190 @@ function renderTexts(filter) {
 
 document.getElementById('textSearch').addEventListener('input', (e) => renderTexts(e.target.value));
 
-function renderImages() {
-  const container = document.getElementById('imagesList');
-  const images = allRows.filter(r => r.kind === 'image');
-  if (!images.length) { container.innerHTML = '<div class="empty">No story photos found.</div>'; return; }
-  container.innerHTML = images.map(row => `
-    <div class="card img-row" data-key="${esc(row.key)}">
-      <img src="${esc(row.image_url || '')}" alt="">
-      <div class="img-controls">
-        <div style="font-size:13.5px;font-weight:700;margin-bottom:6px;">${esc(row.label || friendlyLabel(row.key))}</div>
-        <input type="file" accept="image/*" class="photo-input">
-        <div class="row-actions" style="justify-content:flex-start;margin-top:8px;">
-          <button class="btn small upload-photo" disabled>Upload new photo</button>
-          <span class="save-status">Uploaded</span>
+function sceneBanner(msg, kind) {
+  const el = document.getElementById('topSceneBanner');
+  if (!msg) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="banner ${kind || 'error'}">${esc(msg)}</div>`;
+}
+
+async function loadScenes() {
+  let res;
+  try {
+    res = await authFetch('/api/admin/story-scenes');
+  } catch (e) { return; }
+  if (!res.ok) {
+    document.getElementById('scenesList').innerHTML = '<div class="empty">Couldn\'t load story photos — try refreshing.</div>';
+    return;
+  }
+  allScenes = await res.json();
+  allScenes.sort((a, b) => a.position - b.position);
+  renderScenes();
+}
+
+function sceneTypeBadge(scene) {
+  return scene.scene_type === 'registration_hud'
+    ? '<span class="badge">Has registration info overlay</span>'
+    : '';
+}
+
+function renderScenes() {
+  const container = document.getElementById('scenesList');
+  if (!allScenes.length) { container.innerHTML = '<div class="empty">No story photos found.</div>'; return; }
+  container.innerHTML = allScenes.map((scene, i) => `
+    <div class="card scene-card" data-id="${esc(scene.id)}">
+      <div class="scene-thumb-col">
+        <img src="${esc(scene.image_url || '')}" alt="">
+        <div class="scene-pos">Scene ${i + 1} of ${allScenes.length}</div>
+        <div class="scene-move">
+          <button class="move-up" ${i === 0 ? 'disabled' : ''} title="Move earlier">↑</button>
+          <button class="move-down" ${i === allScenes.length - 1 ? 'disabled' : ''} title="Move later">↓</button>
+        </div>
+      </div>
+      <div class="scene-controls">
+        <div class="scene-head">${sceneTypeBadge(scene)}</div>
+        <div class="lang-row">
+          <div><label>Mongolian</label><textarea data-lang="caption_mn">${esc(scene.caption_mn || '')}</textarea></div>
+          <div><label>English</label><textarea data-lang="caption_en">${esc(scene.caption_en || '')}</textarea></div>
+          <div><label>Japanese</label><textarea data-lang="caption_jp">${esc(scene.caption_jp || '')}</textarea></div>
+        </div>
+        <div class="scene-footer">
+          <div class="replace-row">
+            <input type="file" accept="image/*" class="replace-photo-input">
+            <button class="btn small ghost replace-photo-btn" disabled>Replace photo</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="save-status">Saved</span>
+            <button class="btn small save-caption">Save caption</button>
+            <button class="btn small danger delete-scene">Delete</button>
+          </div>
         </div>
       </div>
     </div>
   `).join('');
-  container.querySelectorAll('.img-row').forEach(row => {
-    const fileInput = row.querySelector('.photo-input');
-    const uploadBtn = row.querySelector('.upload-photo');
-    fileInput.addEventListener('change', () => { uploadBtn.disabled = !fileInput.files.length; });
-    uploadBtn.addEventListener('click', async () => {
+
+  container.querySelectorAll('.scene-card').forEach(card => {
+    const id = card.dataset.id;
+    const status = card.querySelector('.save-status');
+
+    card.querySelector('.save-caption').addEventListener('click', async (e) => {
+      const btn = e.target;
+      const caption_mn = card.querySelector('[data-lang="caption_mn"]').value;
+      const caption_en = card.querySelector('[data-lang="caption_en"]').value;
+      const caption_jp = card.querySelector('[data-lang="caption_jp"]').value;
+      btn.disabled = true;
+      try {
+        const res = await authFetch(`/api/admin/story-scenes/${encodeURIComponent(id)}`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ caption_mn, caption_en, caption_jp })
+        });
+        if (!res.ok) throw new Error();
+        status.textContent = 'Saved'; status.classList.remove('err'); status.classList.add('show');
+      } catch (e) {
+        status.textContent = 'Failed to save'; status.classList.add('err', 'show');
+      }
+      btn.disabled = false;
+      setTimeout(() => status.classList.remove('show'), 2000);
+    });
+
+    const fileInput = card.querySelector('.replace-photo-input');
+    const replaceBtn = card.querySelector('.replace-photo-btn');
+    fileInput.addEventListener('change', () => { replaceBtn.disabled = !fileInput.files.length; });
+    replaceBtn.addEventListener('click', async () => {
       if (!fileInput.files.length) return;
-      const key = row.dataset.key;
-      const status = row.querySelector('.save-status');
-      uploadBtn.disabled = true;
-      uploadBtn.textContent = 'Uploading...';
+      replaceBtn.disabled = true;
+      replaceBtn.textContent = 'Uploading...';
       const form = new FormData();
       form.append('photo', fileInput.files[0]);
       try {
-        const res = await authFetch(`/api/admin/site-content/image/${encodeURIComponent(key)}`, { method: 'POST', body: form });
+        const res = await authFetch(`/api/admin/story-scenes/${encodeURIComponent(id)}/photo`, { method: 'POST', body: form });
         const out = await res.json();
         if (!res.ok) throw new Error(out.error || 'Upload failed');
-        row.querySelector('img').src = out.url;
-        status.textContent = 'Uploaded'; status.classList.remove('err'); status.classList.add('show');
+        card.querySelector('img').src = out.url;
+        status.textContent = 'Photo replaced'; status.classList.remove('err'); status.classList.add('show');
         fileInput.value = '';
-      } catch (e) {
-        status.textContent = e.message || 'Upload failed'; status.classList.add('err', 'show');
+      } catch (err) {
+        status.textContent = err.message || 'Upload failed'; status.classList.add('err', 'show');
       }
-      uploadBtn.disabled = true;
-      uploadBtn.textContent = 'Upload new photo';
+      replaceBtn.disabled = true;
+      replaceBtn.textContent = 'Replace photo';
       setTimeout(() => status.classList.remove('show'), 3000);
     });
+
+    card.querySelector('.delete-scene').addEventListener('click', async () => {
+      if (allScenes.length <= 1) {
+        sceneBanner('The story needs at least 1 photo — replace this one instead of deleting it.', 'error');
+        return;
+      }
+      if (!confirm('Delete this scene and its caption? This can\'t be undone.')) return;
+      sceneBanner('');
+      try {
+        const res = await authFetch(`/api/admin/story-scenes/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        const out = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(out.error || 'Delete failed');
+        await loadScenes();
+      } catch (err) {
+        sceneBanner(err.message || 'Could not delete that scene — please try again.', 'error');
+      }
+    });
+
+    card.querySelector('.move-up').addEventListener('click', () => moveScene(id, -1));
+    card.querySelector('.move-down').addEventListener('click', () => moveScene(id, 1));
   });
 }
+
+async function moveScene(id, direction) {
+  const idx = allScenes.findIndex(s => String(s.id) === String(id));
+  const swapWith = idx + direction;
+  if (idx < 0 || swapWith < 0 || swapWith >= allScenes.length) return;
+  const reordered = allScenes.slice();
+  [reordered[idx], reordered[swapWith]] = [reordered[swapWith], reordered[idx]];
+  const order = reordered.map(s => s.id);
+  sceneBanner('');
+  try {
+    const res = await authFetch('/api/admin/story-scenes/reorder', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order })
+    });
+    if (!res.ok) throw new Error();
+    await loadScenes();
+  } catch (e) {
+    sceneBanner('Could not reorder — please try again.', 'error');
+  }
+}
+
+document.getElementById('addSceneBtn').addEventListener('click', async () => {
+  const fileInput = document.getElementById('newScenePhoto');
+  const status = document.getElementById('newSceneStatus');
+  if (!fileInput.files.length) {
+    sceneBanner('Choose a photo before adding a new scene.', 'error');
+    return;
+  }
+  sceneBanner('');
+  const btn = document.getElementById('addSceneBtn');
+  btn.disabled = true;
+  btn.textContent = 'Adding...';
+  const form = new FormData();
+  form.append('photo', fileInput.files[0]);
+  form.append('caption_mn', document.getElementById('newSceneMn').value);
+  form.append('caption_en', document.getElementById('newSceneEn').value);
+  form.append('caption_jp', document.getElementById('newSceneJp').value);
+  try {
+    const res = await authFetch('/api/admin/story-scenes', { method: 'POST', body: form });
+    const out = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(out.error || 'Could not add that scene.');
+    fileInput.value = '';
+    document.getElementById('newSceneMn').value = '';
+    document.getElementById('newSceneEn').value = '';
+    document.getElementById('newSceneJp').value = '';
+    status.textContent = 'Added'; status.classList.remove('err'); status.classList.add('show');
+    setTimeout(() => status.classList.remove('show'), 2000);
+    await loadScenes();
+  } catch (err) {
+    sceneBanner(err.message || 'Could not add that scene — please try again.', 'error');
+  }
+  btn.disabled = false;
+  btn.textContent = 'Add scene';
+});
 
 function renderBlocks() {
   const container = document.getElementById('blocksList');
