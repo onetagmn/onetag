@@ -76,7 +76,17 @@
      z-index/stacking work to avoid covering the photo prematurely — not
      safe to do blind without live visual verification, so this lower-risk
      version ships first.) */
-  .scroll-story { position: relative; height: 910vh; background: linear-gradient(to bottom, #0E2338 0%, #0E2338 85%, var(--bg-light) 100%); }
+  /* padding:0 is deliberate and load-bearing here, not a default — the
+     mobile breakpoint below has a generic "section { padding: 64px 0; }"
+     rule for normal content sections, and since .scroll-story is also a
+     <section>, it was silently inheriting that same 64px of top padding.
+     That pushed the pinned photo down by 64px on every mobile screen,
+     exposing this section's own background above it — the top-of-page gap.
+     A class selector (.scroll-story) always outranks a plain element
+     selector (section) regardless of media query or source order, so this
+     wins in both the mobile and desktop cases without needing to touch
+     that other rule, which other sections still rely on. */
+  .scroll-story { position: relative; height: 910vh; padding: 0; background: linear-gradient(to bottom, #0E2338 0%, #0E2338 85%, var(--bg-light) 100%); }
   .story-sticky { position: sticky; top: 0; height: 100vh; overflow: hidden; }
   .story-stage-photo {
     position: absolute; inset: 0; opacity: 0; z-index: 1;
@@ -411,11 +421,11 @@
 
     <div class="story-progress" id="storyProgress"></div>
 
-    <div class="story-eyebrow-top show" id="storyEyebrowTop">
+    <div class="story-eyebrow-top" id="storyEyebrowTop">
       <span class="dot"></span><span data-i18n="eyebrow">NFC Safety Wristband</span>
     </div>
 
-    <button class="story-tap-center show" id="storyPreviewBtn">
+    <button class="story-tap-center" id="storyPreviewBtn">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><circle cx="12" cy="12" r="10" opacity="0.4"></circle></svg>
       <span data-i18n="photo_caption">Tap here</span>
     </button>
