@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OneTag — Website Content</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+  :root {
+    --ink: #0E2A32; --steppe: #17458F; --steppe-light: #0067C8;
+    --sun: #F7A81B; --paper: #FAF8F4; --card: #FFFFFF; --line: #DCE4E6;
+    --ok: #59BA47; --danger: #C1442C; --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--paper); color: var(--ink); }
+  .topbar { background: var(--steppe); color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .topbar h1 { margin: 0; font-size: 18px; }
+  .topbar a { color: rgba(255,255,255,0.85); font-size: 13px; text-decoration: none; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 24px; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 18px; flex-wrap: wrap; }
+  .tabbtn { padding: 9px 16px; border-radius: 20px; border: 1px solid var(--line); background: #fff; color: var(--ink); font-size: 13.5px; font-weight: 700; cursor: pointer; }
+  .tabbtn.active { background: var(--steppe); color: #fff; border-color: var(--steppe); }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 14px; }
+  h2 { font-size: 14px; margin: 0 0 4px; color: var(--steppe); }
+  .hint { font-size: 12.5px; color: #6B7A7D; margin: 0 0 14px; }
+  input[type="text"], textarea, input[type="search"] { width: 100%; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 13.5px; font-family: inherit; }
+  textarea { resize: vertical; min-height: 38px; }
+  label { display: block; font-size: 11.5px; font-weight: 700; color: #6B7A7D; margin: 8px 0 3px; text-transform: uppercase; letter-spacing: 0.03em; }
+  .lang-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  @media (max-width: 700px) { .lang-row { grid-template-columns: 1fr; } }
+  .btn { padding: 8px 16px; border: none; border-radius: 8px; background: var(--steppe); color: white; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .btn:disabled { opacity: 0.55; cursor: default; }
+  .btn.small { padding: 6px 12px; font-size: 12px; }
+  .searchbar { margin-bottom: 16px; }
+  .row-actions { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 8px; }
+  .save-status { font-size: 12px; color: var(--ok); opacity: 0; transition: opacity 0.2s; }
+  .save-status.show { opacity: 1; }
+  .save-status.err { color: var(--danger); }
+  .key-tag { font-size: 10.5px; color: #9AA7A9; font-family: ui-monospace, monospace; }
+  .img-row { display: flex; gap: 16px; align-items: center; }
+  .img-row img { width: 140px; height: 90px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); background: #eee; }
+  .img-row .img-controls { flex: 1; }
+  .switch-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .switch-row:last-child { border-bottom: none; }
+  .switch-label { font-size: 13.5px; }
+  .switch { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; inset: 0; background: #ccc; border-radius: 22px; cursor: pointer; transition: 0.15s; }
+  .slider:before { content: ""; position: absolute; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.15s; }
+  input:checked + .slider { background: var(--ok); }
+  input:checked + .slider:before { transform: translateX(18px); }
+  .empty { color: #6B7A7D; font-size: 13px; padding: 10px 0; }
+  .banner { padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+  .banner.error { background: #FBE9E5; color: var(--danger); }
+  .banner.warn { background: #FDF0DE; color: #9a6a14; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <h1>OneTag — Website Content</h1>
+    <a href="dashboard.html">← Back to dashboard</a>
+  </div>
+  <div class="wrap">
+    <div id="topBanner"></div>
+
+    <div class="tabs">
+      <button class="tabbtn active" data-panel="texts">Text</button>
+      <button class="tabbtn" data-panel="images">Story photos</button>
+      <button class="tabbtn" data-panel="blocks">Show / hide sections</button>
+    </div>
+
+    <div class="panel active" id="panel-texts">
+      <div class="searchbar"><input type="search" id="textSearch" placeholder="Search text by key or content..."></div>
+      <div id="textsList" class="empty">Loading...</div>
+    </div>
+
+    <div class="panel" id="panel-images">
+      <p class="hint">These are the 9 photos in the scrolling story at the top of the homepage, in order. Landscape photos work best — see the size guide below.</p>
+      <div id="imagesList" class="empty">Loading...</div>
+      <div class="card">
+        <h2>Photo size guide</h2>
+        <p class="hint" style="margin-bottom:0;">
+          Minimum <strong>1600×900px</strong> (16:9), landscape orientation. JPG, under ~500KB.
+          These photos fill the entire screen behind the scrolling story and get cropped to fit —
+          center the important part of the shot, since edges may be trimmed differently on phones
+          vs. desktop. Avoid photos with important detail near the very top or bottom edge.
+        </p>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-blocks">
+      <p class="hint">Turn any of these off to hide that whole section or card from the live site — no code changes needed. The hero story and Contact section aren't included here since hiding either would break the page.</p>
+      <div id="blocksList" class="empty">Loading...</div>
+    </div>
+  </div>
+
+<script>
+const API_BASE = window.location.origin;
+const token = localStorage.getItem('onetag_admin_token');
+if (!token) window.location.href = 'admin-login.html';
+
+function esc(val) {
+  if (val === null || val === undefined) return '';
+  return String(val).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+function friendlyLabel(key) {
+  return key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+async function authFetch(path, options = {}) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: { ...(options.headers || {}), ...(options.body instanceof FormData ? {} : {}), 'Authorization': `Bearer ${token}` }
+  });
+  if (res.status === 401) {
+    localStorage.removeItem('onetag_admin_token');
+    window.location.href = 'admin-login.html';
+    throw new Error('Session expired');
+  }
+  return res;
+}
+
+document.querySelectorAll('.tabbtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tabbtn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.panel).classList.add('active');
+  });
+});
+
+let allRows = [];
+
+async function loadAll() {
+  let res;
+  try {
+    res = await authFetch('/api/admin/site-content');
+  } catch (e) { return; }
+  if (res.status === 403) {
+    document.getElementById('topBanner').innerHTML = '<div class="banner error">Your account doesn\'t have super-admin access, so this page can\'t load or save anything.</div>';
+    return;
+  }
+  if (!res.ok) {
+    document.getElementById('topBanner').innerHTML = '<div class="banner error">Couldn\'t load website content — try refreshing.</div>';
+    return;
+  }
+  allRows = await res.json();
+  renderTexts();
+  renderImages();
+  renderBlocks();
+}
+
+function renderTexts(filter) {
+  const container = document.getElementById('textsList');
+  const q = (filter || '').trim().toLowerCase();
+  const texts = allRows.filter(r => r.kind === 'text').filter(r => {
+    if (!q) return true;
+    return r.key.toLowerCase().includes(q) || (r.mn || '').toLowerCase().includes(q) || (r.en || '').toLowerCase().includes(q) || (r.jp || '').toLowerCase().includes(q);
+  });
+  if (!texts.length) { container.innerHTML = '<div class="empty">No matching text found.</div>'; return; }
+  container.innerHTML = texts.map(row => `
+    <div class="card" data-key="${esc(row.key)}">
+      <h2>${esc(friendlyLabel(row.key))}</h2>
+      <div class="key-tag">${esc(row.key)}</div>
+      <div class="lang-row" style="margin-top:10px;">
+        <div><label>Mongolian</label><textarea data-lang="mn">${esc(row.mn || '')}</textarea></div>
+        <div><label>English</label><textarea data-lang="en">${esc(row.en || '')}</textarea></div>
+        <div><label>Japanese</label><textarea data-lang="jp">${esc(row.jp || '')}</textarea></div>
+      </div>
+      <div class="row-actions">
+        <span class="save-status">Saved</span>
+        <button class="btn small save-text">Save</button>
+      </div>
+    </div>
+  `).join('');
+  container.querySelectorAll('.save-text').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const card = btn.closest('.card');
+      const key = card.dataset.key;
+      const mn = card.querySelector('[data-lang="mn"]').value;
+      const en = card.querySelector('[data-lang="en"]').value;
+      const jp = card.querySelector('[data-lang="jp"]').value;
+      const status = card.querySelector('.save-status');
+      btn.disabled = true;
+      try {
+        const res = await authFetch(`/api/admin/site-content/text/${encodeURIComponent(key)}`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mn, en, jp })
+        });
+        if (!res.ok) throw new Error();
+        status.textContent = 'Saved'; status.classList.remove('err'); status.classList.add('show');
+      } catch (e) {
+        status.textContent = 'Failed to save'; status.classList.add('err', 'show');
+      }
+      btn.disabled = false;
+      setTimeout(() => status.classList.remove('show'), 2000);
+    });
+  });
+}
+
+document.getElementById('textSearch').addEventListener('input', (e) => renderTexts(e.target.value));
+
+function renderImages() {
+  const container = document.getElementById('imagesList');
+  const images = allRows.filter(r => r.kind === 'image');
+  if (!images.length) { container.innerHTML = '<div class="empty">No story photos found.</div>'; return; }
+  container.innerHTML = images.map(row => `
+    <div class="card img-row" data-key="${esc(row.key)}">
+      <img src="${esc(row.image_url || '')}" alt="">
+      <div class="img-controls">
+        <div style="font-size:13.5px;font-weight:700;margin-bottom:6px;">${esc(row.label || friendlyLabel(row.key))}</div>
+        <input type="file" accept="image/*" class="photo-input">
+        <div class="row-actions" style="justify-content:flex-start;margin-top:8px;">
+          <button class="btn small upload-photo" disabled>Upload new photo</button>
+          <span class="save-status">Uploaded</span>
+        </div>
+      </div>
+    </div>
+  `).join('');
+  container.querySelectorAll('.img-row').forEach(row => {
+    const fileInput = row.querySelector('.photo-input');
+    const uploadBtn = row.querySelector('.upload-photo');
+    fileInput.addEventListener('change', () => { uploadBtn.disabled = !fileInput.files.length; });
+    uploadBtn.addEventListener('click', async () => {
+      if (!fileInput.files.length) return;
+      const key = row.dataset.key;
+      const status = row.querySelector('.save-status');
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = 'Uploading...';
+      const form = new FormData();
+      form.append('photo', fileInput.files[0]);
+      try {
+        const res = await authFetch(`/api/admin/site-content/image/${encodeURIComponent(key)}`, { method: 'POST', body: form });
+        const out = await res.json();
+        if (!res.ok) throw new Error(out.error || 'Upload failed');
+        row.querySelector('img').src = out.url;
+        status.textContent = 'Uploaded'; status.classList.remove('err'); status.classList.add('show');
+        fileInput.value = '';
+      } catch (e) {
+        status.textContent = e.message || 'Upload failed'; status.classList.add('err', 'show');
+      }
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = 'Upload new photo';
+      setTimeout(() => status.classList.remove('show'), 3000);
+    });
+  });
+}
+
+function renderBlocks() {
+  const container = document.getElementById('blocksList');
+  const blocks = allRows.filter(r => r.kind === 'block');
+  if (!blocks.length) { container.innerHTML = '<div class="empty">No sections found.</div>'; return; }
+  container.innerHTML = `<div class="card">` + blocks.map(row => `
+    <div class="switch-row" data-key="${esc(row.key)}">
+      <span class="switch-label">${esc(row.label || friendlyLabel(row.key))}</span>
+      <label class="switch">
+        <input type="checkbox" class="block-toggle" ${row.visible ? 'checked' : ''}>
+        <span class="slider"></span>
+      </label>
+    </div>
+  `).join('') + `</div>`;
+  container.querySelectorAll('.block-toggle').forEach(toggle => {
+    toggle.addEventListener('change', async () => {
+      const row = toggle.closest('.switch-row');
+      const key = row.dataset.key;
+      const visible = toggle.checked;
+      toggle.disabled = true;
+      try {
+        const res = await authFetch(`/api/admin/site-content/block/${encodeURIComponent(key)}`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ visible })
+        });
+        if (!res.ok) throw new Error();
+      } catch (e) {
+        toggle.checked = !visible; // revert on failure
+        alert('Could not save that change — please try again.');
+      }
+      toggle.disabled = false;
+    });
+  });
+}
+
+loadAll();
+</script>
+</body>
+</html>

@@ -39,6 +39,7 @@
     <div style="display:flex;align-items:center;gap:14px;font-size:13px;">
       <span id="whoami"></span>
       <a href="admin-panel.html" id="managementLink" style="color:white;text-decoration:underline;display:none;">Manage schools & admins</a>
+      <a href="admin-content.html" id="contentLink" style="color:white;text-decoration:underline;display:none;">Website content</a>
       <button id="logoutBtn" style="background:none;border:1px solid rgba(255,255,255,0.4);color:white;padding:6px 12px;border-radius:6px;cursor:pointer;">Log out</button>
     </div>
   </div>
@@ -245,7 +246,10 @@ function renderScan() {
   document.getElementById(id).addEventListener('input', renderScan));
 
 document.getElementById('whoami').textContent = `${adminInfo.username} (${adminInfo.role === 'super_admin' ? 'all schools' : 'school admin'})`;
-if (adminInfo.role === 'super_admin') document.getElementById('managementLink').style.display = 'inline';
+if (adminInfo.role === 'super_admin') {
+  document.getElementById('managementLink').style.display = 'inline';
+  document.getElementById('contentLink').style.display = 'inline';
+}
 document.getElementById('logoutBtn').onclick = async () => {
   await fetch(`${API_BASE}/api/admin/logout`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }).catch(() => {});
   localStorage.removeItem('onetag_admin_token');

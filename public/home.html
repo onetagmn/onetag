@@ -19,8 +19,8 @@
      needed to be visible — reading as a "black gap" at both the top and
      the end of the story. Preloading both here fixes it at the source
      rather than papering over it with a fallback color. -->
-<link rel="preload" as="image" href="/assets/scene4-aerial.jpg" fetchpriority="high">
-<link rel="preload" as="image" href="/assets/scene1-product.jpg">
+<link rel="preload" as="image" href="/assets/scene4-aerial.jpg" fetchpriority="high" data-story-stage="0">
+<link rel="preload" as="image" href="/assets/scene1-product.jpg" data-story-stage="8">
 <style>
   :root {
     --blue: #0B5FFF; --blue-dark: #0847C7; --sky: #DCEEFF; --green: #32C36C;
@@ -449,7 +449,7 @@
   </div>
 </section>
 
-<section class="post-story-ctas">
+<section class="post-story-ctas" data-block="section_post_story_ctas">
   <div class="wrap post-story-ctas-inner">
     <a href="#contact" class="btn btn-primary" data-i18n="hero_cta_primary">Get OneTag for your school</a>
     <a href="#gps-demo" class="btn btn-ghost" data-i18n="hero_cta_secondary">See how fast it works</a>
@@ -469,20 +469,20 @@
   </div>
 </div>
 
-<section class="reveal-on-scroll">
+<section class="reveal-on-scroll" data-block="section_stats">
   <div class="wrap">
     <div class="eyebrow-sm" data-i18n="stats_eyebrow">Why this matters</div>
     <h2 class="section-title" data-i18n="stats_title">Every day, thousands of children face risks they can't explain</h2>
     <div class="stats-grid">
-      <div class="stat-box"><div class="stat-num">115,000</div><div class="stat-label" data-i18n="stat_a_label">people living with disabilities in Mongolia today</div></div>
-      <div class="stat-box"><div class="stat-num">~11,000</div><div class="stat-label" data-i18n="stat_b_label">children with disabilities nationwide</div></div>
-      <div class="stat-box"><div class="stat-num">953</div><div class="stat-label" data-i18n="stat_c_label">road injuries involving children in a single year</div></div>
+      <div class="stat-box" data-block="stat_a"><div class="stat-num">115,000</div><div class="stat-label" data-i18n="stat_a_label">people living with disabilities in Mongolia today</div></div>
+      <div class="stat-box" data-block="stat_b"><div class="stat-num">~11,000</div><div class="stat-label" data-i18n="stat_b_label">children with disabilities nationwide</div></div>
+      <div class="stat-box" data-block="stat_c"><div class="stat-num">953</div><div class="stat-label" data-i18n="stat_c_label">road injuries involving children in a single year</div></div>
     </div>
     <p class="stats-footer-note" data-i18n="stats_footer">A child who can't speak can't be found by name. OneTag gives them a voice when it matters most.</p>
   </div>
 </section>
 
-<section id="gps-demo" class="bg-light reveal-on-scroll">
+<section id="gps-demo" class="bg-light reveal-on-scroll" data-block="section_gps_demo">
   <div class="wrap">
     <div class="eyebrow-sm" data-i18n="gps_eyebrow">Real-time location</div>
     <h2 class="section-title" data-i18n="gps_title">See how fast we find them</h2>
@@ -513,62 +513,62 @@
   </div>
 </section>
 
-<section class="bg-light reveal-on-scroll">
+<section class="bg-light reveal-on-scroll" data-block="section_features">
   <div class="wrap">
     <div class="eyebrow-sm" data-i18n="features_eyebrow">Features</div>
     <h2 class="section-title" data-i18n="features_title">Everything built in, ready on day one</h2>
     <p class="section-sub" data-i18n="features_sub">One wristband, one dashboard, no extra hardware to manage.</p>
     <div class="grid-3">
-      <div class="icon-card"><div class="icon-badge"><img src="/assets/icon-gps.png" alt=""></div><h3 data-i18n="feat_1_title">Real-time GPS</h3><p data-i18n="feat_1_p">Every tap shows a location within seconds — a real measurement, not a guess.</p></div>
-      <div class="icon-card"><div class="icon-badge"><img src="/assets/icon-nfc.png" alt=""></div><h3 data-i18n="feat_2_title">NFC technology</h3><p data-i18n="feat_2_p">Works with any NFC-capable phone — no special reader needed for a finder to help.</p></div>
-      <div class="icon-card"><div class="icon-badge"><img src="/assets/icon-attendance.png" alt=""></div><h3 data-i18n="feat_3_title">Attendance tracking</h3><p data-i18n="feat_3_p">Gate taps log arrival and departure automatically, with time and location.</p></div>
-      <div class="icon-card"><div class="icon-badge"><img src="/assets/icon-emergency.png" alt=""></div><h3 data-i18n="feat_4_title">Emergency contact</h3><p data-i18n="feat_4_p">One button connects a finder directly to the guardian, without exposing the number.</p></div>
-      <div class="icon-card"><div class="icon-badge"><img src="/assets/icon-id.png" alt=""></div><h3 data-i18n="feat_5_title">Student identification</h3><p data-i18n="feat_5_p">Name, school, class, and photo — available instantly to anyone who taps.</p></div>
-      <div class="icon-card"><div class="icon-badge"><img src="/assets/icon-notifications.png" alt=""></div><h3 data-i18n="feat_6_title">Parent notifications</h3><p data-i18n="feat_6_p">Parents check daily activity themselves — no separate app, just a phone number and a code.</p></div>
-      <div class="icon-card"><div class="icon-badge"><img src="/assets/icon-dashboard.png" alt=""></div><h3 data-i18n="feat_7_title">School dashboard</h3><p data-i18n="feat_7_p">Staff see every child's gate and scan activity in one place, filterable by class.</p></div>
-      <div class="icon-card"><div class="icon-badge"><img src="/assets/icon-secure.png" alt=""></div><h3 data-i18n="feat_8_title">Secure by design</h3><p data-i18n="feat_8_p">Profiles are locked — editing always requires a one-time code sent to the parent.</p></div>
-      <div class="icon-card"><div class="icon-badge"><img src="/assets/icon-durable.png" alt=""></div><h3 data-i18n="feat_9_title">Durable & bilingual</h3><p data-i18n="feat_9_p">Full Mongolian and English support, built into a wristband durable enough to wear all day, every day.</p></div>
+      <div class="icon-card" data-block="feat_1"><div class="icon-badge"><img src="/assets/icon-gps.png" alt=""></div><h3 data-i18n="feat_1_title">Real-time GPS</h3><p data-i18n="feat_1_p">Every tap shows a location within seconds — a real measurement, not a guess.</p></div>
+      <div class="icon-card" data-block="feat_2"><div class="icon-badge"><img src="/assets/icon-nfc.png" alt=""></div><h3 data-i18n="feat_2_title">NFC technology</h3><p data-i18n="feat_2_p">Works with any NFC-capable phone — no special reader needed for a finder to help.</p></div>
+      <div class="icon-card" data-block="feat_3"><div class="icon-badge"><img src="/assets/icon-attendance.png" alt=""></div><h3 data-i18n="feat_3_title">Attendance tracking</h3><p data-i18n="feat_3_p">Gate taps log arrival and departure automatically, with time and location.</p></div>
+      <div class="icon-card" data-block="feat_4"><div class="icon-badge"><img src="/assets/icon-emergency.png" alt=""></div><h3 data-i18n="feat_4_title">Emergency contact</h3><p data-i18n="feat_4_p">One button connects a finder directly to the guardian, without exposing the number.</p></div>
+      <div class="icon-card" data-block="feat_5"><div class="icon-badge"><img src="/assets/icon-id.png" alt=""></div><h3 data-i18n="feat_5_title">Student identification</h3><p data-i18n="feat_5_p">Name, school, class, and photo — available instantly to anyone who taps.</p></div>
+      <div class="icon-card" data-block="feat_6"><div class="icon-badge"><img src="/assets/icon-notifications.png" alt=""></div><h3 data-i18n="feat_6_title">Parent notifications</h3><p data-i18n="feat_6_p">Parents check daily activity themselves — no separate app, just a phone number and a code.</p></div>
+      <div class="icon-card" data-block="feat_7"><div class="icon-badge"><img src="/assets/icon-dashboard.png" alt=""></div><h3 data-i18n="feat_7_title">School dashboard</h3><p data-i18n="feat_7_p">Staff see every child's gate and scan activity in one place, filterable by class.</p></div>
+      <div class="icon-card" data-block="feat_8"><div class="icon-badge"><img src="/assets/icon-secure.png" alt=""></div><h3 data-i18n="feat_8_title">Secure by design</h3><p data-i18n="feat_8_p">Profiles are locked — editing always requires a one-time code sent to the parent.</p></div>
+      <div class="icon-card" data-block="feat_9"><div class="icon-badge"><img src="/assets/icon-durable.png" alt=""></div><h3 data-i18n="feat_9_title">Durable & multilingual</h3><p data-i18n="feat_9_p">Full Mongolian, English, and Japanese support, built into a wristband durable enough to wear all day, every day.</p></div>
     </div>
   </div>
 </section>
 
-<section id="how-it-works" class="reveal-on-scroll">
+<section id="how-it-works" class="reveal-on-scroll" data-block="section_how_it_works">
   <div class="wrap">
     <div class="eyebrow-sm" data-i18n="how_eyebrow">How it works</div>
     <h2 class="section-title" data-i18n="how_title">From wristband to reunited, in four steps</h2>
     <p class="section-sub">&nbsp;</p>
     <div class="timeline">
-      <div class="timeline-step"><div class="timeline-num">1</div><h3 data-i18n="how_1_title">Wear</h3><p data-i18n="how_1_p">The child wears the wristband, registered once by the school.</p></div>
-      <div class="timeline-step"><div class="timeline-num">2</div><h3 data-i18n="how_2_title">Tap</h3><p data-i18n="how_2_p">Anyone with a phone taps the wristband — no app required.</p></div>
-      <div class="timeline-step"><div class="timeline-num">3</div><h3 data-i18n="how_3_title">Info appears</h3><p data-i18n="how_3_p">Name, school, and emergency details appear in the child's language.</p></div>
-      <div class="timeline-step"><div class="timeline-num">4</div><h3 data-i18n="how_4_title">Everyone's notified</h3><p data-i18n="how_4_p">Guardians and school staff can see exactly what happened, and when.</p></div>
+      <div class="timeline-step" data-block="how_1"><div class="timeline-num">1</div><h3 data-i18n="how_1_title">Wear</h3><p data-i18n="how_1_p">The child wears the wristband, registered once by the school.</p></div>
+      <div class="timeline-step" data-block="how_2"><div class="timeline-num">2</div><h3 data-i18n="how_2_title">Tap</h3><p data-i18n="how_2_p">Anyone with a phone taps the wristband — no app required.</p></div>
+      <div class="timeline-step" data-block="how_3"><div class="timeline-num">3</div><h3 data-i18n="how_3_title">Info appears</h3><p data-i18n="how_3_p">Name, school, and emergency details appear in the child's language.</p></div>
+      <div class="timeline-step" data-block="how_4"><div class="timeline-num">4</div><h3 data-i18n="how_4_title">Everyone's notified</h3><p data-i18n="how_4_p">Guardians and school staff can see exactly what happened, and when.</p></div>
     </div>
   </div>
 </section>
 
-<section id="benefits" class="bg-light reveal-on-scroll">
+<section id="benefits" class="bg-light reveal-on-scroll" data-block="section_benefits">
   <div class="wrap">
     <div class="eyebrow-sm" data-i18n="benefits_eyebrow">Benefits</div>
     <h2 class="section-title" data-i18n="benefits_title">Built for everyone around the child</h2>
     <p class="section-sub">&nbsp;</p>
     <div class="tabs-nav" id="tabsNav"></div>
     <div id="tabsPanels">
-      <div class="tab-panel active" data-tab="parents"><div class="tab-content"><ul>
+      <div class="tab-panel active" data-tab="parents" data-block="benefits_tab_parents"><div class="tab-content"><ul>
         <li data-i18n="tab_parents_1">See exactly when your child arrived at and left school — automatically.</li>
         <li data-i18n="tab_parents_2">Your phone number is never shown to a finder — they connect through OneTag.</li>
         <li data-i18n="tab_parents_3">No app to install — check activity from any phone browser with a one-time code.</li>
       </ul></div></div>
-      <div class="tab-panel" data-tab="schools"><div class="tab-content"><ul>
+      <div class="tab-panel" data-tab="schools" data-block="benefits_tab_schools"><div class="tab-content"><ul>
         <li data-i18n="tab_schools_1">Gate arrival and departure are logged automatically — no manual sheets.</li>
         <li data-i18n="tab_schools_2">One dashboard shows every child's activity, filterable by class.</li>
         <li data-i18n="tab_schools_3">Every admin account is scoped to its own school — no data crossover.</li>
       </ul></div></div>
-      <div class="tab-panel" data-tab="teachers"><div class="tab-content"><ul>
+      <div class="tab-panel" data-tab="teachers" data-block="benefits_tab_teachers"><div class="tab-content"><ul>
         <li data-i18n="tab_teachers_1">Know instantly which children are present without a roll call.</li>
         <li data-i18n="tab_teachers_2">Emergency medical notes are one tap away in an actual emergency.</li>
         <li data-i18n="tab_teachers_3">Less time on paperwork, more time with the children.</li>
       </ul></div></div>
-      <div class="tab-panel" data-tab="admin"><div class="tab-content"><ul>
+      <div class="tab-panel" data-tab="admin" data-block="benefits_tab_admin"><div class="tab-content"><ul>
         <li data-i18n="tab_admin_1">Manage every school, class, and admin account from one place.</li>
         <li data-i18n="tab_admin_2">A clear audit trail of every gate tap and profile edit.</li>
         <li data-i18n="tab_admin_3">Add or remove school admins in minutes, not days.</li>
@@ -577,7 +577,7 @@
   </div>
 </section>
 
-<section class="reveal-on-scroll">
+<section class="reveal-on-scroll" data-block="section_gallery">
   <div class="wrap">
     <div class="eyebrow-sm" data-i18n="gallery_eyebrow">Gallery</div>
     <h2 class="section-title" data-i18n="gallery_title">See OneTag in the real world</h2>
@@ -618,17 +618,17 @@
 -->
 
 
-<section id="faq" class="reveal-on-scroll">
+<section id="faq" class="reveal-on-scroll" data-block="section_faq">
   <div class="wrap">
     <div class="eyebrow-sm" data-i18n="faq_eyebrow">FAQ</div>
     <h2 class="section-title" data-i18n="faq_title">Common questions</h2>
     <p class="section-sub">&nbsp;</p>
     <div class="faq-list" id="faqList">
-      <div class="faq-item"><div class="faq-q"><span data-i18n="faq_1_q">Does a finder need to install an app?</span><span class="chev">▾</span></div><div class="faq-a"><div class="faq-a-inner" data-i18n="faq_1_a">No. Tapping the wristband opens a normal web page in any browser — nothing to install.</div></div></div>
-      <div class="faq-item"><div class="faq-q"><span data-i18n="faq_2_q">Is our child's information safe?</span><span class="chev">▾</span></div><div class="faq-a"><div class="faq-a-inner" data-i18n="faq_2_a">Only essential emergency details are public. Editing a profile always requires a one-time code sent to the parent, and the parent's phone number is never shown to a finder.</div></div></div>
-      <div class="faq-item"><div class="faq-q"><span data-i18n="faq_3_q">What happens if the wristband is lost?</span><span class="chev">▾</span></div><div class="faq-a"><div class="faq-a-inner" data-i18n="faq_3_a">A school admin can deactivate a lost tag and issue a new one from the dashboard in minutes.</div></div></div>
-      <div class="faq-item"><div class="faq-q"><span data-i18n="faq_4_q">What does OneTag cost?</span><span class="chev">▾</span></div><div class="faq-a"><div class="faq-a-inner" data-i18n="faq_4_a">Pricing depends on the number of students and deployment scale. Contact us for a quote tailored to your school.</div></div></div>
-      <div class="faq-item"><div class="faq-q"><span data-i18n="faq_5_q">Which languages are supported?</span><span class="chev">▾</span></div><div class="faq-a"><div class="faq-a-inner" data-i18n="faq_5_a">OneTag is fully bilingual in Mongolian and English today, with more languages planned.</div></div></div>
+      <div class="faq-item" data-block="faq_1"><div class="faq-q"><span data-i18n="faq_1_q">Does a finder need to install an app?</span><span class="chev">▾</span></div><div class="faq-a"><div class="faq-a-inner" data-i18n="faq_1_a">No. Tapping the wristband opens a normal web page in any browser — nothing to install.</div></div></div>
+      <div class="faq-item" data-block="faq_2"><div class="faq-q"><span data-i18n="faq_2_q">Is our child's information safe?</span><span class="chev">▾</span></div><div class="faq-a"><div class="faq-a-inner" data-i18n="faq_2_a">Only essential emergency details are public. Editing a profile always requires a one-time code sent to the parent, and the parent's phone number is never shown to a finder.</div></div></div>
+      <div class="faq-item" data-block="faq_3"><div class="faq-q"><span data-i18n="faq_3_q">What happens if the wristband is lost?</span><span class="chev">▾</span></div><div class="faq-a"><div class="faq-a-inner" data-i18n="faq_3_a">A school admin can deactivate a lost tag and issue a new one from the dashboard in minutes.</div></div></div>
+      <div class="faq-item" data-block="faq_4"><div class="faq-q"><span data-i18n="faq_4_q">What does OneTag cost?</span><span class="chev">▾</span></div><div class="faq-a"><div class="faq-a-inner" data-i18n="faq_4_a">Pricing depends on the number of students and deployment scale. Contact us for a quote tailored to your school.</div></div></div>
+      <div class="faq-item" data-block="faq_5"><div class="faq-q"><span data-i18n="faq_5_q">Which languages are supported?</span><span class="chev">▾</span></div><div class="faq-a"><div class="faq-a-inner" data-i18n="faq_5_a">OneTag is available in Mongolian, English, and Japanese today, with more languages planned.</div></div></div>
     </div>
   </div>
 </section>
@@ -677,10 +677,10 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
-(function () {
-  const ENABLED_LANGUAGES = ['mn', 'en']; // add 'zh' here to show Chinese too
+(async function () {
+  const ENABLED_LANGUAGES = ['mn', 'en', 'jp']; // add 'zh' here to show Chinese too
   const DEFAULT_LANGUAGE = 'mn';
-  const LANG_NAMES = { mn: 'МОН', en: 'EN', zh: '中文' };
+  const LANG_NAMES = { mn: 'МОН', en: 'EN', zh: '中文', jp: '日本語' };
 
   const translations = {
     en: {
@@ -979,8 +979,144 @@
       form_message_ph: "请告诉我们贵校的情况以及您的需求...", form_submit: "发送留言",
       footer_desc: "用于学生安全的 NFC 智能手环 — 即时身份识别、紧急联系、实时定位和考勤跟踪。",
       footer_product: "产品", footer_access: "入口", footer_contact: "联系我们"
+    },
+    jp: {
+      nav_gps: "リアルタイムGPS", nav_how: "使い方", nav_benefits: "メリット", nav_faq: "よくある質問", nav_contact: "お問い合わせ",
+      intro_eyebrow: "OneTagのご紹介",
+      scroll_hint: "スクロールして仕組みを見る ↓",
+      story_2: "大切な情報を、数秒で記録。",
+      story_3: "毎朝、同じように一日が始まります。",
+      story_4: "登校した瞬間に、すべての子どもの出席が確認されます。",
+      story_5: "校門でタップするだけ。",
+      story_8: "登校した瞬間、学校はすぐに把握します。",
+      story_10: "無事に下校。保護者はすぐに知ることができます。",
+      story_11: "メートル単位で、正確な位置がわかります。",
+      label_name: "名前", label_allergies: "アレルギー", label_blood: "血液型",
+      label_contact: "緊急連絡先", label_school: "学校", label_class: "学年",
+      story_crane: "また学校の朝が始まります。",
+      intro_1: "OneTagのご紹介 — 子ども向けシリコン製NFCリストバンドです。",
+      intro_2: "毎朝、校門でタップ…",
+      intro_3: "…そして毎日下校時にも。",
+      intro_4: "万が一迷子になっても、誰でもタップしてすぐに保護者へ連絡できます。",
+      intro_5: "緊急時も、ワンタップで数秒以内に位置を特定 — リアルタイムGPS。",
+      nav_parents: "保護者の方へ", nav_staff: "学校スタッフログイン",
+      eyebrow: "NFC安全リストバンド",
+      hero_h1: "毎日安心して登校。保護者にも安心を。数秒で居場所がわかります。",
+      hero_sub: "OneTagは登校・下校を自動で記録するリストバンドです。万が一お子さまが離れた場所で見つかった場合も、発見した方にリアルタイムの位置情報と緊急時の情報を即座に表示します。",
+      hero_cta_primary: "学校にOneTagを導入する", hero_cta_secondary: "その速さを見てみる",
+      story_close_product: "一つのリストバンドで、毎日の学校生活を。",
+      panel_lost_title: "もし迷子になったら",
+      panel_lost_p: "発見した方がリストバンドをタップすると、名前・写真・血液型・アレルギー・医療メモがすぐに表示され、保護者への通話ボタンも利用できます。電話番号は常に非公開です。",
+      panel_daily_title: "毎日の学校生活で",
+      panel_daily_p: "毎朝・毎夕の校門タップで、登校・下校の通知が即座に届きます。出席簿も、心配する必要もありません。",
+      photo_caption: "ここをタップ",
+      reveal_badge: "発見しました — タップして助ける", reveal_sub: "7歳・特別支援学校",
+      reveal_allergy_label: "アレルギー", reveal_allergy_val: "ピーナッツ",
+      reveal_condition_label: "特性", reveal_condition_val: "非言語・自閉スペクトラム症",
+      reveal_blood_label: "血液型", reveal_call: "今すぐ保護者に電話", reveal_close: "閉じる",
+      gps_eyebrow: "リアルタイム位置情報", gps_title: "発見までの速さを体験",
+      gps_sub: "推測ではなく、本物のGPS。下のボタンを押して体験してください。",
+      gps_btn: "今すぐ位置を特定", gps_btn_again: "もう一度位置を特定",
+      gps_result_prefix: "所要時間", gps_result_suffix: "誤差約20メートル",
+      gps_result_accuracy_prefix: "精度", gps_denied_note: "位置情報へのアクセスが拒否されました — もう一度お試しいただき、ブラウザで位置情報を許可すると実際の位置が表示されます。",
+      gps_footer_note: "リストバンドをタップするたびに、同じリアルタイムGPSが作動します — 校門でも、どこにいても。",
+      gps_privacy_note: "このデモではお客様の実際の位置情報を使用して仕組みをご紹介しています — 保存や送信は一切行われません。",
+      gps_real_caption: "OneTagアプリの実際の画面",
+      stats_eyebrow: "なぜ重要なのか", stats_title: "毎日、何千人もの子どもたちが、自分では説明できない危険にさらされています",
+      stat_a_label: "現在モンゴルで暮らす障がいのある人々",
+      stat_b_label: "全国の障がいのある子どもたち",
+      stat_c_label: "年間の子どもが関わる交通事故によるけが",
+      stats_footer: "言葉を話せない子どもは、名前で見つけてもらうことができません。OneTagは、最も必要な瞬間に子どもたちに声を与えます。",
+      features_eyebrow: "機能", features_title: "すべての機能を標準搭載、導入初日から利用可能",
+      features_sub: "一つのリストバンド、一つのダッシュボードで、追加のハードウェア管理は不要です。",
+      feat_1_title: "リアルタイムGPS", feat_1_p: "タップするたびに数秒で位置情報を表示 — 推測ではなく、実際の測定値です。",
+      feat_2_title: "NFC技術", feat_2_p: "NFC対応のスマートフォンであればどれでも利用可能 — 発見者が特別な読み取り機を用意する必要はありません。",
+      feat_3_title: "出席管理", feat_3_p: "校門でのタップにより、登校・下校の時刻と場所が自動的に記録されます。",
+      feat_4_title: "緊急連絡", feat_4_p: "ワンボタンで発見者を保護者に直接つなぎます — 電話番号を明かすことはありません。",
+      feat_5_title: "生徒情報の確認", feat_5_p: "名前・学校・学年・写真を、タップした方にすぐに表示します。",
+      feat_6_title: "保護者への通知", feat_6_p: "保護者は電話番号とワンタイムコードだけで、専用アプリなしに毎日の活動を確認できます。",
+      feat_7_title: "学校用ダッシュボード", feat_7_p: "教職員は全生徒の登下校・スキャン履歴を一つの画面で確認でき、学年ごとに絞り込みも可能です。",
+      feat_8_title: "設計段階からのセキュリティ", feat_8_p: "プロフィール情報はロックされており、編集には必ず保護者に送られるワンタイムコードが必要です。",
+      feat_9_title: "耐久性と多言語対応", feat_9_p: "モンゴル語・英語・日本語に完全対応し、一日中着用しても耐えられる丈夫なシリコン製リストバンドです。",
+      how_eyebrow: "使い方", how_title: "リストバンド装着から再会まで、4つのステップ",
+      how_1_title: "装着", how_1_p: "お子さまがリストバンドを装着し、学校が一度だけ登録します。",
+      how_2_title: "タップ", how_2_p: "スマートフォンを持つ誰でもリストバンドにタップできます — アプリは不要です。",
+      how_3_title: "情報を表示", how_3_p: "名前・学校・緊急時の情報が、お子さまの言語で表示されます。",
+      how_4_title: "全員に通知", how_4_p: "保護者と学校スタッフは、何が起きたのか、いつ起きたのかを正確に確認できます。",
+      benefits_eyebrow: "メリット", benefits_title: "子どもを取り巻くすべての人のために",
+      tab_parents: "保護者", tab_schools: "学校", tab_teachers: "教員", tab_admin: "管理者",
+      tab_parents_1: "お子さまが登校・下校した時刻を自動的に、正確に確認できます。",
+      tab_parents_2: "保護者の電話番号は発見者に表示されません — OneTagを通じて接続されます。",
+      tab_parents_3: "アプリのインストール不要 — ワンタイムコードでどのスマートフォンからでも確認できます。",
+      tab_schools_1: "校門での登下校が自動的に記録されます — 手作業の記録簿は不要です。",
+      tab_schools_2: "一つのダッシュボードで全生徒の活動を確認、学年ごとに絞り込み可能です。",
+      tab_schools_3: "各管理者アカウントは自校のみに限定され、データが混在することはありません。",
+      tab_teachers_1: "点呼をしなくても、どの生徒が登校しているか即座にわかります。",
+      tab_teachers_2: "緊急時の医療情報にワンタップでアクセスできます。",
+      tab_teachers_3: "事務作業が減り、子どもたちと過ごす時間が増えます。",
+      tab_admin_1: "すべての学校・学年・管理者アカウントを一箇所で管理できます。",
+      tab_admin_2: "校門でのタップやプロフィール編集の履歴を明確に確認できます。",
+      tab_admin_3: "学校管理者の追加・削除も数分で完了します。",
+      gallery_eyebrow: "ギャラリー", gallery_title: "実際の利用シーンをご覧ください",
+      testimonial_eyebrow: "ご意見・ご感想", testimonial_title: "ご家族・学校の声",
+      testimonial_placeholder_text: "より多くのご家族・学校にご参加いただくことで、こちらに実際のご感想が掲載される予定です。",
+      faq_eyebrow: "よくある質問", faq_title: "よくあるご質問",
+      faq_1_q: "発見した方はアプリをインストールする必要がありますか？",
+      faq_1_a: "いいえ。リストバンドをタップすると、どのブラウザでも通常のウェブページが開きます — インストールは一切不要です。",
+      faq_2_q: "子どもの情報は安全に管理されますか？",
+      faq_2_a: "公開されるのは必要最低限の緊急情報のみです。プロフィールの編集には必ず保護者に送られるワンタイムコードが必要で、保護者の電話番号が発見者に表示されることはありません。",
+      faq_3_q: "リストバンドを紛失した場合はどうなりますか？",
+      faq_3_a: "学校管理者はダッシュボードから紛失したタグを数分で無効化し、新しいものを発行できます。",
+      faq_4_q: "OneTagの費用はどのくらいですか？",
+      faq_4_a: "料金は生徒数や導入規模によって異なります。貴校に合わせたお見積りについては、お気軽にお問い合わせください。",
+      faq_5_q: "どの言語に対応していますか？",
+      faq_5_a: "OneTagは現在、モンゴル語・英語・日本語に対応しており、今後さらに多くの言語に対応予定です。",
+      contact_h2: "学校にOneTagを導入する",
+      contact_p: "OneTagは現在、ウランバートル市内の特別支援学校で導入されています。今後さらに多くの学校への展開を予定しています。デモのご予約、料金のお問い合わせ、導入のご相談などお気軽にご連絡ください。",
+      hero_btn_parent: "保護者です", hero_btn_staff: "学校スタッフです",
+      form_name: "お名前", form_org: "学校・団体名", form_email: "メールアドレス", form_message: "メッセージ",
+      form_message_ph: "貴校の状況とご要望をお聞かせください…", form_submit: "送信する",
+      footer_desc: "生徒の安全を守るNFCスマートリストバンド — 即時の身元確認、緊急連絡、リアルタイム位置情報、出席管理。",
+      footer_product: "製品", footer_access: "アクセス", footer_contact: "お問い合わせ"
     }
   };
+
+  // ---- Load dashboard-editable content (text overrides, block visibility,
+  // scene photo URLs) and merge it in BEFORE anything below renders. Fails
+  // silently and falls back to the hardcoded defaults above if the request
+  // is slow, offline, or the site-content feature isn't deployed yet — a
+  // visitor should never see a broken page just because this one extra
+  // fetch didn't come back in time.
+  let siteOverrides = { texts: {}, images: {}, blocks: {} };
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 3000);
+    const res = await fetch('/api/site-content', { signal: ctrl.signal });
+    clearTimeout(timer);
+    if (res.ok) siteOverrides = await res.json();
+  } catch (e) { /* offline or slow — keep the hardcoded defaults */ }
+
+  for (const [key, perLang] of Object.entries(siteOverrides.texts || {})) {
+    for (const lang of Object.keys(translations)) {
+      const val = perLang[lang];
+      if (typeof val === 'string' && val.trim()) translations[lang][key] = val;
+    }
+  }
+
+  // Scene photo overrides — swap the <img src> for any story stage the
+  // dashboard has a replacement for, and keep the two <link rel=preload>
+  // tags (stage 0 + stage 8, the two the story shows first/most) pointed at
+  // whatever is actually going to load, so a replaced photo still benefits
+  // from the preload instead of the browser preloading a file nothing uses.
+  for (const [key, img] of Object.entries(siteOverrides.images || {})) {
+    if (!img.url) continue;
+    const m = /^story_stage_(\d)$/.exec(key);
+    if (!m) continue;
+    const stageEl = document.querySelector(`.story-stage-photo[data-stage="${m[1]}"] img`);
+    if (stageEl) stageEl.src = img.url;
+    const preloadLink = document.querySelector(`link[rel="preload"][data-story-stage="${m[1]}"]`);
+    if (preloadLink) preloadLink.href = img.url;
+  }
 
   function applyLanguage(lang) {
     const dict = translations[lang] || translations[DEFAULT_LANGUAGE];
@@ -1024,6 +1160,7 @@
     const btn = document.createElement('button');
     btn.className = 'tab-btn' + (i === 0 ? ' active' : '');
     btn.dataset.tab = key;
+    btn.dataset.block = 'benefits_tab_' + key; // lets the dashboard hide this tab (button + panel) as one unit
     btn.onclick = () => {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -1032,6 +1169,25 @@
     };
     tabsNav.appendChild(btn);
   });
+
+  // Apply "hide this section/card" toggles from the dashboard. Runs after
+  // the benefits tab buttons above exist (so a hidden tab's nav button
+  // disappears along with its panel) and before the language pass below
+  // (so nothing hidden gets measured or animated first). Every element this
+  // can target carries a data-block="..." attribute matching a BLOCK_SEED
+  // key in site-content-seed.js.
+  document.querySelectorAll('[data-block]').forEach(el => {
+    const block = siteOverrides.blocks && siteOverrides.blocks[el.dataset.block];
+    if (block && block.visible === false) el.style.display = 'none';
+  });
+  // The "Parents" benefits tab is active by default. If it got hidden above,
+  // switch to the first tab that's still visible so the section doesn't
+  // render blank.
+  const activeTabBtn = tabsNav.querySelector('.tab-btn.active');
+  if (activeTabBtn && activeTabBtn.style.display === 'none') {
+    const nextBtn = Array.from(tabsNav.querySelectorAll('.tab-btn')).find(b => b.style.display !== 'none');
+    if (nextBtn) nextBtn.click();
+  }
 
   const savedLang = localStorage.getItem('onetag_home_lang');
   applyLanguage(ENABLED_LANGUAGES.includes(savedLang) ? savedLang : DEFAULT_LANGUAGE);
