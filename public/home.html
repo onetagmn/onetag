@@ -62,7 +62,21 @@
   .lang-btn.active { background: var(--sky); color: var(--blue); border-color: var(--sky); }
 
   /* ---------- SCROLL STORY HERO ---------- */
-  .scroll-story { position: relative; height: 910vh; background: #0E2338; }
+  /* Once you've scrolled through all 9 photos, the pinned photo (.story-sticky,
+     position:sticky) detaches and scrolls away normally for its own final
+     ~100vh of height before this section ends — that's inherent to how
+     position:sticky un-pins, not a bug on its own. The bug was that during
+     that ~100vh window, nothing else is drawn where the photo used to be,
+     so .scroll-story's own flat navy background showed through as a stark
+     block right up against .post-story-ctas's light background right after
+     it. Fading the last ~15% of this background to that same light color
+     turns that reveal into an intentional-looking fade instead of a jarring
+     dark void. (A cleaner fix would have the next section slide up and
+     cover that space in sync via a negative margin, but that needs careful
+     z-index/stacking work to avoid covering the photo prematurely — not
+     safe to do blind without live visual verification, so this lower-risk
+     version ships first.) */
+  .scroll-story { position: relative; height: 910vh; background: linear-gradient(to bottom, #0E2338 0%, #0E2338 85%, var(--bg-light) 100%); }
   .story-sticky { position: sticky; top: 0; height: 100vh; overflow: hidden; }
   .story-stage-photo {
     position: absolute; inset: 0; opacity: 0; z-index: 1;
