@@ -5,6 +5,7 @@ const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
 const { pool, initSchema, withTransaction } = require('./db');
 const { sendOtp, verifyOtp } = require('./otp');
+const { RETIRED_TEXT_KEYS } = require('./site-content-seed');
 
 const app = express();
 app.use(express.json());
@@ -831,27 +832,42 @@ app.get('/api/parent/history', async (req, res) => {
 });
 
 // ---------- Editable homepage content ("Website content" dashboard) ----------
-// Backs home.html's text (mn/en/jp), the 9 scroll-story scene photos, and
-// section/card visibility toggles. See site-content-seed.js for what a
-// fresh row looks like and db.js for the table + seeding.
+// Backs home.html's text (mn/en/jp), the scroll-story scenes (photo +
+// caption, fully add/delete/reorder-able), and section/card visibility
+// toggles. See site-content-seed.js for what a fresh row looks like and
+// db.js for the tables + seeding.
+const MIN_STORY_SCENES = 1; // the story can't render with zero photos
 
 // Public — home.html fetches this on every load (no login: it's the same
 // page a public visitor already sees). Shaped for direct use by the page's
-// existing i18n code rather than as a raw table dump.
+// existing i18n / story-rendering code rather than as a raw table dump.
 app.get('/api/site-content', async (req, res) => {
-  const result = await pool.query(`SELECT key, kind, mn, en, jp, image_url, visible FROM site_content`);
-  const texts = {}, images = {}, blocks = {};
-  for (const row of result.rows) {
+  const [contentResult, scenesResult] = await Promise.all([
+    pool.query(`SELECT key, kind, mn, en, jp, visible FROM site_content`),
+    pool.query(`SELECT id, image_url, caption_mn, caption_en, caption_jp, scene_type FROM story_scenes ORDER BY position ASC`)
+  ]);
+  const texts = {}, blocks = {};
+  for (const row of contentResult.rows) {
     if (row.kind === 'text') texts[row.key] = { mn: row.mn, en: row.en, jp: row.jp };
-    else if (row.kind === 'image') images[row.key] = { url: row.image_url };
     else if (row.kind === 'block') blocks[row.key] = { visible: row.visible };
   }
-  res.json({ texts, images, blocks });
+  const scenes = scenesResult.rows.map(r => ({
+    id: r.id, image_url: r.image_url, scene_type: r.scene_type,
+    caption: { mn: r.caption_mn, en: r.caption_en, jp: r.caption_jp }
+  }));
+  res.json({ texts, blocks, scenes });
 });
 
-// Admin — full rows (incl. labels) for building the dashboard UI.
+// Admin — full rows (incl. labels) for building the dashboard UI. Excludes
+// the handful of text keys that used to be story captions before scenes
+// got their own caption columns — editing them here would no longer do
+// anything, since home.html reads captions from story_scenes now.
 app.get('/api/admin/site-content', requireSuperAdmin, async (req, res) => {
-  const result = await pool.query(`SELECT key, kind, label, mn, en, jp, image_url, visible, updated_at FROM site_content ORDER BY kind, key`);
+  const result = await pool.query(
+    `SELECT key, kind, label, mn, en, jp, image_url, visible, updated_at FROM site_content
+     WHERE NOT (kind = 'text' AND key = ANY($1)) ORDER BY kind, key`,
+    [RETIRED_TEXT_KEYS]
+  );
   res.json(result.rows);
 });
 
@@ -878,26 +894,109 @@ app.put('/api/admin/site-content/block/:key', requireSuperAdmin, async (req, res
   res.json({ success: true, visible });
 });
 
-app.post('/api/admin/site-content/image/:key', requireSuperAdmin, (req, res) => {
+// ---------- Story scenes (scroll-story photo + caption management) ----------
+app.get('/api/admin/story-scenes', requireSuperAdmin, async (req, res) => {
+  const result = await pool.query(`SELECT * FROM story_scenes ORDER BY position ASC`);
+  res.json(result.rows);
+});
+
+// Adds a new scene at the end of the story. Always a plain 'photo' scene —
+// the one 'registration_hud' scene (if it still exists) keeps its special
+// HUD overlay; new scenes never get it, since that overlay's content
+// (Name/Allergies/Blood Type/...) doesn't make sense on an arbitrary photo.
+app.post('/api/admin/story-scenes', requireSuperAdmin, (req, res) => {
   sceneUpload.single('photo')(req, res, async (err) => {
     if (err) return res.status(400).json({ error: err.message });
     if (!CLOUDINARY_CONFIGURED) {
-      return res.status(503).json({ error: 'Image uploads are not configured yet — set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in Render, then redeploy.' });
+      return res.status(503).json({ error: 'Photo uploads are not configured yet — set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in Render, then redeploy.' });
     }
-    if (!req.file) return res.status(400).json({ error: 'No photo file was uploaded' });
-    const { key } = req.params;
-    const existing = await pool.query(`SELECT key FROM site_content WHERE key = $1 AND kind = 'image'`, [key]);
-    if (!existing.rows[0]) return res.status(404).json({ error: 'Unknown image key' });
+    if (!req.file) return res.status(400).json({ error: 'A photo file is required' });
+    const { caption_mn, caption_en, caption_jp } = req.body;
 
     try {
       const uploaded = await uploadBufferToCloudinary(req.file.buffer);
-      await pool.query(`UPDATE site_content SET image_url = $1, updated_at = NOW() WHERE key = $2`, [uploaded.secure_url, key]);
+      const maxPosRes = await pool.query(`SELECT COALESCE(MAX(position), -1) AS max_pos FROM story_scenes`);
+      const nextPosition = maxPosRes.rows[0].max_pos + 1;
+      const insertRes = await pool.query(
+        `INSERT INTO story_scenes (position, image_url, caption_mn, caption_en, caption_jp, scene_type)
+         VALUES ($1, $2, $3, $4, $5, 'photo') RETURNING *`,
+        [nextPosition, uploaded.secure_url, caption_mn || null, caption_en || null, caption_jp || null]
+      );
+      res.json({ success: true, scene: insertRes.rows[0] });
+    } catch (uploadErr) {
+      console.error('Cloudinary upload failed:', uploadErr.message);
+      res.status(502).json({ error: 'Upload to image host failed — please try again.' });
+    }
+  });
+});
+
+// Full reorder — body is the complete list of scene ids in the new order.
+// Validated to be exactly the current set of ids (no silent drops/dupes)
+// before anything is written. Registered before the "/:id" routes below —
+// Express matches routes in registration order, and "/:id" would otherwise
+// swallow "/reorder" as if "reorder" were a scene id.
+app.put('/api/admin/story-scenes/reorder', requireSuperAdmin, async (req, res) => {
+  const { order } = req.body;
+  if (!Array.isArray(order) || !order.length) return res.status(400).json({ error: 'order (array of scene ids) is required' });
+
+  const currentRes = await pool.query(`SELECT id FROM story_scenes`);
+  const currentIds = new Set(currentRes.rows.map(r => String(r.id)));
+  const orderIds = order.map(String);
+  const orderSet = new Set(orderIds);
+  if (orderSet.size !== orderIds.length || orderIds.length !== currentIds.size || [...orderSet].some(id => !currentIds.has(id))) {
+    return res.status(400).json({ error: 'order must contain each existing scene id exactly once' });
+  }
+
+  await withTransaction(async (client) => {
+    for (let i = 0; i < orderIds.length; i++) {
+      await client.query(`UPDATE story_scenes SET position = $1 WHERE id = $2`, [i, orderIds[i]]);
+    }
+  });
+  res.json({ success: true });
+});
+
+app.put('/api/admin/story-scenes/:id', requireSuperAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { caption_mn, caption_en, caption_jp } = req.body;
+  const result = await pool.query(
+    `UPDATE story_scenes SET caption_mn = $1, caption_en = $2, caption_jp = $3 WHERE id = $4`,
+    [caption_mn ?? null, caption_en ?? null, caption_jp ?? null, id]
+  );
+  if (result.rowCount === 0) return res.status(404).json({ error: 'Unknown scene id' });
+  res.json({ success: true });
+});
+
+app.post('/api/admin/story-scenes/:id/photo', requireSuperAdmin, (req, res) => {
+  sceneUpload.single('photo')(req, res, async (err) => {
+    if (err) return res.status(400).json({ error: err.message });
+    if (!CLOUDINARY_CONFIGURED) {
+      return res.status(503).json({ error: 'Photo uploads are not configured yet — set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in Render, then redeploy.' });
+    }
+    if (!req.file) return res.status(400).json({ error: 'No photo file was uploaded' });
+    const { id } = req.params;
+    const existing = await pool.query(`SELECT id FROM story_scenes WHERE id = $1`, [id]);
+    if (!existing.rows[0]) return res.status(404).json({ error: 'Unknown scene id' });
+
+    try {
+      const uploaded = await uploadBufferToCloudinary(req.file.buffer);
+      await pool.query(`UPDATE story_scenes SET image_url = $1 WHERE id = $2`, [uploaded.secure_url, id]);
       res.json({ success: true, url: uploaded.secure_url });
     } catch (uploadErr) {
       console.error('Cloudinary upload failed:', uploadErr.message);
       res.status(502).json({ error: 'Upload to image host failed — please try again.' });
     }
   });
+});
+
+app.delete('/api/admin/story-scenes/:id', requireSuperAdmin, async (req, res) => {
+  const { id } = req.params;
+  const countRes = await pool.query(`SELECT COUNT(*)::int AS c FROM story_scenes`);
+  if (countRes.rows[0].c <= MIN_STORY_SCENES) {
+    return res.status(400).json({ error: `The story needs at least ${MIN_STORY_SCENES} photo — delete or replace one instead of leaving none.` });
+  }
+  const result = await pool.query(`DELETE FROM story_scenes WHERE id = $1`, [id]);
+  if (result.rowCount === 0) return res.status(404).json({ error: 'Unknown scene id' });
+  res.json({ success: true });
 });
 
 const PORT = process.env.PORT || 3000;

@@ -160,20 +160,43 @@ const TEXT_SEED = {
   footer_contact: { en: "Contact", mn: "Холбоо барих", jp: "お問い合わせ" }
 };
 
-// The 9 scroll-story scene photos, in stage order (0-8). "url" is the
-// CURRENT path each stage loads today — these become the seeded image_url
-// so the dashboard shows real live thumbnails on first load, not blanks.
-const IMAGE_SEED = [
-  { key: 'story_stage_0', label: 'Story photo 1 — Aerial arrival (stage 0)', url: '/assets/scene4-aerial.jpg' },
-  { key: 'story_stage_1', label: 'Story photo 2 — Descending to the gate (stage 1)', url: '/assets/scene5-crane.jpg' },
-  { key: 'story_stage_2', label: 'Story photo 3 — Morning gate tap (stage 2)', url: '/assets/scene7-tap-morning.jpg' },
-  { key: 'story_stage_3', label: 'Story photo 4 — Staff dashboard (stage 3)', url: '/assets/scene8-dashboard.jpg' },
-  { key: 'story_stage_4', label: 'Story photo 5 — Afternoon gate tap (stage 4)', url: '/assets/scene9-tap-dusk.jpg' },
-  { key: 'story_stage_5', label: 'Story photo 6 — Parent phone notification (stage 5)', url: '/assets/scene10-phone-notif.jpg' },
-  { key: 'story_stage_6', label: 'Story photo 7 — Full-screen map (stage 6)', url: '/assets/scene12-map.jpg' },
-  { key: 'story_stage_7', label: 'Story photo 8 — Registration HUD (stage 7)', url: '/assets/scene2-hud-v3.jpg' },
-  { key: 'story_stage_8', label: 'Story photo 9 — Product close-up (stage 8)', url: '/assets/scene1-product.jpg' }
+// The scroll-story scenes, in original order (position 0-8). Each becomes
+// one row in the story_scenes table (see db.js) — position, image, and a
+// caption in all three languages. scene_type 'registration_hud' is the one
+// scene (originally position 7) that also overlays the small HUD labels
+// (Name/Allergies/Blood Type/...) on top of its photo; every other scene
+// is a plain photo + caption. This is the ORIGINAL set only — once the
+// super-admin dashboard adds, deletes, or reorders scenes, this file is
+// never consulted again for that installation (see seedStorySceneDefaults
+// in db.js, which only runs once against an empty table).
+const STORY_SCENE_SEED = [
+  { position: 0, image_url: '/assets/scene4-aerial.jpg', scene_type: 'photo',
+    caption: { en: "Safe every school day. Found in seconds, wherever they are.", mn: "Сургуулийн өдөр бүр аюулгүй. Секундын дотор олдоно, хаана ч байсан.", jp: "毎日安心して登校。数秒で居場所がわかります。" } },
+  { position: 1, image_url: '/assets/scene5-crane.jpg', scene_type: 'photo',
+    caption: { en: "Another school morning begins.", mn: "Сургуулийн өглөө дахин эхэлж байна.", jp: "また学校の朝が始まります。" } },
+  { position: 2, image_url: '/assets/scene7-tap-morning.jpg', scene_type: 'photo',
+    caption: { en: "Tap at the school gate every morning...", mn: "Өглөө бүр сургуулийн хаалганд товшино...", jp: "毎朝、校門でタップ…" } },
+  { position: 3, image_url: '/assets/scene8-dashboard.jpg', scene_type: 'photo',
+    caption: { en: "The school knows the instant they're in.", mn: "Сургууль тэднийг ирсэн даруйд нь мэднэ.", jp: "登校した瞬間、学校はすぐに把握します。" } },
+  { position: 4, image_url: '/assets/scene9-tap-dusk.jpg', scene_type: 'photo',
+    caption: { en: "...and every afternoon.", mn: "...орой бүр мөн адил.", jp: "…そして毎日下校時にも。" } },
+  { position: 5, image_url: '/assets/scene10-phone-notif.jpg', scene_type: 'photo',
+    caption: { en: "Left safely. Parents know instantly.", mn: "Аюулгүй явлаа. Эцэг эх шууд мэднэ.", jp: "無事に下校。保護者はすぐに知ることができます。" } },
+  { position: 6, image_url: '/assets/scene12-map.jpg', scene_type: 'photo',
+    caption: { en: "In an emergency, one tap finds them in seconds — real-time GPS.", mn: "Онц үед нэг товшилтоор секундын дотор олно — бодит цагийн GPS.", jp: "緊急時も、ワンタップで数秒以内に位置を特定 — リアルタイムGPS。" } },
+  { position: 7, image_url: '/assets/scene2-hud-v3.jpg', scene_type: 'registration_hud',
+    caption: { en: "Everything that matters, saved in seconds.", mn: "Хэрэгтэй бүх мэдээлэл секундын дотор хадгалагдана.", jp: "大切な情報を、数秒で記録。" } },
+  { position: 8, image_url: '/assets/scene1-product.jpg', scene_type: 'photo',
+    caption: { en: "One wristband. Every school day.", mn: "Нэг бугуйвч. Сургуулийн өдөр бүр.", jp: "一つのリストバンドで、毎日の学校生活を。" } }
 ];
+
+// These 9 keys used to be the story captions before scenes got their own
+// caption_mn/en/jp columns (see above). They're left in TEXT_SEED so an
+// in-progress edit from the very first version of this dashboard isn't
+// silently lost, but the admin Text tab hides them now — editing one here
+// would no longer do anything, since home.html reads story captions from
+// story_scenes instead.
+const RETIRED_TEXT_KEYS = ['hero_h1', 'story_crane', 'intro_2', 'story_8', 'intro_3', 'story_10', 'intro_5', 'story_2', 'story_close_product'];
 
 // Whole sections/cards/items that can be hidden from the live site without
 // touching code. Scoped to repeatable content units and top-level sections
@@ -216,4 +239,4 @@ const BLOCK_SEED = [
   { key: 'faq_5', label: 'FAQ: Which languages are supported?' }
 ];
 
-module.exports = { TEXT_SEED, IMAGE_SEED, BLOCK_SEED };
+module.exports = { TEXT_SEED, STORY_SCENE_SEED, RETIRED_TEXT_KEYS, BLOCK_SEED };

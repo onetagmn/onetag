@@ -4,7 +4,7 @@
 // persists independently of the web service.
 
 const { Pool } = require('pg');
-const { TEXT_SEED, IMAGE_SEED, BLOCK_SEED } = require('./site-content-seed');
+const { TEXT_SEED, STORY_SCENE_SEED, BLOCK_SEED } = require('./site-content-seed');
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -166,6 +166,29 @@ async function initSchema() {
       visible BOOLEAN NOT NULL DEFAULT true,
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
     );
+
+    -- The scroll-story photos, now fully manageable (add, delete, reorder,
+    -- edit caption) from the super-admin dashboard instead of a fixed set
+    -- of 9. "position" controls both display order and which scene is
+    -- treated as the opening one (position 0) or closing one (highest
+    -- position) for the zoom animation — those are applied positionally in
+    -- home.html's JS, not stored per-row, so they automatically move to
+    -- whichever scene ends up first/last after a delete or reorder.
+    -- scene_type 'registration_hud' additionally overlays the small
+    -- Name/Allergies/Blood Type/... HUD labels on top of the photo; that
+    -- content lives in site_content (label_name etc.), not here, so it's
+    -- shared if more than one such scene ever exists. Deleting the one
+    -- registration_hud scene just removes it — nothing else inherits it.
+    CREATE TABLE IF NOT EXISTS story_scenes (
+      id SERIAL PRIMARY KEY,
+      position INTEGER NOT NULL,
+      image_url TEXT NOT NULL,
+      caption_mn TEXT,
+      caption_en TEXT,
+      caption_jp TEXT,
+      scene_type TEXT NOT NULL DEFAULT 'photo' CHECK (scene_type IN ('photo', 'registration_hud')),
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    );
   `);
 
   // Seed default values once. ON CONFLICT DO NOTHING means this only ever
@@ -177,17 +200,37 @@ async function initSchema() {
       [key, langs.mn, langs.en, langs.jp]
     );
   }
-  for (const img of IMAGE_SEED) {
-    await pool.query(
-      `INSERT INTO site_content (key, kind, label, image_url) VALUES ($1, 'image', $2, $3) ON CONFLICT (key) DO NOTHING`,
-      [img.key, img.label, img.url]
-    );
-  }
   for (const block of BLOCK_SEED) {
     await pool.query(
       `INSERT INTO site_content (key, kind, label, visible) VALUES ($1, 'block', $2, true) ON CONFLICT (key) DO NOTHING`,
       [block.key, block.label]
     );
+  }
+
+  // story_scenes has no natural key to ON CONFLICT against (rows can be
+  // freely added/deleted), so instead: only seed it the very first time,
+  // when the table is completely empty. If an earlier version of this
+  // dashboard already had per-stage photo overrides saved under
+  // site_content (kind='image', key='story_stage_N'), those replace the
+  // hardcoded defaults here — an admin who already swapped a photo before
+  // this update shipped doesn't lose that change. Those old rows are then
+  // removed since story_scenes is now the only place scroll-story photos
+  // live.
+  const sceneCountRes = await pool.query(`SELECT COUNT(*)::int AS c FROM story_scenes`);
+  if (sceneCountRes.rows[0].c === 0) {
+    const oldImageRes = await pool.query(`SELECT key, image_url FROM site_content WHERE kind = 'image'`);
+    const oldImageByKey = {};
+    for (const row of oldImageRes.rows) oldImageByKey[row.key] = row.image_url;
+
+    for (const scene of STORY_SCENE_SEED) {
+      const legacyKey = `story_stage_${scene.position}`;
+      const imageUrl = oldImageByKey[legacyKey] || scene.image_url;
+      await pool.query(
+        `INSERT INTO story_scenes (position, image_url, caption_mn, caption_en, caption_jp, scene_type) VALUES ($1, $2, $3, $4, $5, $6)`,
+        [scene.position, imageUrl, scene.caption.mn, scene.caption.en, scene.caption.jp, scene.scene_type]
+      );
+    }
+    await pool.query(`DELETE FROM site_content WHERE kind = 'image'`);
   }
 }
 
