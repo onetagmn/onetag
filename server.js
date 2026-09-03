@@ -61,7 +61,7 @@ app.set('trust proxy', 1);
 // '*'. Add more with a comma-separated ALLOWED_ORIGINS env var if a real
 // second consumer (e.g. a native app or admin tool on another domain) is
 // ever added.
-const DEFAULT_ALLOWED_ORIGINS = ['https://onetag-0b04.onrender.com', 'http://localhost:3000'];
+const DEFAULT_ALLOWED_ORIGINS = ['https://onetagmn.com', 'https://www.onetagmn.com', 'https://onetag-0b04.onrender.com', 'http://localhost:3000'];
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
   : DEFAULT_ALLOWED_ORIGINS;
