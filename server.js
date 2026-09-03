@@ -78,6 +78,21 @@ app.use((req, res, next) => {
   next();
 });
 
+// The bare root URL is also the address written onto every physical
+// wristband's NFC tag, as "/?tag=OT-0001" — that must keep landing on the
+// tap-to-view safety card (public/index.html, served by the static
+// middleware below). But a person who types the plain domain into a
+// browser has no wristband to scan, and index.html's "no tag" state was
+// just a dead-end "No tag found" message with no way to reach the actual
+// marketing site — nothing in the app links to home.html at all. So: a
+// bare "/" with no ?tag= now sends a human visitor to the homepage
+// instead of that dead end; a "/?tag=..." link (from a real wristband, a
+// QR code, or a share link) still falls through unchanged.
+app.get('/', (req, res, next) => {
+  if (req.query.tag) return next();
+  res.redirect('/home.html');
+});
+
 app.use(express.static(path.join(__dirname, 'public'), {
   setHeaders: (res, filePath) => {
     // HTML pages must always be fetched fresh — staff, parents, and finders
