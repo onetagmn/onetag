@@ -5,6 +5,9 @@
 <meta name="robots" content="index, follow">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>OneTag — NFC Safety Wristband</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <meta name="description" content="OneTag is an NFC wristband that logs safe school arrival and departure automatically, and instantly shows real-time location and emergency details to anyone who finds your child.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -43,8 +46,18 @@
   button { font-family: inherit; }
 
   .nav { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
-  .nav-logo { font-weight: 800; font-size: 19px; color: var(--ink); display: flex; align-items: center; gap: 8px; }
-  .nav-logo .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); }
+  .nav-logo { font-weight: 800; font-size: 19px; color: var(--ink); display: flex; align-items: center; gap: 9px; text-decoration: none; }
+  .nav-logo .mark { width: 28px; height: 28px; flex: none; }
+  .nav-logo .mark #dot, .nav-logo .mark #arc1, .nav-logo .mark #arc2, .nav-logo .mark #arc3 {
+    animation: onetagPulse 1.8s ease-in-out infinite;
+  }
+  .nav-logo .mark #arc1 { animation-delay: 0.15s; }
+  .nav-logo .mark #arc2 { animation-delay: 0.30s; }
+  .nav-logo .mark #arc3 { animation-delay: 0.45s; }
+  @keyframes onetagPulse { 0% { opacity: 0.35; } 50% { opacity: 1; } 100% { opacity: 0.35; } }
+  @media (prefers-reduced-motion: reduce) {
+    .nav-logo .mark #dot, .nav-logo .mark #arc1, .nav-logo .mark #arc2, .nav-logo .mark #arc3 { animation: none; opacity: 1; }
+  }
   .nav-right { display: flex; align-items: center; gap: 18px; }
   .nav-links { display: flex; gap: 22px; font-size: 14.5px; font-weight: 500; color: var(--muted); }
   .nav-links a { text-decoration: none; }
@@ -370,7 +383,24 @@
 <body>
 
 <nav class="nav">
-  <div class="nav-logo"><span class="dot"></span>OneTag</div>
+  <a class="nav-logo" href="/home.html" aria-label="OneTag home">
+    <svg class="mark" viewBox="0 0 512 512" aria-hidden="true">
+      <defs><clipPath id="navLogoClip"><circle cx="256" cy="190" r="100"/></clipPath></defs>
+      <path fill="#0B2A52" fill-rule="evenodd" d="M240.59,431.93 C127.07,267.37 106,250.48 106,190 C106,107.16 173.16,40 256,40 C338.84,40 406,107.16 406,190 C406,250.48 384.93,267.37 271.41,431.93 C264.0,442.69 248.03,442.69 240.59,431.93 Z M256,90 A100,100 0 1,0 256,290 A100,100 0 1,0 256,90 Z"/>
+      <g clip-path="url(#navLogoClip)">
+        <rect x="200" y="172" rx="12" ry="12" width="32" height="50" fill="#0B2A52"/>
+        <path fill="none" stroke="#0B2A52" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" d="M256,163 L256,213 M256,213 Q246,240 232,266 M256,213 Q276,238 286,264 M256,172 Q238,190 224,205 M256,172 Q278,188 292,200"/>
+        <circle cx="256" cy="138" r="23" fill="#0B2A52"/>
+      </g>
+      <g fill="none" stroke="#F7A81B" stroke-width="20" stroke-linecap="round">
+        <path id="arc1" d="M 372 148 A 40 40 0 0 1 400 118"/>
+        <path id="arc2" d="M 356 128 A 66 66 0 0 1 420 92"/>
+        <path id="arc3" d="M 340 108 A 92 92 0 0 1 440 66"/>
+      </g>
+      <circle id="dot" cx="358" cy="164" r="19" fill="#F7A81B"/>
+    </svg>
+    OneTag
+  </a>
   <div class="nav-right">
     <div class="nav-links">
       <a href="#gps-demo" data-i18n="nav_gps">Real-time GPS</a>

@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <clipPath id="holeClip3">
+      <circle cx="256" cy="190" r="100"/>
+    </clipPath>
+  </defs>
+
+  <!-- OUTER PIN, ring at the head + solid tail, one shape via evenodd -->
+  <path fill="#0B2A52" fill-rule="evenodd" d="
+    M240.59,431.93
+    C127.07,267.37 106,250.48 106,190
+    C106,107.16 173.16,40 256,40
+    C338.84,40 406,107.16 406,190
+    C406,250.48 384.93,267.37 271.41,431.93
+    C264.0,442.69 248.03,442.69 240.59,431.93
+    Z
+    M256,90
+    A100,100 0 1,0 256,290
+    A100,100 0 1,0 256,90
+    Z
+  "/>
+
+  <!-- CHILD + BACKPACK pictogram, walking, inside the hollow head -->
+  <g clip-path="url(#holeClip3)">
+    <!-- backpack, behind the body -->
+    <rect x="200" y="172" rx="12" ry="12" width="32" height="50" fill="#0B2A52"/>
+
+    <!-- body: spine, arms, legs as one round-cap stroked path -->
+    <path fill="none" stroke="#0B2A52" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" d="
+      M256,163 L256,213
+      M256,213 Q246,240 232,266
+      M256,213 Q276,238 286,264
+      M256,172 Q238,190 224,205
+      M256,172 Q278,188 292,200
+    "/>
+
+    <!-- head -->
+    <circle cx="256" cy="138" r="23" fill="#0B2A52"/>
+  </g>
+
+  <!-- WIFI / NFC SIGNAL, radiating from the ring's upper-right shoulder -->
+  <g fill="none" stroke="#FFC72C" stroke-width="20" stroke-linecap="round">
+    <path id="arc1" d="M 372 148 A 40 40 0 0 1 400 118"/>
+    <path id="arc2" d="M 356 128 A 66 66 0 0 1 420 92"/>
+    <path id="arc3" d="M 340 108 A 92 92 0 0 1 440 66"/>
+  </g>
+  <circle id="dot" cx="358" cy="164" r="19" fill="#FFC72C"/>
+</svg>
