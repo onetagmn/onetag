@@ -1,31 +1,41 @@
-# New logo — what changed and how to push it
+# Updated logo — bigger, single-color, colors cycling
 
-## What's in this folder
+This replaces the previous logo push (the navy+gold pin). If you already
+pushed that one, this new push overwrites it — same files, new content.
 
-Only the files that changed, in the same `public/` layout as your repo:
+## What changed
 
-- `public/home.html` — the header logo is now the new pin-mark icon (animated: the gold signal pulses continuously), plus a favicon tag was added
-- `public/assets/logo-mark.svg`, `favicon-32.png`, `favicon-16.png`, `apple-touch-icon.png` — the new icon files
-- `public/admin-content.html`, `admin-login.html`, `admin-panel.html`, `admin-setup.html`, `dashboard.html`, `gate-listener.html`, `index.html`, `parent-portal.html`, `t.html` — each got the same 3-line favicon addition only, nothing else touched
+- **The exact image you sent** is now the site logo — I didn't redraw
+  anything. Your file had a printed-in checkerboard pattern instead of
+  real transparency (common when an AI image tool's preview is
+  downloaded directly), so I rebuilt it as a proper transparent PNG from
+  your same artwork — same shape, same teal color, just a real
+  see-through background instead of a checkerboard.
+- **Bigger**: the header logo went from 28px to 42px.
+- **Colors change continuously, the whole mark**: not just the signal
+  arcs this time — the entire icon smoothly cycles through the color
+  wheel (teal → blue → purple → red → orange → green → back to teal) on
+  a 6-second loop, forever, for as long as someone's on the page.
+- Favicon (browser tab icon) stays a still frame in the original teal —
+  same reason as before, browsers don't animate tab icons.
 
-Nothing in `server.js`, `db.js`, or any other backend file changed — this is front-end only, safe to push on its own.
+## Files in this folder
 
-## Step by step (GitHub Desktop, same as your last few pushes)
+- `public/home.html` — logo swapped to the new image, sized up, color-cycle animation added
+- `public/assets/logo-mark.png` — your logo, transparency fixed
+- `public/assets/favicon-32.png`, `favicon-16.png`, `apple-touch-icon.png` — regenerated from the same image
+- The other 9 HTML files are unchanged from the last push (still just carrying the favicon tag) — included so the folder is complete to copy over
 
-1. Open your local `onetag` folder (the one GitHub Desktop is already tracking).
-2. Copy every file from this delivery folder into that local folder, **matching the same path** — e.g. this `public/home.html` overwrites your local `public/home.html`. When your file manager asks to replace the existing files, say yes.
-3. Switch to GitHub Desktop. It'll list the changed/added files on the left (the 10 HTML files + the 4 new files in `public/assets/`).
-4. Bottom-left, write a commit message, e.g. "Add new pin logo with animated signal + site favicon".
-5. Click **Commit to main**.
-6. Click **Push origin** (top bar).
-7. Render redeploys automatically a minute or two after the push — refresh **onetagmn.com** after that (a hard refresh — Ctrl/Cmd+Shift+R — helps if your browser cached the old favicon).
+## Step by step (same as before)
 
-## What to expect after it's live
+1. Open your local `onetag` folder (the one GitHub Desktop tracks).
+2. Copy everything from this folder into it, same paths, overwrite when asked.
+3. GitHub Desktop → write a commit message, e.g. "Update logo: single-color, larger, continuous color-cycle" → **Commit to main**.
+4. **Push origin**.
+5. Render redeploys in a minute or two — then hard-refresh **onetagmn.com** (Ctrl/Cmd+Shift+R) so the browser drops the cached favicon.
 
-- The browser tab icon (favicon) becomes the new pin mark, on every page.
-- The site header logo (top-left, next to "Home / How it works / ...") becomes the new pin mark with "OneTag" next to it, and the gold signal arcs pulse continuously — this only animates on `home.html` itself; the favicon stays a still image everywhere (browsers don't animate tab icons — see note below).
-- Nothing else on the site changes — no layout, no other page content, no backend behavior.
+## How the color-cycle works (for reference)
 
-## One real limitation, so it's not a surprise later
-
-Browsers throttle or refuse to animate favicons to save battery, so the tab icon will stay a static frame of the pin mark — only the in-page header logo pulses. This is normal and how essentially every real site handles it; no fix needed on your end.
+It's a CSS filter animation on the logo image — `hue-rotate()` sweeping
+0° to 360° over 6 seconds, on a loop. It's applied to your image file
+directly, so no vector recreation was needed to make this work.
