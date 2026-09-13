@@ -420,7 +420,14 @@
   // page/device was reloaded while offline and Chrome wakes the service worker
   // briefly on reconnect) ----------
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/gate-listener-sw.js').then((reg) => {
+    // Explicit scope is load-bearing: without it, this defaults to the
+    // ENTIRE SITE ROOT ('/'), and the fetch handler's `mode === 'navigate'`
+    // check matches every page load on the whole domain — meaning any
+    // browser that ever opened this gate-reader kiosk page once would have
+    // its service worker silently intercepting home.html, admin pages,
+    // everything else too, invisibly bypassing Cloudflare/server caching
+    // for that browser specifically. Scoping to this exact page fixes that.
+    navigator.serviceWorker.register('/gate-listener-sw.js', { scope: '/gate-listener.html' }).then((reg) => {
       if ('sync' in reg) {
         window.addEventListener('online', () => reg.sync.register('onetag-gate-flush').catch(() => {}));
       }

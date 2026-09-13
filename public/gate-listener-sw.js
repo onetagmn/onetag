@@ -43,8 +43,15 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
-  const isShellRequest = event.request.mode === 'navigate' || SHELL_URLS.includes(url.pathname);
-  if (!isShellRequest) return; // let everything else (API calls, etc.) hit the network normally
+  // Matching on `mode === 'navigate'` ALONE (without also checking the
+  // path) matches every page navigation on the entire origin, not just
+  // this shell page — that was a real bug (see the explicit `scope` now
+  // set at registration in gate-listener.html for the other half of the
+  // fix). Belt-and-suspenders: also require the path itself to be one of
+  // this app's own shell URLs, so even a stale/misregistered instance of
+  // this worker can never intercept an unrelated page like home.html.
+  const isShellRequest = SHELL_URLS.includes(url.pathname) && (event.request.mode === 'navigate' || event.request.mode === 'same-origin' || event.request.mode === 'cors');
+  if (!isShellRequest) return; // let everything else (API calls, other pages, etc.) hit the network normally
 
   event.respondWith(
     fetch(event.request)
