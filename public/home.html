@@ -1162,12 +1162,25 @@
     if (res.ok) siteOverrides = await res.json();
   } catch (e) { /* offline or slow — keep the hardcoded defaults */ }
 
-  for (const [key, perLang] of Object.entries(siteOverrides.texts || {})) {
-    for (const lang of Object.keys(translations)) {
-      const val = perLang[lang];
-      if (typeof val === 'string' && val.trim()) translations[lang][key] = val;
-    }
-  }
+  // TEMPORARILY DISABLED (2026-09) while the homepage copy is still being
+  // actively redesigned in code: a text key edited once via the
+  // admin-content.html dashboard permanently overrides this file's
+  // hardcoded value on the LIVE site, even after this file changes again —
+  // which made a real code edit (renaming the Benefits nav label) look like
+  // "nothing changed" on deploy, since the old DB-stored value kept
+  // winning. Re-enable this block once the homepage content is finalized
+  // and you want non-developers to be able to tweak text via the
+  // dashboard again — nothing about the dashboard itself was touched,
+  // this only stops the homepage from reading its text overrides for now.
+  // (Scene photos and section-visibility toggles from that same dashboard
+  // are untouched and still apply — only per-string text overrides are off.)
+  //
+  // for (const [key, perLang] of Object.entries(siteOverrides.texts || {})) {
+  //   for (const lang of Object.keys(translations)) {
+  //     const val = perLang[lang];
+  //     if (typeof val === 'string' && val.trim()) translations[lang][key] = val;
+  //   }
+  // }
 
   // ---- Build the scroll-story from scene data ----
   // The story used to be 9 fixed stages baked into the HTML. Now the
