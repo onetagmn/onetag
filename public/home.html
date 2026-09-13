@@ -330,6 +330,24 @@
   .faq-item.open .faq-a { max-height: 260px; }
   .faq-a-inner { padding: 0 20px 18px; }
 
+  /* ---------- ADVANTAGES COMPARISON ---------- */
+  .compare-table { max-width: 760px; margin: 0 auto; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: #fff; }
+  .compare-row { display: grid; grid-template-columns: 1.3fr 1fr 1fr; }
+  .compare-row:not(:last-child) { border-bottom: 1px solid var(--line); }
+  .compare-cell { padding: 16px 18px; font-size: 13.5px; display: flex; align-items: center; gap: 6px; line-height: 1.4; }
+  .compare-head .compare-cell { font-weight: 800; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); background: var(--bg-light); }
+  .compare-label { font-weight: 700; color: var(--ink); font-size: 14.5px; }
+  .compare-onetag { background: rgba(50,195,108,0.08); font-weight: 600; color: var(--ink); }
+  .compare-head .compare-onetag { background: var(--green); color: #fff; }
+  .compare-no { color: var(--muted); }
+  .compare-yes { color: var(--green); font-weight: 700; flex-shrink: 0; }
+  @media (max-width: 700px) {
+    .compare-row { grid-template-columns: 1fr; }
+    .compare-cell { border-bottom: 1px solid var(--line); }
+    .compare-row:last-child .compare-cell:last-child { border-bottom: none; }
+    .compare-label { background: var(--bg-light); font-weight: 800; }
+  }
+
   .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
   .contact-info h2 { font-size: 28px; margin-bottom: 14px; }
   .contact-info p { color: var(--muted); font-size: 15px; margin-bottom: 24px; font-weight: 400; }
@@ -389,11 +407,11 @@
       <a href="#gps-demo" data-i18n="nav_gps">Real-time GPS</a>
       <a href="#how-it-works" data-i18n="nav_how">How it works</a>
       <a href="#benefits" data-i18n="nav_benefits">Benefits</a>
-      <a href="#faq" data-i18n="nav_faq">FAQ</a>
-      <a href="#contact" data-i18n="nav_contact">Contact</a>
+      <a href="#advantages" data-i18n="nav_advantages">Advantages</a>
     </div>
     <div class="lang-bar" id="langBar"></div>
     <div class="nav-actions">
+      <a href="#contact" class="btn btn-ghost btn-sm" data-i18n="nav_contact">Contact</a>
       <a href="/parent-portal.html" class="btn btn-ghost btn-sm" data-i18n="nav_parents">For Parents</a>
       <a href="/admin-login.html" class="btn btn-primary btn-sm" data-i18n="nav_staff">School Login</a>
     </div>
@@ -557,6 +575,46 @@
   </div>
 </section>
 
+<section id="advantages" class="reveal-on-scroll" data-block="section_advantages">
+  <div class="wrap">
+    <div class="eyebrow-sm" data-i18n="advantages_eyebrow">Advantages</div>
+    <h2 class="section-title" data-i18n="advantages_title">Most trackers ask a lot in exchange for a location. OneTag doesn't.</h2>
+    <p class="section-sub">&nbsp;</p>
+    <div class="compare-table">
+      <div class="compare-row compare-head">
+        <div class="compare-cell compare-label"></div>
+        <div class="compare-cell" data-i18n="compare_col_other">Typical GPS trackers</div>
+        <div class="compare-cell compare-onetag" data-i18n="compare_col_onetag">OneTag</div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-cell compare-label" data-i18n="compare_battery">Battery</div>
+        <div class="compare-cell compare-no" data-i18n="compare_battery_other">Needs charging or replacing</div>
+        <div class="compare-cell compare-onetag"><span class="compare-yes">✓</span><span data-i18n="compare_battery_onetag">None needed, ever</span></div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-cell compare-label" data-i18n="compare_range">Range</div>
+        <div class="compare-cell compare-no" data-i18n="compare_range_other">Limited by device signal</div>
+        <div class="compare-cell compare-onetag"><span class="compare-yes">✓</span><span data-i18n="compare_range_onetag">Unlimited — works anywhere with a phone</span></div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-cell compare-label" data-i18n="compare_gps">Real-time GPS</div>
+        <div class="compare-cell compare-no" data-i18n="compare_gps_other">Extra cost or subscription</div>
+        <div class="compare-cell compare-onetag"><span class="compare-yes">✓</span><span data-i18n="compare_gps_onetag">Included, every single tap</span></div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-cell compare-label" data-i18n="compare_app">App required</div>
+        <div class="compare-cell compare-no" data-i18n="compare_app_other">Usually, for the finder too</div>
+        <div class="compare-cell compare-onetag"><span class="compare-yes">✓</span><span data-i18n="compare_app_onetag">None — any phone browser works</span></div>
+      </div>
+      <div class="compare-row">
+        <div class="compare-cell compare-label" data-i18n="compare_maintenance">Upkeep</div>
+        <div class="compare-cell compare-no" data-i18n="compare_maintenance_other">Charging routines, dead batteries</div>
+        <div class="compare-cell compare-onetag"><span class="compare-yes">✓</span><span data-i18n="compare_maintenance_onetag">Wear it and forget it</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="reveal-on-scroll" data-block="section_gallery">
   <div class="wrap">
     <div class="eyebrow-sm" data-i18n="gallery_eyebrow">Gallery</div>
@@ -620,7 +678,7 @@
         <h2 data-i18n="contact_h2">Bring OneTag to your school</h2>
         <p data-i18n="contact_p">OneTag is currently available for special-needs schools in Ulaanbaatar, with more schools launching soon. Reach out to book a demo, ask about pricing, or bring it to your school.</p>
         <div class="contact-methods">
-          <a href="mailto:hello@onetag.mn" class="contact-method"><span class="icon-badge"><img src="/assets/icon-email.png" alt=""></span><span>hello@onetag.mn</span></a>
+          <a href="mailto:onetag.mn@gmail.com" class="contact-method"><span class="icon-badge"><img src="/assets/icon-email.png" alt=""></span><span>onetag.mn@gmail.com</span></a>
           <a href="/parent-portal.html" class="contact-method"><span class="icon-badge"><img src="/assets/icon-parent.png" alt=""></span><span data-i18n="hero_btn_parent">I'm a parent</span></a>
           <a href="/admin-login.html" class="contact-method"><span class="icon-badge"><img src="/assets/icon-staff.png" alt=""></span><span data-i18n="hero_btn_staff">I'm school staff</span></a>
         </div>
@@ -647,9 +705,9 @@
         <div class="footer-logo"><span class="dot"></span>OneTag</div>
         <p class="footer-desc" data-i18n="footer_desc">An NFC smart wristband for student safety — instant identification, emergency contact, real-time location, and attendance tracking.</p>
       </div>
-      <div class="footer-col"><h4 data-i18n="footer_product">Product</h4><a href="#gps-demo" data-i18n="nav_gps">Real-time GPS</a><a href="#how-it-works" data-i18n="nav_how">How it works</a><a href="#benefits" data-i18n="nav_benefits">Benefits</a><a href="#faq" data-i18n="nav_faq">FAQ</a></div>
+      <div class="footer-col"><h4 data-i18n="footer_product">Product</h4><a href="#gps-demo" data-i18n="nav_gps">Real-time GPS</a><a href="#how-it-works" data-i18n="nav_how">How it works</a><a href="#benefits" data-i18n="nav_benefits">Benefits</a><a href="#advantages" data-i18n="nav_advantages">Advantages</a><a href="#faq" data-i18n="faq_eyebrow">FAQ</a></div>
       <div class="footer-col"><h4 data-i18n="footer_access">Access</h4><a href="/parent-portal.html" data-i18n="hero_btn_parent">I'm a parent</a><a href="/admin-login.html" data-i18n="hero_btn_staff">I'm school staff</a></div>
-      <div class="footer-col"><h4 data-i18n="footer_contact">Contact</h4><a href="mailto:hello@onetag.mn">hello@onetag.mn</a></div>
+      <div class="footer-col"><h4 data-i18n="footer_contact">Contact</h4><a href="mailto:onetag.mn@gmail.com">onetag.mn@gmail.com</a></div>
     </div>
     <div class="footer-bottom">© 2026 OneTag</div>
   </div>
@@ -664,7 +722,7 @@
 
   const translations = {
     en: {
-      nav_gps: "Real-time GPS", nav_how: "How it works", nav_benefits: "Benefits", nav_faq: "FAQ", nav_contact: "Contact",
+      nav_gps: "Real-time GPS", nav_how: "How it works", nav_benefits: "Benefits", nav_advantages: "Advantages", nav_faq: "FAQ", nav_contact: "Contact",
       intro_eyebrow: "Meet OneTag",
       scroll_hint: "Scroll to see how it works ↓",
       story_2: "Everything that matters, saved in seconds.",
@@ -740,6 +798,13 @@
       tab_admin_1: "Manage every school, class, and admin account from one place.",
       tab_admin_2: "A clear audit trail of every gate tap and profile edit.",
       tab_admin_3: "Add or remove school admins in minutes, not days.",
+      advantages_eyebrow: "Advantages", advantages_title: "Most trackers ask a lot in exchange for a location. OneTag doesn't.",
+      compare_col_other: "Typical GPS trackers", compare_col_onetag: "OneTag",
+      compare_battery: "Battery", compare_battery_other: "Needs charging or replacing", compare_battery_onetag: "None needed, ever",
+      compare_range: "Range", compare_range_other: "Limited by device signal", compare_range_onetag: "Unlimited — works anywhere with a phone",
+      compare_gps: "Real-time GPS", compare_gps_other: "Extra cost or subscription", compare_gps_onetag: "Included, every single tap",
+      compare_app: "App required", compare_app_other: "Usually, for the finder too", compare_app_onetag: "None — any phone browser works",
+      compare_maintenance: "Upkeep", compare_maintenance_other: "Charging routines, dead batteries", compare_maintenance_onetag: "Wear it and forget it",
       gallery_eyebrow: "Gallery", gallery_title: "See OneTag in the real world",
       testimonial_eyebrow: "Feedback", testimonial_title: "From families and schools",
       testimonial_placeholder_text: "Real feedback from families and schools will appear here as more join OneTag.",
@@ -763,7 +828,7 @@
       footer_product: "Product", footer_access: "Access", footer_contact: "Contact"
     },
     mn: {
-      nav_gps: "Бодит цагийн байршил", nav_how: "Хэрхэн ажилладаг", nav_benefits: "Давуу тал", nav_faq: "Асуулт хариулт", nav_contact: "Холбоо барих",
+      nav_gps: "Бодит цагийн байршил", nav_how: "Хэрхэн ажилладаг", nav_benefits: "Ашиг тус", nav_advantages: "Давуу тал", nav_faq: "Асуулт хариулт", nav_contact: "Холбоо барих",
       intro_eyebrow: "OneTag-тай танилцах",
       scroll_hint: "Хэрхэн ажилладгийг үзэхийн тулд гүйлгэнэ үү ↓",
       story_2: "Хэрэгтэй бүх мэдээлэл секундын дотор хадгалагдана.",
@@ -825,7 +890,7 @@
       how_2_title: "Товших", how_2_p: "Утастай хэн ч бугуйвчийг товшино — апп хэрэггүй.",
       how_3_title: "Мэдээлэл гарч ирнэ", how_3_p: "Нэр, сургууль, яаралтай тусламжийн мэдээлэл хүүхдийн хэлээр гарч ирнэ.",
       how_4_title: "Бүгд мэдэгдэнэ", how_4_p: "Асран хамгаалагч, сургуулийн ажилтан юу болсныг, хэзээ болсныг харна.",
-      benefits_eyebrow: "Давуу тал", benefits_title: "Хүүхдийг тойрсон хүн бүрт зориулав",
+      benefits_eyebrow: "Ашиг тус", benefits_title: "Хүүхдийг тойрсон хүн бүрт зориулав",
       tab_parents: "Эцэг эх", tab_schools: "Сургууль", tab_teachers: "Багш", tab_admin: "Админ",
       tab_parents_1: "Хүүхэд тань сургуульд хэзээ ирж, явсныг автоматаар харна.",
       tab_parents_2: "Таны утасны дугаар олсон хүнд хэзээ ч харагдахгүй — OneTag-ээр дамжина.",
@@ -839,6 +904,13 @@
       tab_admin_1: "Бүх сургууль, анги, админ бүртгэлийг нэг дороос удирдана.",
       tab_admin_2: "Хаалганы товшилт, мэдээлэл засварын тодорхой түүх.",
       tab_admin_3: "Сургуулийн админыг хэдхэн минутанд нэмэх, хасах боломжтой.",
+      advantages_eyebrow: "Давуу тал", advantages_title: "Ихэнх трекер байршлын мэдээллийн төлөө их зүйл шаарддаг. OneTag тийм биш.",
+      compare_col_other: "Ердийн GPS трекер", compare_col_onetag: "OneTag",
+      compare_battery: "Батерей", compare_battery_other: "Цэнэглэх, солих шаардлагатай", compare_battery_onetag: "Хэзээ ч хэрэггүй",
+      compare_range: "Хязгаар", compare_range_other: "Төхөөрөмжийн дохионы хүрээгээр хязгаарлагдана", compare_range_onetag: "Хязгааргүй — утастай хаана ч ажиллана",
+      compare_gps: "Бодит цагийн GPS", compare_gps_other: "Нэмэлт төлбөр, захиалга шаардана", compare_gps_onetag: "Товшилт бүрт үнэ төлбөргүй орсон",
+      compare_app: "Апп шаардлагатай", compare_app_other: "Ихэвчлэн олсон хүнд ч бас хэрэгтэй", compare_app_onetag: "Хэрэггүй — ямар ч утасны хөтчөөр ажиллана",
+      compare_maintenance: "Арчилгаа", compare_maintenance_other: "Цэнэглэх дадал, дууссан батерей", compare_maintenance_onetag: "Өмсөөд мартаарай",
       gallery_eyebrow: "Галерей", gallery_title: "OneTag-ийг бодит амьдрал дээр харах",
       testimonial_eyebrow: "Санал хүсэлт", testimonial_title: "Гэр бүл, сургуулиудаас",
       testimonial_placeholder_text: "Илүү олон гэр бүл, сургууль нэгдэхийн хэрээр бодит санал хүсэлт энд гарч ирнэ.",
@@ -862,7 +934,7 @@
       footer_product: "Бүтээгдэхүүн", footer_access: "Нэвтрэх", footer_contact: "Холбоо барих"
     },
     zh: {
-      nav_gps: "实时定位", nav_how: "工作原理", nav_benefits: "优势", nav_faq: "常见问题", nav_contact: "联系我们",
+      nav_gps: "实时定位", nav_how: "工作原理", nav_benefits: "适用人群", nav_advantages: "优势", nav_faq: "常见问题", nav_contact: "联系我们",
       intro_eyebrow: "认识 OneTag",
       scroll_hint: "向下滚动查看工作原理 ↓",
       story_2: "重要的一切，几秒内保存完成。",
@@ -924,7 +996,7 @@
       how_2_title: "触碰", how_2_p: "任何有手机的人都能触碰手环 — 无需应用。",
       how_3_title: "资料显示", how_3_p: "姓名、学校和紧急信息以孩子的语言显示。",
       how_4_title: "各方均获通知", how_4_p: "监护人和学校职员可清楚了解发生了什么，以及具体时间。",
-      benefits_eyebrow: "优势", benefits_title: "为孩子身边的每个人而设计",
+      benefits_eyebrow: "适用人群", benefits_title: "为孩子身边的每个人而设计",
       tab_parents: "家长", tab_schools: "学校", tab_teachers: "教师", tab_admin: "管理员",
       tab_parents_1: "自动查看孩子到校和离校的准确时间。",
       tab_parents_2: "您的电话号码绝不会显示给发现者 — 通过 OneTag 联系。",
@@ -938,6 +1010,13 @@
       tab_admin_1: "在一处管理所有学校、班级和管理员账户。",
       tab_admin_2: "清晰记录每次校门触碰和资料编辑。",
       tab_admin_3: "几分钟内即可添加或移除学校管理员。",
+      advantages_eyebrow: "优势", advantages_title: "大多数追踪器为了定位要求很多。OneTag 不需要。",
+      compare_col_other: "普通 GPS 追踪器", compare_col_onetag: "OneTag",
+      compare_battery: "电池", compare_battery_other: "需要充电或更换", compare_battery_onetag: "完全不需要",
+      compare_range: "范围", compare_range_other: "受设备信号限制", compare_range_onetag: "无限制 — 只要有手机随处可用",
+      compare_gps: "实时 GPS", compare_gps_other: "需额外付费或订阅", compare_gps_onetag: "每次触碰均已包含",
+      compare_app: "需要应用", compare_app_other: "通常发现者也需要安装", compare_app_onetag: "无需 — 任何手机浏览器均可",
+      compare_maintenance: "维护", compare_maintenance_other: "定期充电、电池耗尽", compare_maintenance_onetag: "戴上即可，无需理会",
       gallery_eyebrow: "图库", gallery_title: "了解 OneTag 的真实应用",
       testimonial_eyebrow: "反馈", testimonial_title: "来自家庭与学校",
       testimonial_placeholder_text: "随着更多家庭和学校加入，真实反馈将在此显示。",
@@ -961,7 +1040,7 @@
       footer_product: "产品", footer_access: "入口", footer_contact: "联系我们"
     },
     jp: {
-      nav_gps: "リアルタイムGPS", nav_how: "使い方", nav_benefits: "メリット", nav_faq: "よくある質問", nav_contact: "お問い合わせ",
+      nav_gps: "リアルタイムGPS", nav_how: "使い方", nav_benefits: "ご利用の方へ", nav_advantages: "メリット", nav_faq: "よくある質問", nav_contact: "お問い合わせ",
       intro_eyebrow: "OneTagのご紹介",
       scroll_hint: "スクロールして仕組みを見る ↓",
       story_2: "大切な情報を、数秒で記録。",
@@ -1023,7 +1102,7 @@
       how_2_title: "タップ", how_2_p: "スマートフォンを持つ誰でもリストバンドにタップできます — アプリは不要です。",
       how_3_title: "情報を表示", how_3_p: "名前・学校・緊急時の情報が、お子さまの言語で表示されます。",
       how_4_title: "全員に通知", how_4_p: "保護者と学校スタッフは、何が起きたのか、いつ起きたのかを正確に確認できます。",
-      benefits_eyebrow: "メリット", benefits_title: "子どもを取り巻くすべての人のために",
+      benefits_eyebrow: "ご利用の方へ", benefits_title: "子どもを取り巻くすべての人のために",
       tab_parents: "保護者", tab_schools: "学校", tab_teachers: "教員", tab_admin: "管理者",
       tab_parents_1: "お子さまが登校・下校した時刻を自動的に、正確に確認できます。",
       tab_parents_2: "保護者の電話番号は発見者に表示されません — OneTagを通じて接続されます。",
@@ -1037,6 +1116,13 @@
       tab_admin_1: "すべての学校・学年・管理者アカウントを一箇所で管理できます。",
       tab_admin_2: "校門でのタップやプロフィール編集の履歴を明確に確認できます。",
       tab_admin_3: "学校管理者の追加・削除も数分で完了します。",
+      advantages_eyebrow: "メリット", advantages_title: "多くの追跡機器は位置情報と引き換えに多くを求めます。OneTagは違います。",
+      compare_col_other: "一般的なGPS追跡機器", compare_col_onetag: "OneTag",
+      compare_battery: "バッテリー", compare_battery_other: "充電・交換が必要", compare_battery_onetag: "一切不要",
+      compare_range: "範囲", compare_range_other: "デバイスの電波範囲に限定", compare_range_onetag: "無制限 — スマートフォンがあればどこでも",
+      compare_gps: "リアルタイムGPS", compare_gps_other: "追加費用または月額料金が必要", compare_gps_onetag: "タップするたびに標準搭載",
+      compare_app: "アプリが必要", compare_app_other: "多くの場合、発見者側にも必要", compare_app_onetag: "不要 — どのブラウザでも動作",
+      compare_maintenance: "維持管理", compare_maintenance_other: "定期的な充電、バッテリー切れ", compare_maintenance_onetag: "装着するだけ、あとは気にしない",
       gallery_eyebrow: "ギャラリー", gallery_title: "実際の利用シーンをご覧ください",
       testimonial_eyebrow: "ご意見・ご感想", testimonial_title: "ご家族・学校の声",
       testimonial_placeholder_text: "より多くのご家族・学校にご参加いただくことで、こちらに実際のご感想が掲載される予定です。",
@@ -1491,7 +1577,7 @@
     const email = document.getElementById('formEmail').value;
     const message = document.getElementById('formMessage').value;
     const body = `Name: ${name}\nSchool/Organization: ${org}\nEmail: ${email}\n\n${message}`;
-    window.location.href = `mailto:hello@onetag.mn?subject=${encodeURIComponent('OneTag inquiry from ' + name)}&body=${encodeURIComponent(body)}`;
+    window.location.href = `mailto:onetag.mn@gmail.com?subject=${encodeURIComponent('OneTag inquiry from ' + name)}&body=${encodeURIComponent(body)}`;
   });
 
   // Scroll reveal
