@@ -74,8 +74,13 @@
      nothing here is a one-way door. */
   .hero-static { position: relative; min-height: 92vh; display: flex; align-items: center; overflow: hidden; }
   .hero-bg { position: absolute; inset: 0; z-index: 0; background: #0E2338; }
-  .hero-bg img { width: 100%; height: 100%; object-fit: cover; filter: saturate(1.12) contrast(1.04) brightness(0.92); }
-  .hero-overlay-static { position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(14,11,8,.60) 0%, rgba(14,11,8,.38) 45%, rgba(14,11,8,.78) 100%); }
+  /* Brightened + shifted from a warm near-black overlay (which read as
+     "brown and gray" over a dim photo) to a cooler, much lighter teal-navy
+     tint at lower opacity — the photo itself should read as bright, not
+     darkened for mood. Text-shadow (below) does the legibility work that
+     the heavy dark overlay used to, so brightness doesn't cost readability. */
+  .hero-bg img { width: 100%; height: 100%; object-fit: cover; filter: saturate(1.05) contrast(1.0) brightness(1.08); }
+  .hero-overlay-static { position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(8,28,32,.22) 0%, rgba(8,28,32,.08) 45%, rgba(6,20,24,.42) 100%); }
   .hero-content { position: relative; z-index: 2; text-align: center; padding: 140px 24px 64px; color: #fff; width: 100%; }
   .hero-eyebrow {
     display: inline-flex; align-items: center; gap: 8px;
@@ -83,8 +88,8 @@
     padding: 9px 20px; border-radius: 24px; backdrop-filter: blur(8px); margin-bottom: 22px;
   }
   .hero-eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
-  .hero-content h1 { font-size: clamp(28px, 4.6vw, 50px); line-height: 1.18; max-width: 840px; margin: 0 auto 18px; color: #fff; }
-  .hero-content .hero-sub { font-size: clamp(15px, 1.8vw, 18px); max-width: 640px; margin: 0 auto 32px; color: rgba(255,255,255,0.92); font-weight: 400; line-height: 1.6; }
+  .hero-content h1 { font-size: clamp(28px, 4.6vw, 50px); line-height: 1.18; max-width: 840px; margin: 0 auto 18px; color: #fff; text-shadow: 0 2px 20px rgba(0,0,0,0.35); }
+  .hero-content .hero-sub { font-size: clamp(15px, 1.8vw, 18px); max-width: 640px; margin: 0 auto 32px; color: rgba(255,255,255,0.94); font-weight: 400; line-height: 1.6; text-shadow: 0 1px 12px rgba(0,0,0,0.3); }
   .hero-ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 36px; }
   .hero-ctas .btn { padding: 14px 26px; font-size: 15px; }
   .btn-ghost-light { background: rgba(255,255,255,0.12); color: #fff; border: 1.5px solid rgba(255,255,255,0.55); backdrop-filter: blur(6px); }
@@ -305,7 +310,7 @@
 </nav>
 
 <section class="hero-static" id="heroStatic" data-block="section_hero">
-  <div class="hero-bg"><img src="/assets/scene4-aerial.jpg" alt="" fetchpriority="high"></div>
+  <div class="hero-bg"><img src="/assets/hero-arrival.jpg" alt="" fetchpriority="high"></div>
   <div class="hero-overlay-static"></div>
   <div class="hero-content">
     <div class="hero-eyebrow"><span class="dot"></span><span data-i18n="eyebrow">NFC Safety Wristband</span></div>
@@ -352,9 +357,9 @@
   <div class="reveal-card">
     <div class="reveal-badge" data-i18n="reveal_badge">Found — tap to help</div>
     <h3>Anu B.</h3>
-    <p class="sub" data-i18n="reveal_sub">Age 7 · Special Needs School</p>
+    <p class="sub" data-i18n="reveal_sub">Age 7 · Elementary School</p>
     <div class="reveal-row"><span data-i18n="reveal_allergy_label">Allergies</span><span data-i18n="reveal_allergy_val">Peanuts</span></div>
-    <div class="reveal-row"><span data-i18n="reveal_condition_label">Condition</span><span data-i18n="reveal_condition_val">Non-verbal, ASD</span></div>
+    <div class="reveal-row"><span data-i18n="reveal_condition_label">Condition</span><span data-i18n="reveal_condition_val">Asthma</span></div>
     <div class="reveal-row"><span data-i18n="reveal_blood_label">Blood type</span><span>O+</span></div>
     <div class="reveal-call" data-i18n="reveal_call">Call guardian now</div>
     <div class="reveal-close" id="revealClose" data-i18n="reveal_close">Close</div>
@@ -363,14 +368,14 @@
 
 <section class="reveal-on-scroll" data-block="section_stats">
   <div class="wrap">
-    <div class="eyebrow-sm" data-i18n="stats_eyebrow">Why this matters</div>
-    <h2 class="section-title" data-i18n="stats_title">Every day, thousands of children face risks they can't explain</h2>
+    <div class="eyebrow-sm" data-i18n="stats_eyebrow">By the numbers</div>
+    <h2 class="section-title" data-i18n="stats_title">Simple technology, built to work instantly</h2>
     <div class="stats-grid">
-      <div class="stat-box" data-block="stat_a"><div class="stat-num">115,000</div><div class="stat-label" data-i18n="stat_a_label">people living with disabilities in Mongolia today</div></div>
-      <div class="stat-box" data-block="stat_b"><div class="stat-num">~11,000</div><div class="stat-label" data-i18n="stat_b_label">children with disabilities nationwide</div></div>
-      <div class="stat-box" data-block="stat_c"><div class="stat-num">953</div><div class="stat-label" data-i18n="stat_c_label">road injuries involving children in a single year</div></div>
+      <div class="stat-box" data-block="stat_a"><div class="stat-num">0</div><div class="stat-label" data-i18n="stat_a_label">batteries required — ever, on any tag</div></div>
+      <div class="stat-box" data-block="stat_b"><div class="stat-num">&lt; 5 sec</div><div class="stat-label" data-i18n="stat_b_label">average time to see a real GPS location after a tap</div></div>
+      <div class="stat-box" data-block="stat_c"><div class="stat-num">3</div><div class="stat-label" data-i18n="stat_c_label">languages shown instantly — Mongolian, English, Japanese</div></div>
     </div>
-    <p class="stats-footer-note" data-i18n="stats_footer">A child who can't speak can't be found by name. OneTag gives them a voice when it matters most.</p>
+    <p class="stats-footer-note" data-i18n="stats_footer">No app. No setup. No battery. Just a tap.</p>
   </div>
 </section>
 
@@ -582,7 +587,7 @@
     <div class="contact-grid">
       <div class="contact-info">
         <h2 data-i18n="contact_h2">Bring OneTag to your school</h2>
-        <p data-i18n="contact_p">OneTag is currently available for special-needs schools in Ulaanbaatar, with more schools launching soon. Reach out to book a demo, ask about pricing, or bring it to your school.</p>
+        <p data-i18n="contact_p">OneTag is currently available for schools in Ulaanbaatar, with more schools launching soon. Reach out to book a demo, ask about pricing, or bring it to your school.</p>
         <div class="contact-methods">
           <a href="mailto:onetag.mn@gmail.com" class="contact-method"><span class="icon-badge"><img src="/assets/icon-email.png" alt=""></span><span>onetag.mn@gmail.com</span></a>
           <a href="/parent-portal.html" class="contact-method"><span class="icon-badge"><img src="/assets/icon-parent.png" alt=""></span><span data-i18n="hero_btn_parent">I'm a parent</span></a>
@@ -656,8 +661,8 @@
       intro_5: "In an emergency, one tap finds them in seconds — real-time GPS.",
       nav_parents: "For Parents", nav_staff: "School Login",
       eyebrow: "NFC Safety Wristband",
-      hero_h1: "A child who can't speak can't be found by name. OneTag gives them a voice.",
-      hero_sub: "One tap. Real GPS location, emergency details, and a way to reach you — instantly, in your child's own language.",
+      hero_h1: "One tap. Their name, their location, their safety — instantly.",
+      hero_sub: "OneTag is an NFC wristband that shows a child's info and real GPS location the moment anyone taps it — no app, no battery, ever.",
       hero_cta_primary: "Get OneTag for your school", hero_cta_secondary: "See how fast it works ↓",
       trust_battery: "No battery, ever", trust_gps: "Real-time GPS", trust_phone: "Works with any phone", trust_lang: "MN / EN / 日本語",
       hero_reveal_link: "See what a finder sees when they tap →",
@@ -672,9 +677,9 @@
       panel_daily_title: "Every single school day",
       panel_daily_p: "A tap at the gate each morning and afternoon sends an instant notice: arrived safely, left safely. No sign-in sheets, no wondering.",
       photo_caption: "Tap here",
-      reveal_badge: "Found — tap to help", reveal_sub: "Age 7 · Special Needs School",
+      reveal_badge: "Found — tap to help", reveal_sub: "Age 7 · Elementary School",
       reveal_allergy_label: "Allergies", reveal_allergy_val: "Peanuts",
-      reveal_condition_label: "Condition", reveal_condition_val: "Non-verbal, ASD",
+      reveal_condition_label: "Condition", reveal_condition_val: "Asthma",
       reveal_blood_label: "Blood type", reveal_call: "Call guardian now", reveal_close: "Close",
       gps_eyebrow: "Real-time location", gps_title: "See how fast we find them",
       gps_sub: "Real GPS, not a guess. Tap below to see it work.",
@@ -684,11 +689,11 @@
       gps_footer_note: "The same real-time GPS runs every time the wristband is tapped — at the school gate, or anywhere else.",
       gps_privacy_note: "This demo uses your real location to show how it works — it's never stored or sent anywhere.",
       gps_real_caption: "A real screen from the OneTag app",
-      stats_eyebrow: "Why this matters", stats_title: "Every day, thousands of children face risks they can't explain",
-      stat_a_label: "people living with disabilities in Mongolia today",
-      stat_b_label: "children with disabilities nationwide",
-      stat_c_label: "road injuries involving children in a single year",
-      stats_footer: "A child who can't speak can't be found by name. OneTag gives them a voice when it matters most.",
+      stats_eyebrow: "By the numbers", stats_title: "Simple technology, built to work instantly",
+      stat_a_label: "batteries required — ever, on any tag",
+      stat_b_label: "average time to see a real GPS location after a tap",
+      stat_c_label: "languages shown instantly — Mongolian, English, Japanese",
+      stats_footer: "No app. No setup. No battery. Just a tap.",
       features_eyebrow: "Features", features_title: "Everything built in, ready on day one",
       features_sub: "One wristband, one dashboard, no extra hardware to manage.",
       feat_1_title: "Real-time GPS", feat_1_p: "Every tap shows a location within seconds — a real measurement, not a guess.",
@@ -742,7 +747,7 @@
       faq_5_q: "Which languages are supported?",
       faq_5_a: "OneTag is fully bilingual in Mongolian and English today, with more languages planned.",
       contact_h2: "Bring OneTag to your school",
-      contact_p: "OneTag is currently available for special-needs schools in Ulaanbaatar, with more schools launching soon. Reach out to book a demo, ask about pricing, or bring it to your school.",
+      contact_p: "OneTag is currently available for schools in Ulaanbaatar, with more schools launching soon. Reach out to book a demo, ask about pricing, or bring it to your school.",
       hero_btn_parent: "I'm a parent", hero_btn_staff: "I'm school staff",
       form_name: "Name", form_org: "School / Organization", form_email: "Email", form_message: "Message",
       form_message_ph: "Tell us about your school and what you're looking for...", form_submit: "Send message",
@@ -770,8 +775,8 @@
       intro_5: "Онц үед нэг товшилтоор секундын дотор олно — бодит цагийн GPS.",
       nav_parents: "Эцэг эх", nav_staff: "Сургуулийн нэвтрэх",
       eyebrow: "NFC аюулгүй байдлын бугуйвч",
-      hero_h1: "Ярьж чадахгүй хүүхдийг нэрээр нь олох боломжгүй. OneTag тэдэнд дуу хоолой болдог.",
-      hero_sub: "Нэг товшилт. Бодит цагийн байршил, яаралтай тусламжийн мэдээлэл, тантай холбогдох боломж — шууд, хүүхдийнхээ эх хэлээр.",
+      hero_h1: "Нэг товшилт. Тэдний нэр, байршил, аюулгүй байдал — шууд.",
+      hero_sub: "OneTag бол хэн ч товшсон даруйд хүүхдийн мэдээлэл, бодит цагийн GPS байршлыг харуулдаг NFC бугуйвч — апп, батерей огт хэрэггүй.",
       hero_cta_primary: "Сургуульдаа OneTag авах", hero_cta_secondary: "Хэр хурдан ажилладгийг үзэх ↓",
       trust_battery: "Батерей огт хэрэггүй", trust_gps: "Бодит цагийн GPS", trust_phone: "Ямар ч утсаар ажиллана", trust_lang: "МОН / EN / 日本語",
       hero_reveal_link: "Товшихад олсон хүн юу харахыг үзэх →",
@@ -786,9 +791,9 @@
       panel_daily_title: "Сургуулийн өдөр бүр",
       panel_daily_p: "Өглөө, оройн хаалганы товшилт бүр танд шууд мэдэгдэл илгээнэ: аюулгүй ирлээ, аюулгүй явлаа. Бүртгэлийн хуудас, эргэлзээ хэрэггүй.",
       photo_caption: "Энд товшино уу",
-      reveal_badge: "Олдлоо — тусламж үзүүлэхийн тулд товшино уу", reveal_sub: "7 настай · Тусгай хэрэгцээт сургууль",
+      reveal_badge: "Олдлоо — тусламж үзүүлэхийн тулд товшино уу", reveal_sub: "7 настай · Ерөнхий боловсролын сургууль",
       reveal_allergy_label: "Харшил", reveal_allergy_val: "Газрын самар",
-      reveal_condition_label: "Онцлог", reveal_condition_val: "Хэлгүй, аутизм",
+      reveal_condition_label: "Онцлог", reveal_condition_val: "Багтраа",
       reveal_blood_label: "Цусны бүлэг", reveal_call: "Асран хамгаалагчид одоо залгах", reveal_close: "Хаах",
       gps_eyebrow: "Бодит цагийн байршил", gps_title: "Бид хэр хурдан олдгийг үзээрэй",
       gps_sub: "Таамаглал биш, бодит GPS. Доорх товчийг дарж үзээрэй.",
@@ -798,11 +803,11 @@
       gps_footer_note: "Бугуйвчийг товшох бүрд яг ижил бодит цагийн GPS ажилладаг — сургуулийн хаалганд ч, хаана ч байсан.",
       gps_privacy_note: "Энэ демо нь хэрхэн ажилладгийг үзүүлэхийн тулд таны бодит байршлыг ашиглана — хаана ч хадгалагдахгүй, илгээгдэхгүй.",
       gps_real_caption: "OneTag аппын бодит дэлгэц",
-      stats_eyebrow: "Яагаад чухал вэ", stats_title: "Өдөр бүр мянга мянган хүүхэд тайлбарлаж чадахгүй эрсдэлтэй тулгардаг",
-      stat_a_label: "Монголд өнөөдөр хөгжлийн бэрхшээлтэй амьдарч буй хүн",
-      stat_b_label: "хөгжлийн бэрхшээлтэй хүүхэд улс даяар",
-      stat_c_label: "нэг жилд хүүхэдтэй холбоотой замын хөдөлгөөний осол гэмтэл",
-      stats_footer: "Ярьж чадахгүй хүүхдийг нэрээр нь олох боломжгүй. OneTag хамгийн хэрэгтэй мөчид тэдэнд дуу хоолой болдог.",
+      stats_eyebrow: "Тоон үзүүлэлт", stats_title: "Энгийн технологи, шуурхай ажилладаг",
+      stat_a_label: "батерей огт хэрэггүй, ямар ч тагт",
+      stat_b_label: "товшсоны дараа бодит GPS байршил харагдах дундаж хугацаа",
+      stat_c_label: "шууд харагдах хэл — Монгол, Англи, Япон",
+      stats_footer: "Апп хэрэггүй. Тохиргоо хэрэггүй. Батерей хэрэггүй. Зөвхөн товшино.",
       features_eyebrow: "Онцлогууд", features_title: "Бүх зүйл нэг дор, эхний өдрөөс бэлэн",
       features_sub: "Нэг бугуйвч, нэг удирдлагын самбар, нэмэлт төхөөрөмж хэрэггүй.",
       feat_1_title: "Бодит цагийн GPS", feat_1_p: "Товшсон бүрт хүүхдийн байршлыг секундын дотор харуулна — таамаглал биш, бодит хэмжилт.",
@@ -856,7 +861,7 @@
       faq_5_q: "Ямар хэл дэмждэг вэ?",
       faq_5_a: "OneTag өнөөдөр монгол, англи хэлээр бүрэн ажилладаг бөгөөд цаашид өөр хэл нэмэгдэх төлөвтэй.",
       contact_h2: "OneTag-ийг сургуульдаа авчрах",
-      contact_p: "OneTag одоогоор Улаанбаатар хотын тусгай хэрэгцээт сургуулиудад ашиглах боломжтой бөгөөд удахгүй илүү олон сургуульд нэвтэрнэ. Демо захиалах, үнийн санал авах эсвэл сургуульдаа авчрахын тулд бидэнтэй холбогдоно уу.",
+      contact_p: "OneTag одоогоор Улаанбаатар хотын сургуулиудад ашиглах боломжтой бөгөөд удахгүй илүү олон сургуульд нэвтэрнэ. Демо захиалах, үнийн санал авах эсвэл сургуульдаа авчрахын тулд бидэнтэй холбогдоно уу.",
       hero_btn_parent: "Би эцэг эх", hero_btn_staff: "Би сургуулийн ажилтан",
       form_name: "Нэр", form_org: "Сургууль / Байгууллага", form_email: "И-мэйл", form_message: "Зурвас",
       form_message_ph: "Сургуулийнхаа болон хэрэгцээгээ бидэнд хэлнэ үү...", form_submit: "Зурвас илгээх",
@@ -884,8 +889,8 @@
       intro_5: "紧急情况下，一次触碰，几秒内定位 — 实时 GPS。",
       nav_parents: "为家长", nav_staff: "学校登录",
       eyebrow: "NFC 安全手环",
-      hero_h1: "不会说话的孩子无法凭姓名被找到。OneTag 为他们发声。",
-      hero_sub: "轻触一下。实时 GPS 定位、紧急信息，以及联系您的方式 — 即刻显示，使用孩子自己的语言。",
+      hero_h1: "轻触一下。姓名、位置、安全 — 立即显示。",
+      hero_sub: "OneTag 是一款 NFC 手环，任何人轻触即可立即显示孩子的信息和实时 GPS 位置 — 无需应用，无需电池。",
       hero_cta_primary: "为您的学校获取 OneTag", hero_cta_secondary: "查看其运作速度 ↓",
       trust_battery: "完全不需要电池", trust_gps: "实时 GPS", trust_phone: "任何手机均可使用", trust_lang: "中文 / EN / 日本語",
       hero_reveal_link: "查看发现者触碰后看到的内容 →",
@@ -900,9 +905,9 @@
       panel_daily_title: "每一个上学日",
       panel_daily_p: "每天早晚在校门触碰手环，都会立即通知您：安全到校、安全离校。无需签到表，无需担心。",
       photo_caption: "点击这里",
-      reveal_badge: "已找到 — 点击提供帮助", reveal_sub: "7岁 · 特殊教育学校",
+      reveal_badge: "已找到 — 点击提供帮助", reveal_sub: "7岁 · 小学",
       reveal_allergy_label: "过敏", reveal_allergy_val: "花生",
-      reveal_condition_label: "情况", reveal_condition_val: "不能言语，自闭症",
+      reveal_condition_label: "情况", reveal_condition_val: "哮喘",
       reveal_blood_label: "血型", reveal_call: "立即联系监护人", reveal_close: "关闭",
       gps_eyebrow: "实时定位", gps_title: "看看我们找到孩子的速度",
       gps_sub: "真实 GPS，而非猜测。点击下方按钮体验。",
@@ -912,11 +917,11 @@
       gps_footer_note: "每次触碰手环都会运行同样的实时 GPS — 无论在校门口，还是任何其他地方。",
       gps_privacy_note: "此演示使用您的真实位置来展示其工作原理 — 不会被存储或发送到任何地方。",
       gps_real_caption: "OneTag 应用的真实画面",
-      stats_eyebrow: "为什么重要", stats_title: "每天，成千上万的孩子面临他们无法说明的风险",
-      stat_a_label: "蒙古目前生活着的残疾人士",
-      stat_b_label: "全国残疾儿童",
-      stat_c_label: "一年内涉及儿童的道路伤害事故",
-      stats_footer: "无法说话的孩子无法通过姓名被找到。OneTag 在最关键的时刻为他们发声。",
+      stats_eyebrow: "数据一览", stats_title: "简单的技术，即刻发挥作用",
+      stat_a_label: "任何标签都完全不需要电池",
+      stat_b_label: "触碰后显示真实 GPS 位置的平均时间",
+      stat_c_label: "即时显示的语言 — 蒙古语、英语、日语",
+      stats_footer: "无需应用。无需设置。无需电池。只需轻触。",
       features_eyebrow: "功能", features_title: "一切内置，即刻可用",
       features_sub: "一个手环，一个仪表盘，无需额外硬件管理。",
       feat_1_title: "实时 GPS", feat_1_p: "每次触碰都能在几秒内显示孩子的位置 — 真实测量，而非猜测。",
@@ -970,7 +975,7 @@
       faq_5_q: "支持哪些语言？",
       faq_5_a: "OneTag 目前完整支持蒙古语和英语，未来计划支持更多语言。",
       contact_h2: "将 OneTag 带到您的学校",
-      contact_p: "OneTag 目前已在乌兰巴托的特殊教育学校投入使用，更多学校即将上线。欢迎联系我们预约演示、咨询价格，或将其带到您的学校。",
+      contact_p: "OneTag 目前已在乌兰巴托的学校投入使用，更多学校即将上线。欢迎联系我们预约演示、咨询价格，或将其带到您的学校。",
       hero_btn_parent: "我是家长", hero_btn_staff: "我是学校职员",
       form_name: "姓名", form_org: "学校 / 机构", form_email: "电子邮箱", form_message: "留言",
       form_message_ph: "请告诉我们贵校的情况以及您的需求...", form_submit: "发送留言",
@@ -998,8 +1003,8 @@
       intro_5: "緊急時も、ワンタップで数秒以内に位置を特定 — リアルタイムGPS。",
       nav_parents: "保護者の方へ", nav_staff: "学校スタッフログイン",
       eyebrow: "NFC安全リストバンド",
-      hero_h1: "話せない子どもは、名前で見つけてもらうことができません。OneTagが声を届けます。",
-      hero_sub: "ワンタップで。リアルタイムのGPS位置情報、緊急時の情報、そして連絡手段を — お子さまの言語で、即座に。",
+      hero_h1: "ワンタップで。名前も、居場所も、安全も — 即座に。",
+      hero_sub: "OneTagは、誰かがタップした瞬間にお子さまの情報と実際のGPS位置情報を表示するNFCリストバンドです — アプリもバッテリーも一切不要です。",
       hero_cta_primary: "学校にOneTagを導入する", hero_cta_secondary: "その速さを見てみる ↓",
       trust_battery: "バッテリー不要", trust_gps: "リアルタイムGPS", trust_phone: "どのスマホでも利用可能", trust_lang: "日本語 / EN / МОН",
       hero_reveal_link: "発見者に表示される画面を見る →",
@@ -1014,9 +1019,9 @@
       panel_daily_title: "毎日の学校生活で",
       panel_daily_p: "毎朝・毎夕の校門タップで、登校・下校の通知が即座に届きます。出席簿も、心配する必要もありません。",
       photo_caption: "ここをタップ",
-      reveal_badge: "発見しました — タップして助ける", reveal_sub: "7歳・特別支援学校",
+      reveal_badge: "発見しました — タップして助ける", reveal_sub: "7歳・小学校",
       reveal_allergy_label: "アレルギー", reveal_allergy_val: "ピーナッツ",
-      reveal_condition_label: "特性", reveal_condition_val: "非言語・自閉スペクトラム症",
+      reveal_condition_label: "特性", reveal_condition_val: "喘息",
       reveal_blood_label: "血液型", reveal_call: "今すぐ保護者に電話", reveal_close: "閉じる",
       gps_eyebrow: "リアルタイム位置情報", gps_title: "発見までの速さを体験",
       gps_sub: "推測ではなく、本物のGPS。下のボタンを押して体験してください。",
@@ -1026,11 +1031,11 @@
       gps_footer_note: "リストバンドをタップするたびに、同じリアルタイムGPSが作動します — 校門でも、どこにいても。",
       gps_privacy_note: "このデモではお客様の実際の位置情報を使用して仕組みをご紹介しています — 保存や送信は一切行われません。",
       gps_real_caption: "OneTagアプリの実際の画面",
-      stats_eyebrow: "なぜ重要なのか", stats_title: "毎日、何千人もの子どもたちが、自分では説明できない危険にさらされています",
-      stat_a_label: "現在モンゴルで暮らす障がいのある人々",
-      stat_b_label: "全国の障がいのある子どもたち",
-      stat_c_label: "年間の子どもが関わる交通事故によるけが",
-      stats_footer: "言葉を話せない子どもは、名前で見つけてもらうことができません。OneTagは、最も必要な瞬間に子どもたちに声を与えます。",
+      stats_eyebrow: "数字で見る", stats_title: "シンプルな技術で、即座に機能します",
+      stat_a_label: "どのタグもバッテリーは一切不要",
+      stat_b_label: "タップ後に実際のGPS位置情報が表示されるまでの平均時間",
+      stat_c_label: "即座に表示される言語 — モンゴル語・英語・日本語",
+      stats_footer: "アプリ不要。設定不要。バッテリー不要。タップするだけ。",
       features_eyebrow: "機能", features_title: "すべての機能を標準搭載、導入初日から利用可能",
       features_sub: "一つのリストバンド、一つのダッシュボードで、追加のハードウェア管理は不要です。",
       feat_1_title: "リアルタイムGPS", feat_1_p: "タップするたびに数秒で位置情報を表示 — 推測ではなく、実際の測定値です。",
@@ -1084,7 +1089,7 @@
       faq_5_q: "どの言語に対応していますか？",
       faq_5_a: "OneTagは現在、モンゴル語・英語・日本語に対応しており、今後さらに多くの言語に対応予定です。",
       contact_h2: "学校にOneTagを導入する",
-      contact_p: "OneTagは現在、ウランバートル市内の特別支援学校で導入されています。今後さらに多くの学校への展開を予定しています。デモのご予約、料金のお問い合わせ、導入のご相談などお気軽にご連絡ください。",
+      contact_p: "OneTagは現在、ウランバートル市内の学校で導入されています。今後さらに多くの学校への展開を予定しています。デモのご予約、料金のお問い合わせ、導入のご相談などお気軽にご連絡ください。",
       hero_btn_parent: "保護者です", hero_btn_staff: "学校スタッフです",
       form_name: "お名前", form_org: "学校・団体名", form_email: "メールアドレス", form_message: "メッセージ",
       form_message_ph: "貴校の状況とご要望をお聞かせください…", form_submit: "送信する",
