@@ -13,16 +13,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-<!-- The scroll-story section (.scroll-story) has a dark navy background
-     (#0E2338) showing behind the active photo until that photo's image
-     file finishes downloading. Neither the opening photo (visible
-     immediately on page load) nor the closing one (at the end of the
-     story) having a preload hint reads as a "black gap" at both the top
-     and the end of the story on a slower connection. Since which photo is
-     first/last now depends on the (admin-editable) scene list rather than
-     a fixed stage number, these preload links are injected by JS once
-     that list is known — see "Build the scroll-story from scene data"
-     further down this script — instead of being hardcoded here. -->
 
 <style>
   :root {
@@ -74,159 +64,39 @@
   .lang-btn { padding: 5px 13px; border-radius: 20px; border: 1px solid var(--line); background: #fff; color: var(--muted); font-size: 12.5px; font-weight: 700; cursor: pointer; }
   .lang-btn.active { background: var(--sky); color: var(--teal); border-color: var(--sky); }
 
-  /* ---------- SCROLL STORY HERO ---------- */
-  /* Once you've scrolled through all 9 photos, the pinned photo (.story-sticky,
-     position:sticky) detaches and scrolls away normally for its own final
-     ~100vh of height before this section ends — that's inherent to how
-     position:sticky un-pins, not a bug on its own. The bug was that during
-     that ~100vh window, nothing else is drawn where the photo used to be,
-     so .scroll-story's own flat navy background showed through as a stark
-     block right up against .post-story-ctas's light background right after
-     it. Fading the last ~15% of this background to that same light color
-     turns that reveal into an intentional-looking fade instead of a jarring
-     dark void. (A cleaner fix would have the next section slide up and
-     cover that space in sync via a negative margin, but that needs careful
-     z-index/stacking work to avoid covering the photo prematurely — not
-     safe to do blind without live visual verification, so this lower-risk
-     version ships first.) */
-  /* padding:0 is deliberate and load-bearing here, not a default — the
-     mobile breakpoint below has a generic "section { padding: 64px 0; }"
-     rule for normal content sections, and since .scroll-story is also a
-     <section>, it was silently inheriting that same 64px of top padding.
-     That pushed the pinned photo down by 64px on every mobile screen,
-     exposing this section's own background above it — the top-of-page gap.
-     A class selector (.scroll-story) always outranks a plain element
-     selector (section) regardless of media query or source order, so this
-     wins in both the mobile and desktop cases without needing to touch
-     that other rule, which other sections still rely on. */
-  .scroll-story { position: relative; height: 312vh; padding: 0; background: linear-gradient(to bottom, #0E2338 0%, #0E2338 85%, var(--bg-light) 100%); }
-  .story-sticky { position: sticky; top: 0; height: 100vh; overflow: hidden; }
-  .story-stage-photo {
-    position: absolute; inset: 0; opacity: 0; z-index: 1;
-    transform: scale(1.1) rotateY(6deg) translateZ(0);
-    transition: opacity 0.8s ease, transform 1s cubic-bezier(.2,.8,.2,1);
-    perspective: 1200px;
+  /* ---------- STATIC SALES HERO ---------- */
+  /* Replaces the old 9-photo scroll-hijack hero: a real salesperson leads
+     with the strongest line immediately, not after a forced cinematic
+     scroll. One strong photo, the headline that used to be buried in the
+     Stats section, both CTAs visible with zero scrolling, and a trust
+     strip answering "why should I care" in the same glance. The old
+     version is fully preserved in git history if this doesn't work out —
+     nothing here is a one-way door. */
+  .hero-static { position: relative; min-height: 92vh; display: flex; align-items: center; overflow: hidden; }
+  .hero-bg { position: absolute; inset: 0; z-index: 0; background: #0E2338; }
+  .hero-bg img { width: 100%; height: 100%; object-fit: cover; filter: saturate(1.12) contrast(1.04) brightness(0.92); }
+  .hero-overlay-static { position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, rgba(14,11,8,.60) 0%, rgba(14,11,8,.38) 45%, rgba(14,11,8,.78) 100%); }
+  .hero-content { position: relative; z-index: 2; text-align: center; padding: 140px 24px 64px; color: #fff; width: 100%; }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(0,0,0,0.4); color: #fff; font-size: 14px; font-weight: 700;
+    padding: 9px 20px; border-radius: 24px; backdrop-filter: blur(8px); margin-bottom: 22px;
   }
-  .story-stage-photo.active { opacity: 1; transform: scale(1) rotateY(0deg) translateZ(0); z-index: 2; }
-  .story-stage-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  /* The opening scene gets a distinct descending-zoom instead of the tilt:
-     entering more zoomed-out and pushing in, so the story opens already
-     mid-descent rather than static. Applied by position (whichever scene
-     JS renders first), via a class rather than a fixed data-stage index —
-     scenes can be added/deleted/reordered from the dashboard now, so
-     "the opening scene" isn't always the same stage number. */
-  .story-stage-photo.story-stage-first { transform: scale(1.35) translateY(-2%) rotateY(0deg) translateZ(0); }
-  .story-stage-photo.story-stage-first.active { transform: scale(1) translateY(0%) rotateY(0deg) translateZ(0); }
-  /* The closing scene also skips the rotateY tilt every other scene uses.
-     It's the last frame before the sticky pin releases into the CTA
-     section — a fast scroll can land mid-rotation right as that release
-     happens, and rotateY's perspective foreshortening pulls the image in
-     from the top/bottom edges for an instant, exposing the dark
-     .scroll-story background behind it. Same fix as the opening scene,
-     same reason: both sit at a sticky boundary, so both get a plain
-     scale-only crossfade. Also applied by position, not a fixed index. */
-  .story-stage-photo.story-stage-last { transform: scale(1.08) translateZ(0); }
-  .story-stage-photo.story-stage-last.active { transform: scale(1) translateZ(0); }
-  /* Whip-blur pulse on every cut, mimicking a real camera swish rather
-     than a flat crossfade. */
-  .story-sticky { transition: filter 0.25s ease; }
-  .story-sticky.story-transitioning { filter: blur(5px) brightness(1.08); }
-
-  /* ---------- HUD LABEL REVEAL (Scene 2) ---------- */
-  .hud-svg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; }
-  .hud-svg-line {
-    stroke: #098277; stroke-width: 0.25; fill: none;
-    stroke-dasharray: 40; stroke-dashoffset: 40;
-    transition: stroke-dashoffset 0.5s ease;
+  .hero-eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+  .hero-content h1 { font-size: clamp(28px, 4.6vw, 50px); line-height: 1.18; max-width: 840px; margin: 0 auto 18px; color: #fff; }
+  .hero-content .hero-sub { font-size: clamp(15px, 1.8vw, 18px); max-width: 640px; margin: 0 auto 32px; color: rgba(255,255,255,0.92); font-weight: 400; line-height: 1.6; }
+  .hero-ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 36px; }
+  .hero-ctas .btn { padding: 14px 26px; font-size: 15px; }
+  .btn-ghost-light { background: rgba(255,255,255,0.12); color: #fff; border: 1.5px solid rgba(255,255,255,0.55); backdrop-filter: blur(6px); }
+  .btn-ghost-light:hover { background: rgba(255,255,255,0.22); }
+  .hero-trust-strip { display: flex; gap: 26px; justify-content: center; flex-wrap: wrap; font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 8px; }
+  .hero-trust-strip span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .hero-reveal-link { display: inline-block; margin-top: 18px; color: rgba(255,255,255,0.8); font-size: 13.5px; font-weight: 600; text-decoration: underline; cursor: pointer; background: none; border: none; font-family: inherit; }
+  .hero-reveal-link:hover { color: #fff; }
+  @media (max-width: 700px) {
+    .hero-content { padding: 120px 20px 48px; }
+    .hero-trust-strip { gap: 14px; font-size: 12.5px; }
   }
-  .hud-svg-line.revealed { stroke-dashoffset: 0; }
-  .hud-svg-dot {
-    fill: #fff; opacity: 0; transition: opacity 0.3s ease;
-  }
-  .hud-svg-dot.revealed { opacity: 1; }
-  .hud-labels { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
-  .hud-label {
-    position: absolute; opacity: 0; transition: opacity 0.35s ease, transform 0.35s ease;
-  }
-  .hud-label.revealed { opacity: 1; }
-  .hud-text {
-    background: rgba(9,130,119,0.92); color: #fff; font-size: 12.5px; font-weight: 700;
-    padding: 5px 12px; border-radius: 20px; white-space: nowrap; display: inline-block;
-    box-shadow: 0 4px 14px rgba(9,130,119,0.4);
-  }
-  .story-overlay {
-    /* Was a cool navy gradient that never dropped below 15% opacity —
-       that constant floor across every frame is what read as "grey" on
-       all nine photos regardless of their own color. Warm near-black,
-       and a true 0 in the midframe so untouched image color shows through. */
-    position: absolute; inset: 0; z-index: 3; pointer-events: none;
-    background: linear-gradient(to top, rgba(14,11,8,.74) 0%, rgba(14,11,8,.30) 38%, rgba(14,11,8,0) 68%);
-  }
-  /* Warm sun pass, upper-left, soft-light so it lifts midtones without
-     blowing out highlights. Base treatment for all 9 scenes; per-scene
-     stage-morning/stage-dusk rules below add a stronger directional pass
-     on top of this for the classified scenes. */
-  .story-sticky::before {
-    content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none;
-    background: radial-gradient(120% 80% at 22% 12%, rgba(255,198,124,.30), transparent 62%);
-    mix-blend-mode: soft-light;
-  }
-  /* Base color lift for all scene photos. Tune these values, then bake
-     them into the JPGs and delete this rule — filter re-composites every
-     frame during scroll, which costs real frame rate on low-end phones. */
-  .story-stage-photo img { filter: saturate(1.18) contrast(1.05) brightness(1.04); }
-  /* Time-of-day grading: morning scenes (aerial/crane/tap-morning) run
-     cooler-gold and higher contrast; dusk scenes (tap-dusk/phone-notif)
-     run deeper amber, lower contrast, softer, with the sun moved to the
-     right to read as later in the day. Dashboard and map stay neutral. */
-  .story-stage-photo.stage-morning::before {
-    content: ''; position: absolute; inset: 0; pointer-events: none;
-    background: radial-gradient(120% 80% at 22% 12%, rgba(255,214,150,.28), transparent 62%);
-  }
-  .story-stage-photo.stage-dusk::before {
-    content: ''; position: absolute; inset: 0; pointer-events: none;
-    background: radial-gradient(120% 80% at 78% 18%, rgba(255,158,84,.34), transparent 66%);
-  }
-  .story-stage-photo.stage-dusk img { filter: saturate(1.12) contrast(.98) brightness(1.02); }
-  .story-progress { display: none; }
-  .story-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.3); transition: background 0.3s ease, width 0.3s ease; }
-  .story-dot.active { background: #fff; width: 22px; border-radius: 5px; }
-  .story-caption-wrap { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
-  .story-caption {
-    position: absolute; left: 0; right: 0; bottom: 130px; text-align: center; padding: 0 24px;
-    opacity: 0; transform: translateY(20px); transition: opacity 0.5s ease, transform 0.5s ease;
-  }
-  .story-caption.active { opacity: 1; transform: translateY(0); }
-  .story-caption h1 { font-size: clamp(30px, 5vw, 54px); font-weight: 800; color: #fff; line-height: 1.12; max-width: 780px; margin: 0 auto; }
-  .story-caption h2 { font-size: clamp(24px, 4vw, 42px); font-weight: 800; color: #fff; line-height: 1.2; max-width: 700px; margin: 0 auto; }
-  .story-eyebrow-top {
-    position: absolute; top: 56px; left: 0; right: 0; z-index: 6;
-    display: none; align-items: center; justify-content: center; gap: 8px;
-    background: rgba(0,0,0,0.45); color: #fff; font-size: 15px; font-weight: 700;
-    width: fit-content; margin: 0 auto; padding: 9px 20px; border-radius: 24px;
-    backdrop-filter: blur(8px); pointer-events: none;
-  }
-  .story-eyebrow-top.show { display: flex; }
-  .story-eyebrow-top .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
-  .story-tap-center {
-    position: absolute; top: 58%; left: 40%; transform: translate(-50%, -50%);
-    z-index: 6; display: none; align-items: center; gap: 8px; pointer-events: auto; cursor: pointer;
-    background: rgba(0,0,0,0.5); color: #fff; border: 1.5px solid rgba(255,255,255,0.5);
-    padding: 11px 22px; border-radius: 24px; font-size: 14px; font-weight: 700; font-family: inherit;
-    backdrop-filter: blur(6px); animation: tapPulse 1.8s ease-in-out infinite;
-  }
-  .story-tap-center.show { display: flex; }
-  .story-tap-center:hover { background: rgba(0,0,0,0.65); }
-  @keyframes tapPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.25); } 50% { box-shadow: 0 0 0 10px rgba(255,255,255,0); } }
-  .story-scroll-hint {
-    position: absolute; bottom: 32px; left: 0; right: 0; z-index: 5; text-align: center;
-    color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 500; pointer-events: none;
-    animation: bobHint 1.8s ease-in-out infinite;
-  }
-  @keyframes bobHint { 0%, 100% { transform: translateY(0); opacity: 0.6; } 50% { transform: translateY(6px); opacity: 1; } }
-  .post-story-ctas { padding: 56px 0; background: var(--bg-light); text-align: center; }
-  .post-story-ctas-inner { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
-  .post-story-ctas .btn { padding: 14px 26px; font-size: 15px; }
 
   .reveal-overlay { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0); pointer-events: none; transition: background 0.35s ease; padding: 24px; }
   .reveal-overlay.active { background: rgba(15, 23, 42, 0.55); pointer-events: auto; }
@@ -403,12 +273,8 @@
     .timeline::before { display: none; }
     .nav-links { display: none; }
     .stats-grid { grid-template-columns: 1fr; gap: 32px; }
-    .story-caption { bottom: 110px; }
   }
   @media (max-width: 560px) {
-    .scroll-story { height: 260vh; }
-    .post-story-ctas-inner { flex-direction: column; align-items: center; }
-    .story-caption { bottom: 140px; }
     .grid-3 { grid-template-columns: 1fr; }
     .timeline { grid-template-columns: 1fr; }
     section { padding: 64px 0; }
@@ -438,39 +304,24 @@
   </div>
 </nav>
 
-<section class="scroll-story" id="scrollStory">
-  <div class="story-sticky">
-    <!-- Story photos + captions below are built entirely by JS from
-         siteOverrides.scenes (falling back to FALLBACK_SCENES if that
-         fetch fails) — see the "Build the scroll-story from scene data"
-         block further down this script. There's no fixed stage count
-         anymore: the super-admin dashboard can add, delete, and reorder
-         scenes, so the markup has to be able to render any number of
-         them, not just 9. -->
-    <div id="storyStagePhotos"></div>
-
-    <div class="story-progress" id="storyProgress"></div>
-
-    <div class="story-eyebrow-top" id="storyEyebrowTop">
-      <span class="dot"></span><span data-i18n="eyebrow">NFC Safety Wristband</span>
+<section class="hero-static" id="heroStatic" data-block="section_hero">
+  <div class="hero-bg"><img src="/assets/scene4-aerial.jpg" alt="" fetchpriority="high"></div>
+  <div class="hero-overlay-static"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow"><span class="dot"></span><span data-i18n="eyebrow">NFC Safety Wristband</span></div>
+    <h1 data-i18n="hero_h1">A child who can't speak can't be found by name. OneTag gives them a voice.</h1>
+    <p class="hero-sub" data-i18n="hero_sub">One tap. Real GPS location, emergency details, and a way to reach you — instantly, in your child's own language.</p>
+    <div class="hero-ctas">
+      <a href="#contact" class="btn btn-primary" data-i18n="hero_cta_primary">Get OneTag for your school</a>
+      <a href="#gps-demo" class="btn btn-ghost-light" data-i18n="hero_cta_secondary">See how fast it works ↓</a>
     </div>
-
-    <button class="story-tap-center" id="storyPreviewBtn">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><circle cx="12" cy="12" r="10" opacity="0.4"></circle></svg>
-      <span data-i18n="photo_caption">Tap here</span>
-    </button>
-    <div class="story-overlay"></div>
-
-    <div class="story-caption-wrap" id="storyCaptionWrap"></div>
-
-    <div class="story-scroll-hint" id="storyScrollHint" data-i18n="scroll_hint">Scroll to see how it works ↓</div>
-  </div>
-</section>
-
-<section class="post-story-ctas" data-block="section_post_story_ctas">
-  <div class="wrap post-story-ctas-inner">
-    <a href="#contact" class="btn btn-primary" data-i18n="hero_cta_primary">Get OneTag for your school</a>
-    <a href="#gps-demo" class="btn btn-ghost" data-i18n="hero_cta_secondary">See how fast it works</a>
+    <div class="hero-trust-strip">
+      <span>🔋 <span data-i18n="trust_battery">No battery, ever</span></span>
+      <span>📍 <span data-i18n="trust_gps">Real-time GPS</span></span>
+      <span>📱 <span data-i18n="trust_phone">Works with any phone</span></span>
+      <span>🌐 <span data-i18n="trust_lang">MN / EN / 日本語</span></span>
+    </div>
+    <button class="hero-reveal-link" id="storyPreviewBtn" data-i18n="hero_reveal_link">See what a finder sees when they tap →</button>
   </div>
 </section>
 
@@ -805,9 +656,11 @@
       intro_5: "In an emergency, one tap finds them in seconds — real-time GPS.",
       nav_parents: "For Parents", nav_staff: "School Login",
       eyebrow: "NFC Safety Wristband",
-      hero_h1: "Safe every school day. Peace of mind for parents. Found in seconds.",
-      hero_sub: "OneTag is a wristband that logs safe arrival and departure at school automatically — and instantly shows real-time location and emergency details to anyone who finds your child, anywhere else.",
-      hero_cta_primary: "Get OneTag for your school", hero_cta_secondary: "See how fast it works",
+      hero_h1: "A child who can't speak can't be found by name. OneTag gives them a voice.",
+      hero_sub: "One tap. Real GPS location, emergency details, and a way to reach you — instantly, in your child's own language.",
+      hero_cta_primary: "Get OneTag for your school", hero_cta_secondary: "See how fast it works ↓",
+      trust_battery: "No battery, ever", trust_gps: "Real-time GPS", trust_phone: "Works with any phone", trust_lang: "MN / EN / 日本語",
+      hero_reveal_link: "See what a finder sees when they tap →",
       tag3d_eyebrow: "The wristband itself", tag3d_title: "Drag to look around",
       tag3d_sub: "The actual OneTag design — rotate it yourself.", tag3d_loading: "Loading model…", tag3d_hint: "Drag to rotate · scroll to zoom",
       tag3d_info_title: "What's saved on it",
@@ -917,9 +770,11 @@
       intro_5: "Онц үед нэг товшилтоор секундын дотор олно — бодит цагийн GPS.",
       nav_parents: "Эцэг эх", nav_staff: "Сургуулийн нэвтрэх",
       eyebrow: "NFC аюулгүй байдлын бугуйвч",
-      hero_h1: "Сургуулийн өдөр бүр аюулгүй. Эцэг эхэд санаа зовохгүй байдал. Секундын дотор олдоно.",
-      hero_sub: "OneTag бол сургуульд ирсэн, явсныг автоматаар бүртгэдэг бугуйвч — мөн хаана ч олдсон хүүхдийг олсон хэн бүхэнд бодит цагийн байршил, яаралтай тусламжийн мэдээллийг шууд харуулдаг.",
-      hero_cta_primary: "Сургуульдаа OneTag авах", hero_cta_secondary: "Хэр хурдан ажилладгийг үзэх",
+      hero_h1: "Ярьж чадахгүй хүүхдийг нэрээр нь олох боломжгүй. OneTag тэдэнд дуу хоолой болдог.",
+      hero_sub: "Нэг товшилт. Бодит цагийн байршил, яаралтай тусламжийн мэдээлэл, тантай холбогдох боломж — шууд, хүүхдийнхээ эх хэлээр.",
+      hero_cta_primary: "Сургуульдаа OneTag авах", hero_cta_secondary: "Хэр хурдан ажилладгийг үзэх ↓",
+      trust_battery: "Батерей огт хэрэггүй", trust_gps: "Бодит цагийн GPS", trust_phone: "Ямар ч утсаар ажиллана", trust_lang: "МОН / EN / 日本語",
+      hero_reveal_link: "Товшихад олсон хүн юу харахыг үзэх →",
       tag3d_eyebrow: "Бугуйвч өөрөө", tag3d_title: "Чирж эргүүлж үзээрэй",
       tag3d_sub: "OneTag-ийн жинхэнэ загвар — өөрөө эргүүлж үзээрэй.", tag3d_loading: "Загвар ачаалж байна…", tag3d_hint: "Эргүүлэхийн тулд чирнэ · томруулахын тулд гүйлгэнэ",
       tag3d_info_title: "Үүнд юу хадгалагддаг вэ",
@@ -1029,9 +884,11 @@
       intro_5: "紧急情况下，一次触碰，几秒内定位 — 实时 GPS。",
       nav_parents: "为家长", nav_staff: "学校登录",
       eyebrow: "NFC 安全手环",
-      hero_h1: "每个上学日都安全。家长安心无忧。几秒内即可找到。",
-      hero_sub: "OneTag 是一款手环，自动记录到校与离校的安全状态 — 并能即时向发现孩子的任何人显示实时位置和紧急信息。",
-      hero_cta_primary: "为您的学校获取 OneTag", hero_cta_secondary: "查看其运作速度",
+      hero_h1: "不会说话的孩子无法凭姓名被找到。OneTag 为他们发声。",
+      hero_sub: "轻触一下。实时 GPS 定位、紧急信息，以及联系您的方式 — 即刻显示，使用孩子自己的语言。",
+      hero_cta_primary: "为您的学校获取 OneTag", hero_cta_secondary: "查看其运作速度 ↓",
+      trust_battery: "完全不需要电池", trust_gps: "实时 GPS", trust_phone: "任何手机均可使用", trust_lang: "中文 / EN / 日本語",
+      hero_reveal_link: "查看发现者触碰后看到的内容 →",
       tag3d_eyebrow: "手环本身", tag3d_title: "拖动查看",
       tag3d_sub: "OneTag 的真实设计 — 亲自旋转查看。", tag3d_loading: "正在加载模型…", tag3d_hint: "拖动旋转 · 滚动缩放",
       tag3d_info_title: "上面保存了什么",
@@ -1141,9 +998,11 @@
       intro_5: "緊急時も、ワンタップで数秒以内に位置を特定 — リアルタイムGPS。",
       nav_parents: "保護者の方へ", nav_staff: "学校スタッフログイン",
       eyebrow: "NFC安全リストバンド",
-      hero_h1: "毎日安心して登校。保護者にも安心を。数秒で居場所がわかります。",
-      hero_sub: "OneTagは登校・下校を自動で記録するリストバンドです。万が一お子さまが離れた場所で見つかった場合も、発見した方にリアルタイムの位置情報と緊急時の情報を即座に表示します。",
-      hero_cta_primary: "学校にOneTagを導入する", hero_cta_secondary: "その速さを見てみる",
+      hero_h1: "話せない子どもは、名前で見つけてもらうことができません。OneTagが声を届けます。",
+      hero_sub: "ワンタップで。リアルタイムのGPS位置情報、緊急時の情報、そして連絡手段を — お子さまの言語で、即座に。",
+      hero_cta_primary: "学校にOneTagを導入する", hero_cta_secondary: "その速さを見てみる ↓",
+      trust_battery: "バッテリー不要", trust_gps: "リアルタイムGPS", trust_phone: "どのスマホでも利用可能", trust_lang: "日本語 / EN / МОН",
+      hero_reveal_link: "発見者に表示される画面を見る →",
       tag3d_eyebrow: "リストバンドそのもの", tag3d_title: "ドラッグして見てみましょう",
       tag3d_sub: "OneTagの実際のデザイン — ご自身で回転させてご覧ください。", tag3d_loading: "モデルを読み込み中…", tag3d_hint: "ドラッグで回転 ・ スクロールでズーム",
       tag3d_info_title: "保存されている情報",
@@ -1269,133 +1128,11 @@
   //   }
   // }
 
-  // ---- Build the scroll-story from scene data ----
-  // The story used to be 9 fixed stages baked into the HTML. Now the
-  // super-admin dashboard can add, delete, and reorder photos, so the
-  // whole thing is built here from a scene list instead: whatever the API
-  // returned, or this hardcoded copy of the original 9 if the fetch above
-  // failed (offline, slow, or the feature isn't deployed yet) — the story
-  // must always render something, never a blank/broken hero.
-  // Trimmed from the original 9 scenes to 4 — the strongest beats only
-  // (hook, action, what's saved, payoff) — per the "shorter, more compact"
-  // hero request. This is only the FALLBACK used when the admin dashboard
-  // (admin-content.html > Story photos) hasn't set its own scene list yet;
-  // once it has, that list wins and can be edited without touching code.
-  const FALLBACK_SCENES = [
-    { image_url: '/assets/scene4-aerial.jpg', scene_type: 'photo', caption: { en: "Safe every school day. Found in seconds, wherever they are.", mn: "Сургуулийн өдөр бүр аюулгүй. Секундын дотор олдоно, хаана ч байсан.", jp: "毎日安心して登校。数秒で居場所がわかります。" } },
-    { image_url: '/assets/scene7-tap-morning.jpg', scene_type: 'photo', caption: { en: "Tap at the school gate every morning...", mn: "Өглөө бүр сургуулийн хаалганд товшино...", jp: "毎朝、校門でタップ…" } },
-    { image_url: '/assets/scene2-hud-v3.jpg', scene_type: 'registration_hud', caption: { en: "Everything that matters, saved in seconds.", mn: "Хэрэгтэй бүх мэдээлэл секундын дотор хадгалагдана.", jp: "大切な情報を、数秒で記録。" } },
-    { image_url: '/assets/scene12-map.jpg', scene_type: 'photo', caption: { en: "In an emergency, one tap finds them in seconds — real-time GPS.", mn: "Онц үед нэг товшилтоор секундын дотор олно — бодит цагийн GPS.", jp: "緊急時も、ワンタップで数秒以内に位置を特定 — リアルタイムGPS。" } }
-  ];
-  // TEMPORARILY DISABLED (same reason and same fix pattern as the text
-  // override block above): the database already has the original 9 scenes
-  // stored from before this redesign, and that stored list was silently
-  // overriding this file's new 4-scene FALLBACK_SCENES on every deploy —
-  // which is exactly why the hero kept showing all 9 scenes no matter how
-  // this file changed. Forcing FALLBACK_SCENES here makes the code the
-  // single source of truth while the homepage is still being redesigned.
-  // Re-enable (restore the commented line below) once you're done and want
-  // the admin-content.html "Story photos" dashboard back in control.
-  //
-  // const storyScenes = (siteOverrides.scenes && siteOverrides.scenes.length) ? siteOverrides.scenes : FALLBACK_SCENES;
-  const storyScenes = FALLBACK_SCENES;
-
-  // Per-scene captions aren't global i18n keys anymore (a given position
-  // can hold a different photo/caption after any edit), so they're kept
-  // here and applied by stage index inside applyLanguage() below, instead
-  // of going through the [data-i18n] mechanism the rest of the page uses.
-  const sceneCaptions = storyScenes.map(s => s.caption || {});
-  const registrationHudStage = storyScenes.findIndex(s => s.scene_type === 'registration_hud');
-
-  const HUD_LABEL_DEFS = [
-    { hud: '0', top: '16%', left: '14%', key: 'label_name', text: 'Name' },
-    { hud: '1', top: '16%', left: '86%', key: 'label_allergies', text: 'Allergies' },
-    { hud: '2', top: '50%', left: '9%', key: 'label_blood', text: 'Blood Type' },
-    { hud: '3', top: '50%', left: '91%', key: 'label_contact', text: 'Emergency Contact' },
-    { hud: '4', top: '82%', left: '16%', key: 'label_school', text: 'School' },
-    { hud: '5', top: '82%', left: '84%', key: 'label_class', text: 'Class' }
-  ];
-  function buildHudOverlayMarkup() {
-    const lines = HUD_LABEL_DEFS.map((d, i) => {
-      const positions = [
-        ['38', '38', '14', '16'], ['62', '38', '86', '16'], ['29', '50', '9', '50'],
-        ['71', '50', '91', '50'], ['40', '61', '16', '82'], ['60', '61', '84', '82']
-      ][i];
-      return `<line class="hud-svg-line" data-hud="${d.hud}" x1="${positions[0]}" y1="${positions[1]}" x2="${positions[2]}" y2="${positions[3]}"></line>`;
-    }).join('');
-    const dots = HUD_LABEL_DEFS.map((d, i) => {
-      const c = [['38', '38'], ['62', '38'], ['29', '50'], ['71', '50'], ['40', '61'], ['60', '61']][i];
-      return `<circle class="hud-svg-dot" data-hud="${d.hud}" cx="${c[0]}" cy="${c[1]}" r="0.7"></circle>`;
-    }).join('');
-    const labels = HUD_LABEL_DEFS.map(d =>
-      `<div class="hud-label" data-hud="${d.hud}" style="top:${d.top}; left:${d.left}; transform:translate(-50%,-50%);"><span class="hud-text" data-i18n="${d.key}">${d.text}</span></div>`
-    ).join('');
-    return `<svg class="hud-svg" id="hudSvg" viewBox="0 0 100 100" preserveAspectRatio="none">${lines}${dots}</svg><div class="hud-labels" id="hudLabels">${labels}</div>`;
-  }
-
-  const stagePhotosContainer = document.getElementById('storyStagePhotos');
-  const captionWrap = document.getElementById('storyCaptionWrap');
-  storyScenes.forEach((scene, i) => {
-    const isFirst = i === 0, isLast = i === storyScenes.length - 1;
-
-    const photoEl = document.createElement('div');
-    photoEl.className = 'story-stage-photo' + (isFirst ? ' active story-stage-first' : '') + (isLast ? ' story-stage-last' : '');
-    photoEl.dataset.stage = String(i);
-    const img = document.createElement('img');
-    img.src = scene.image_url;
-    img.alt = '';
-    if (isFirst) img.setAttribute('fetchpriority', 'high');
-    photoEl.appendChild(img);
-    if (scene.scene_type === 'registration_hud') photoEl.insertAdjacentHTML('beforeend', buildHudOverlayMarkup());
-    stagePhotosContainer.appendChild(photoEl);
-
-    const captionEl = document.createElement('div');
-    captionEl.className = 'story-caption' + (isFirst ? ' active' : '');
-    captionEl.dataset.stage = String(i);
-    const heading = document.createElement(isFirst ? 'h1' : 'h2');
-    heading.textContent = (scene.caption && (scene.caption[DEFAULT_LANGUAGE] || scene.caption.en)) || '';
-    captionEl.appendChild(heading);
-    captionWrap.appendChild(captionEl);
-  });
-
-  // Story container height scales with however many scenes there are now
-  // (roughly one viewport-height of scroll per scene, same ratio the
-  // original fixed-9-stage version used), overriding the static 312vh /
-  // 260vh in the stylesheet — those stay in place only as a fallback for
-  // the instant before this runs.
-  // Reduced from 101/82 — with fewer scenes now (4, not 9), each one can
-  // afford less scroll distance and still read clearly, making the whole
-  // hero noticeably snappier/more compact rather than just shorter by
-  // virtue of having fewer photos.
-  const isMobileWidth = window.matchMedia('(max-width: 560px)').matches;
-  const vhPerScene = isMobileWidth ? 65 : 78;
-  document.getElementById('scrollStory').style.height = (storyScenes.length * vhPerScene) + 'vh';
-
-  // Preload the opening and closing photos — whichever those are now — the
-  // same way the old fixed <link rel=preload> tags did, just computed at
-  // runtime since "first" and "last" can change with any dashboard edit.
-  [storyScenes[0], storyScenes[storyScenes.length - 1]].forEach((scene, idx) => {
-    if (!scene || (idx === 1 && storyScenes.length === 1)) return; // don't double-preload a single-scene story
-    const link = document.createElement('link');
-    link.rel = 'preload'; link.as = 'image'; link.href = scene.image_url;
-    if (idx === 0) link.setAttribute('fetchpriority', 'high');
-    document.head.appendChild(link);
-  });
-
   function applyLanguage(lang) {
     const dict = translations[lang] || translations[DEFAULT_LANGUAGE];
     document.querySelectorAll('[data-i18n]').forEach(el => {
       const key = el.getAttribute('data-i18n');
       if (dict[key]) el.textContent = dict[key];
-    });
-    // Story captions come from sceneCaptions (per-scene data), not the
-    // global translations dict — see "Build the scroll-story from scene
-    // data" above.
-    document.querySelectorAll('.story-caption').forEach(el => {
-      const cap = sceneCaptions[parseInt(el.dataset.stage, 10)];
-      if (!cap) return;
-      const heading = el.querySelector('h1, h2');
-      if (heading) heading.textContent = cap[lang] || cap.en || cap.mn || '';
     });
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
       const key = el.getAttribute('data-i18n-placeholder');
@@ -1692,119 +1429,6 @@
       { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
     );
   });
-
-  // Scroll-driven story hero — as the visitor scrolls through the tall
-  // .scroll-story wrapper, the sticky inner section stays pinned while
-  // photos crossfade + subtly rotate/scale based on scroll position,
-  // walking through 11 real moments before releasing into the rest of
-  // the page. Pacing is intentionally non-uniform — key emotional beats
-  // (product, aerial, taps, dashboard, phone, map) get more scroll room
-  // than quick connective/bridge shots (walking, crane, transition),
-  // so the story feels paced like a film rather than a mechanical slideshow.
-  const storyWrapper = document.getElementById('scrollStory');
-  const storyPhotos = document.querySelectorAll('.story-stage-photo');
-  const storyCaptions = document.querySelectorAll('.story-caption');
-  const storyProgressEl = document.getElementById('storyProgress');
-  const storyScrollHint = document.getElementById('storyScrollHint');
-  const STORY_STAGES = storyPhotos.length;
-  // Relative scroll-time weight per stage. The scene list is dashboard-
-  // editable now, so there's no fixed per-photo pacing to hardcode —
-  // every scene gets an equal share, except the opening and closing ones
-  // get a little more room to let their zoom animation read.
-  const STORY_WEIGHTS = storyScenes.map((s, i) => (i === 0 || i === storyScenes.length - 1) ? 12 : 10);
-  const STORY_TOTAL_WEIGHT = STORY_WEIGHTS.reduce((a, b) => a + b, 0);
-  const STORY_BOUNDARIES = []; // cumulative fraction (0-1) where each stage ENDS
-  (function buildBoundaries() {
-    let cum = 0;
-    for (let i = 0; i < STORY_WEIGHTS.length; i++) {
-      cum += STORY_WEIGHTS[i];
-      STORY_BOUNDARIES.push(cum / STORY_TOTAL_WEIGHT);
-    }
-  })();
-  let storyActiveStage = 0;
-
-  for (let i = 0; i < STORY_STAGES; i++) {
-    const dot = document.createElement('div');
-    dot.className = 'story-dot' + (i === 0 ? ' active' : '');
-    storyProgressEl.appendChild(dot);
-  }
-  const storyDots = storyProgressEl.querySelectorAll('.story-dot');
-
-  const hudLabelEls = document.querySelectorAll('.hud-label');
-  const hudLineEls = document.querySelectorAll('.hud-svg-line');
-  const hudDotEls = document.querySelectorAll('.hud-svg-dot');
-  let hudTimers = [];
-  function triggerHudReveal() {
-    hudTimers.forEach(t => clearTimeout(t));
-    hudTimers = [];
-    hudLabelEls.forEach(el => el.classList.remove('revealed'));
-    hudLineEls.forEach(el => el.classList.remove('revealed'));
-    hudDotEls.forEach(el => el.classList.remove('revealed'));
-    hudLabelEls.forEach((el, i) => {
-      const delay = 250 + i * 320;
-      const hud = el.dataset.hud;
-      hudTimers.push(setTimeout(() => {
-        document.querySelector('.hud-svg-dot[data-hud="' + hud + '"]').classList.add('revealed');
-        document.querySelector('.hud-svg-line[data-hud="' + hud + '"]').classList.add('revealed');
-      }, delay));
-      hudTimers.push(setTimeout(() => el.classList.add('revealed'), delay + 250));
-    });
-  }
-  function resetHudReveal() {
-    hudTimers.forEach(t => clearTimeout(t));
-    hudTimers = [];
-    hudLabelEls.forEach(el => el.classList.remove('revealed'));
-    hudLineEls.forEach(el => el.classList.remove('revealed'));
-    hudDotEls.forEach(el => el.classList.remove('revealed'));
-  }
-
-  let storyBlurTimer = null;
-  function setStoryStage(stage) {
-    if (stage === storyActiveStage) return;
-    const enteringHud = registrationHudStage >= 0 && stage === registrationHudStage && storyActiveStage !== registrationHudStage;
-    const leavingHud = registrationHudStage >= 0 && storyActiveStage === registrationHudStage && stage !== registrationHudStage;
-    storyActiveStage = stage;
-    storyPhotos.forEach((el, i) => el.classList.toggle('active', i === stage));
-    storyCaptions.forEach((el) => el.classList.toggle('active', parseInt(el.dataset.stage, 10) === stage));
-    storyDots.forEach((el, i) => el.classList.toggle('active', i === stage));
-    if (enteringHud) triggerHudReveal();
-    if (leavingHud) resetHudReveal();
-    // The eyebrow badge and "Tap here" reveal button are pinned to the
-    // wristband's position in the closing photo (the last scene) — not the
-    // opening one, which typically has no wristband in frame.
-    document.getElementById('storyEyebrowTop').classList.toggle('show', stage === STORY_STAGES - 1);
-    document.getElementById('storyPreviewBtn').classList.toggle('show', stage === STORY_STAGES - 1);
-    // Quick blur+brighten pulse on every cut, mimicking a real camera
-    // whip-pan instead of a flat crossfade between static photos.
-    const storySticky = document.querySelector('.story-sticky');
-    storySticky.classList.add('story-transitioning');
-    clearTimeout(storyBlurTimer);
-    storyBlurTimer = setTimeout(() => storySticky.classList.remove('story-transitioning'), 220);
-  }
-
-  function stageForProgress(progress) {
-    for (let i = 0; i < STORY_BOUNDARIES.length; i++) {
-      if (progress <= STORY_BOUNDARIES[i]) return i;
-    }
-    return STORY_STAGES - 1;
-  }
-
-  let storyTicking = false;
-  function updateStoryScroll() {
-    storyTicking = false;
-    const rect = storyWrapper.getBoundingClientRect();
-    const viewportH = window.innerHeight;
-    const wrapperHeight = storyWrapper.offsetHeight;
-    const maxScroll = wrapperHeight - viewportH;
-    const scrolledIntoWrapper = -rect.top;
-    const progress = Math.min(Math.max(scrolledIntoWrapper / maxScroll, 0), 1);
-    setStoryStage(stageForProgress(progress));
-    storyScrollHint.style.opacity = progress > 0.02 ? '0' : '1';
-  }
-  window.addEventListener('scroll', () => {
-    if (!storyTicking) { requestAnimationFrame(updateStoryScroll); storyTicking = true; }
-  });
-  updateStoryScroll();
 
   // FAQ accordion
   document.querySelectorAll('.faq-item').forEach(item => {
