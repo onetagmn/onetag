@@ -1287,7 +1287,18 @@
     { image_url: '/assets/scene2-hud-v3.jpg', scene_type: 'registration_hud', caption: { en: "Everything that matters, saved in seconds.", mn: "Хэрэгтэй бүх мэдээлэл секундын дотор хадгалагдана.", jp: "大切な情報を、数秒で記録。" } },
     { image_url: '/assets/scene12-map.jpg', scene_type: 'photo', caption: { en: "In an emergency, one tap finds them in seconds — real-time GPS.", mn: "Онц үед нэг товшилтоор секундын дотор олно — бодит цагийн GPS.", jp: "緊急時も、ワンタップで数秒以内に位置を特定 — リアルタイムGPS。" } }
   ];
-  const storyScenes = (siteOverrides.scenes && siteOverrides.scenes.length) ? siteOverrides.scenes : FALLBACK_SCENES;
+  // TEMPORARILY DISABLED (same reason and same fix pattern as the text
+  // override block above): the database already has the original 9 scenes
+  // stored from before this redesign, and that stored list was silently
+  // overriding this file's new 4-scene FALLBACK_SCENES on every deploy —
+  // which is exactly why the hero kept showing all 9 scenes no matter how
+  // this file changed. Forcing FALLBACK_SCENES here makes the code the
+  // single source of truth while the homepage is still being redesigned.
+  // Re-enable (restore the commented line below) once you're done and want
+  // the admin-content.html "Story photos" dashboard back in control.
+  //
+  // const storyScenes = (siteOverrides.scenes && siteOverrides.scenes.length) ? siteOverrides.scenes : FALLBACK_SCENES;
+  const storyScenes = FALLBACK_SCENES;
 
   // Per-scene captions aren't global i18n keys anymore (a given position
   // can hold a different photo/caption after any edit), so they're kept
