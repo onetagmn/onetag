@@ -192,19 +192,32 @@
   .live-demo-tap span { font-size: 13.5px; font-weight: 700; opacity: 0.9; }
   @media (max-width: 860px) { .journey-layout { grid-template-columns: 1fr; } .journey-layout-reverse { direction: ltr; } }
 
-  /* ---------- 3D TAG VIEWER ---------- */
+  /* ---------- TAG SHOWCASE (pinned scroll photo swap) ---------- */
   .tag3d-layout { display: grid; grid-template-columns: 1.1fr 1fr; gap: 44px; align-items: center; }
-  .tag3d-viewer { position: relative; aspect-ratio: 4/3; border-radius: var(--radius); overflow: hidden; background: linear-gradient(160deg, #0E2338, #163650); }
-  .tag3d-viewer canvas { display: block; width: 100% !important; height: 100% !important; cursor: grab; touch-action: none; }
-  .tag3d-viewer canvas:active { cursor: grabbing; }
-  .tag3d-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #9fb3c4; font-size: 14px; transition: opacity 0.3s ease; background: linear-gradient(160deg, #0E2338, #163650); }
-  .tag3d-loading.hide { opacity: 0; pointer-events: none; }
-  .tag3d-hint { position: absolute; bottom: 14px; left: 0; right: 0; text-align: center; color: rgba(255,255,255,0.55); font-size: 12.5px; pointer-events: none; }
   .tag3d-info h3 { font-size: 20px; font-weight: 700; margin-bottom: 16px; }
   .tag3d-info ul { list-style: none; display: flex; flex-direction: column; gap: 14px; }
   .tag3d-info li { font-size: 15px; color: var(--ink); line-height: 1.5; padding-left: 26px; position: relative; font-weight: 400; }
   .tag3d-info li::before { content: '✓'; position: absolute; left: 0; color: var(--green); font-weight: 800; }
-  @media (max-width: 860px) { .tag3d-layout { grid-template-columns: 1fr; } }
+  /* The track is taller than the sticky frame inside it — that extra height
+     is the scroll distance over which the two photos crossfade. Once the
+     visitor scrolls past it, the sticky frame simply scrolls away with the
+     rest of the page like normal; nothing here hijacks the page scroll. */
+  .tag-pin-track { position: relative; height: 200vh; margin-top: 44px; }
+  .tag-pin-sticky { position: sticky; top: 88px; height: min(560px, 74vh); display: flex; align-items: center; }
+  .tag-photo-frame { position: relative; aspect-ratio: 4/3; border-radius: var(--radius); overflow: hidden; box-shadow: 0 24px 64px rgba(9,53,48,0.22); background: #eef6f4; }
+  .tag-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; will-change: opacity, transform; }
+  @media (max-width: 860px) {
+    /* Sticky scroll-crossfade needs real scroll headroom above the frame,
+       which cramped mobile layouts don't reliably have — so below this
+       width we drop the pin/crossfade entirely and just show both real
+       photos stacked normally. The scroll JS also checks this breakpoint
+       and skips itself, so it never fights this layout. */
+    .tag3d-layout { grid-template-columns: 1fr; }
+    .tag-pin-track { height: auto; margin-top: 24px; }
+    .tag-pin-sticky { position: static; height: auto; display: block; }
+    .tag-photo-frame { position: static; aspect-ratio: auto; box-shadow: none; background: none; }
+    .tag-photo { position: static; width: 100%; height: auto; opacity: 1 !important; transform: none !important; border-radius: var(--radius); box-shadow: 0 16px 40px rgba(9,53,48,0.18); margin-bottom: 16px; }
+  }
 
   /* ---------- STATS ---------- */
   .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 32px; }
@@ -412,21 +425,25 @@
 <section id="tag-3d" class="reveal-on-scroll" data-block="section_tag_3d">
   <div class="wrap">
     <div class="eyebrow-sm" data-i18n="tag3d_eyebrow">The wristband itself</div>
-    <h2 class="section-title" data-i18n="tag3d_title">Drag to look around</h2>
-    <p class="section-sub" data-i18n="tag3d_sub">The actual OneTag design — rotate it yourself.</p>
-    <div class="tag3d-layout">
-      <div class="tag3d-viewer" id="tag3dViewer">
-        <div class="tag3d-loading" id="tag3dLoading" data-i18n="tag3d_loading">Loading model…</div>
-        <div class="tag3d-hint" data-i18n="tag3d_hint">Drag to rotate · scroll to zoom</div>
-      </div>
-      <div class="tag3d-info">
-        <h3 data-i18n="tag3d_info_title">What's saved on it</h3>
-        <ul>
-          <li data-i18n="tag3d_info_1">Name, photo, class, and school</li>
-          <li data-i18n="tag3d_info_2">Blood type, allergies, and medical notes</li>
-          <li data-i18n="tag3d_info_3">Emergency contacts — never shown directly to a finder</li>
-          <li data-i18n="tag3d_info_4">A unique, unguessable ID tied to this exact physical wristband</li>
-        </ul>
+    <h2 class="section-title" data-i18n="tag3d_title">See it up close</h2>
+    <p class="section-sub" data-i18n="tag3d_sub">The actual OneTag design, ready to wear.</p>
+  </div>
+  <div class="tag-pin-track" id="tagPinTrack">
+    <div class="tag-pin-sticky">
+      <div class="wrap tag3d-layout">
+        <div class="tag-photo-frame">
+          <img src="/assets/tag-photo-1.jpg" alt="OneTag wristband, angled view" class="tag-photo" id="tagPhotoA">
+          <img src="/assets/tag-photo-2.jpg" alt="OneTag wristband, front view" class="tag-photo" id="tagPhotoB">
+        </div>
+        <div class="tag3d-info">
+          <h3 data-i18n="tag3d_info_title">What's saved on it</h3>
+          <ul>
+            <li data-i18n="tag3d_info_1">Name, photo, class, and school</li>
+            <li data-i18n="tag3d_info_2">Blood type, allergies, and medical notes</li>
+            <li data-i18n="tag3d_info_3">Emergency contacts — never shown directly to a finder</li>
+            <li data-i18n="tag3d_info_4">A unique, unguessable ID tied to this exact physical wristband</li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>
@@ -704,14 +721,6 @@
 </footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<!-- Three.js r128 — pinned to the last version that still ships classic
-     (non-module) UMD example scripts, so STLLoader/OrbitControls load as
-     plain script tags like everything else on this page, no bundler or
-     import map needed. Used for the "drag to look around" 3D wristband
-     viewer further down. -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script>
 (async function () {
   const ENABLED_LANGUAGES = ['mn', 'en', 'jp']; // add 'zh' here to show Chinese too
@@ -745,8 +754,8 @@
       hero_cta_primary: "Get OneTag for your school", hero_cta_secondary: "See how fast it works ↓",
       trust_battery: "No battery, ever", trust_gps: "Real-time GPS", trust_phone: "Works with any phone", trust_lang: "MN / EN / 日本語",
       hero_reveal_link: "See what a finder sees when they tap →",
-      tag3d_eyebrow: "The wristband itself", tag3d_title: "Drag to look around",
-      tag3d_sub: "The actual OneTag design — rotate it yourself.", tag3d_loading: "Loading model…", tag3d_hint: "Drag to rotate · scroll to zoom",
+      tag3d_eyebrow: "The wristband itself", tag3d_title: "See it up close",
+      tag3d_sub: "The actual OneTag design, ready to wear.",
       tag3d_info_title: "What's saved on it",
       tag3d_info_1: "Name, photo, class, and school", tag3d_info_2: "Blood type, allergies, and medical notes",
       tag3d_info_3: "Emergency contacts — never shown directly to a finder", tag3d_info_4: "A unique, unguessable ID tied to this exact physical wristband",
@@ -865,8 +874,8 @@
       hero_cta_primary: "Сургуульдаа OneTag авах", hero_cta_secondary: "Хэр хурдан ажилладгийг үзэх ↓",
       trust_battery: "Батерей огт хэрэггүй", trust_gps: "Бодит цагийн GPS", trust_phone: "Ямар ч утсаар ажиллана", trust_lang: "МОН / EN / 日本語",
       hero_reveal_link: "Товшихад олсон хүн юу харахыг үзэх →",
-      tag3d_eyebrow: "Бугуйвч өөрөө", tag3d_title: "Чирж эргүүлж үзээрэй",
-      tag3d_sub: "OneTag-ийн жинхэнэ загвар — өөрөө эргүүлж үзээрэй.", tag3d_loading: "Загвар ачаалж байна…", tag3d_hint: "Эргүүлэхийн тулд чирнэ · томруулахын тулд гүйлгэнэ",
+      tag3d_eyebrow: "Бугуйвч өөрөө", tag3d_title: "Ойрхоос харах",
+      tag3d_sub: "OneTag-ийн жинхэнэ загвар, өмсөхөд бэлэн.",
       tag3d_info_title: "Үүнд юу хадгалагддаг вэ",
       tag3d_info_1: "Нэр, зураг, анги, сургууль", tag3d_info_2: "Цусны бүлэг, харшил, эмнэлгийн тэмдэглэл",
       tag3d_info_3: "Яаралтай холбоо барих хүмүүс — олсон хүнд шууд харагдахгүй", tag3d_info_4: "Яг энэ физик бугуйвчтай холбоотой, таамаглашгүй давтагдашгүй ID",
@@ -985,8 +994,8 @@
       hero_cta_primary: "为您的学校获取 OneTag", hero_cta_secondary: "查看其运作速度 ↓",
       trust_battery: "完全不需要电池", trust_gps: "实时 GPS", trust_phone: "任何手机均可使用", trust_lang: "中文 / EN / 日本語",
       hero_reveal_link: "查看发现者触碰后看到的内容 →",
-      tag3d_eyebrow: "手环本身", tag3d_title: "拖动查看",
-      tag3d_sub: "OneTag 的真实设计 — 亲自旋转查看。", tag3d_loading: "正在加载模型…", tag3d_hint: "拖动旋转 · 滚动缩放",
+      tag3d_eyebrow: "手环本身", tag3d_title: "近距离查看",
+      tag3d_sub: "OneTag 的真实设计，随时可以佩戴。",
       tag3d_info_title: "上面保存了什么",
       tag3d_info_1: "姓名、照片、班级和学校", tag3d_info_2: "血型、过敏和医疗备注",
       tag3d_info_3: "紧急联系人 — 绝不直接显示给发现者", tag3d_info_4: "与这个实际手环唯一对应、无法猜测的编号",
@@ -1105,8 +1114,8 @@
       hero_cta_primary: "学校にOneTagを導入する", hero_cta_secondary: "その速さを見てみる ↓",
       trust_battery: "バッテリー不要", trust_gps: "リアルタイムGPS", trust_phone: "どのスマホでも利用可能", trust_lang: "日本語 / EN / МОН",
       hero_reveal_link: "発見者に表示される画面を見る →",
-      tag3d_eyebrow: "リストバンドそのもの", tag3d_title: "ドラッグして見てみましょう",
-      tag3d_sub: "OneTagの実際のデザイン — ご自身で回転させてご覧ください。", tag3d_loading: "モデルを読み込み中…", tag3d_hint: "ドラッグで回転 ・ スクロールでズーム",
+      tag3d_eyebrow: "リストバンドそのもの", tag3d_title: "近くで見てみる",
+      tag3d_sub: "OneTagの実際のデザイン、そのまま着用できます。",
       tag3d_info_title: "保存されている情報",
       tag3d_info_1: "名前・写真・学年・学校", tag3d_info_2: "血液型・アレルギー・医療メモ",
       tag3d_info_3: "緊急連絡先 — 発見者に直接表示されることはありません", tag3d_info_4: "この物理的なリストバンドに紐づく、推測不可能な一意のID",
@@ -1371,83 +1380,43 @@
   stepModalClose.addEventListener('click', () => stepModalOverlay.classList.remove('active'));
   stepModalOverlay.addEventListener('click', (e) => { if (e.target === stepModalOverlay) stepModalOverlay.classList.remove('active'); });
 
-  // ---- 3D tag viewer (drag/scroll to look at the actual wristband model) ----
-  // The STL is a BINARY file with no part metadata — a single fused mesh,
-  // not separate solids for the rotary wheel vs. the main body. So this
-  // renders as one color for now; true two-tone (yellow wheel / blue body)
-  // needs either a real photo texture or the parts exported as separate
-  // STL files from the CAD tool — not something derivable from this file
-  // alone.
-  (function initTag3D() {
-    const container = document.getElementById('tag3dViewer');
-    const loadingEl = document.getElementById('tag3dLoading');
-    if (!container || typeof THREE === 'undefined') return;
+  // ---- Tag showcase: pinned scroll photo crossfade ----
+  // The section wraps a tall "track" div around a `position: sticky` frame.
+  // While the track is scrolling past, the frame stays pinned in place and
+  // we crossfade+tilt between the two real product photos based on how far
+  // through the track the visitor has scrolled — once they scroll past the
+  // track's extra height, the frame un-sticks and the page continues
+  // normally. No preventDefault/scroll-jacking, so it can't fight the
+  // browser or trackpad/touch scrolling the way a hijacked-scroll hero can.
+  // Below the 860px breakpoint the CSS drops the pin/crossfade entirely
+  // (see `.tag-pin-track` mobile override) and shows both photos stacked,
+  // so this skips its own work there too.
+  (function initTagShowcase() {
+    const track = document.getElementById('tagPinTrack');
+    const photoA = document.getElementById('tagPhotoA');
+    const photoB = document.getElementById('tagPhotoB');
+    if (!track || !photoA || !photoB) return;
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(container.clientWidth, container.clientHeight);
-    container.insertBefore(renderer.domElement, container.firstChild);
-
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x223344, 1.15));
-    const keyLight = new THREE.DirectionalLight(0xffffff, 0.9);
-    keyLight.position.set(3, 5, 4);
-    scene.add(keyLight);
-    const rimLight = new THREE.DirectionalLight(0x6fa8ff, 0.45);
-    rimLight.position.set(-4, -2, -3);
-    scene.add(rimLight);
-
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.08;
-    controls.enablePan = false;
-    controls.minDistance = 1.2;
-    controls.maxDistance = 6;
-    controls.autoRotate = true;
-    controls.autoRotateSpeed = 1.6;
-
-    const loader = new THREE.STLLoader();
-    loader.load('/assets/onetag-model.stl', (geometry) => {
-      geometry.computeBoundingBox();
-      geometry.computeVertexNormals();
-      const center = new THREE.Vector3();
-      geometry.boundingBox.getCenter(center);
-      geometry.translate(-center.x, -center.y, -center.z);
-
-      const size = new THREE.Vector3();
-      geometry.boundingBox.getSize(size);
-      const maxDim = Math.max(size.x, size.y, size.z) || 1;
-      const scale = 2 / maxDim;
-      const material = new THREE.MeshStandardMaterial({ color: 0x2F6FED, metalness: 0.15, roughness: 0.45 });
-      const mesh = new THREE.Mesh(geometry, material);
-      mesh.scale.setScalar(scale);
-      scene.add(mesh);
-
-      camera.position.set(0, 0.6, 2.6);
-      controls.target.set(0, 0, 0);
-      controls.update();
-      loadingEl.classList.add('hide');
-    }, undefined, (err) => {
-      loadingEl.textContent = 'Could not load the 3D model.';
-      console.error('STL load failed:', err);
-    });
-
-    function onResize() {
-      const w = container.clientWidth, h = container.clientHeight;
-      if (!w || !h) return;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
+    function isPinnedLayout() {
+      return window.matchMedia('(min-width: 861px)').matches;
     }
-    window.addEventListener('resize', onResize);
 
-    function animate() {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
+    function update() {
+      if (!isPinnedLayout()) return;
+      const rect = track.getBoundingClientRect();
+      const total = rect.height - window.innerHeight;
+      let progress = total > 0 ? (-rect.top) / total : 0;
+      progress = Math.max(0, Math.min(1, progress));
+      const tilt = (progress - 0.5) * 5;
+      photoA.style.opacity = String(1 - progress);
+      photoA.style.transform = `scale(1.02) rotate(${(-tilt).toFixed(2)}deg)`;
+      photoB.style.opacity = String(progress);
+      photoB.style.transform = `scale(1.02) rotate(${tilt.toFixed(2)}deg)`;
     }
-    animate();
+
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    update();
   })();
 
   // ---- Interactive GPS speed demo ----
