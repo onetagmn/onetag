@@ -6,6 +6,7 @@ const cloudinary = require('cloudinary').v2;
 const { pool, initSchema, withTransaction } = require('./db');
 const { sendOtp, verifyOtp } = require('./otp');
 const { RETIRED_TEXT_KEYS } = require('./site-content-seed');
+const { genTagToken, normalizeUid, TAG_STATUSES } = require('./lib/tagUtils');
 
 const app = express();
 app.use(express.json());
@@ -108,7 +109,12 @@ app.use(express.static(path.join(__dirname, 'public'), {
 const rateLimitBuckets = new Map();
 function rateLimit(maxAttempts, windowMinutes) {
   return (req, res, next) => {
-    const key = `${req.ip}:${req.path}`;
+    // req.route.path is the route PATTERN (e.g. "/api/profile/:tagId"),
+    // not the actual URL. Using req.path here was a bug: req.path contains
+    // the real tag_id, so every different tag got its own bucket and the
+    // limit never actually capped requests across many tag_ids from one
+    // IP — exactly the case that matters for scraping/enumeration.
+    const key = `${req.ip}:${req.method}:${req.route ? req.route.path : req.path}`;
     const now = Date.now();
     const windowMs = windowMinutes * 60 * 1000;
     const bucket = rateLimitBuckets.get(key) || { count: 0, resetAt: now + windowMs };
@@ -123,10 +129,43 @@ function rateLimit(maxAttempts, windowMinutes) {
   };
 }
 
+// ---------- UID mirror verification ----------
+// NTAG213/215 chips can be configured to auto-append their own UID into
+// the tag's stored URL on every tap (an NDEF "UID mirror"), so a URL like
+// /?tag=<token>&uid=<chipUID> only reads back correctly from the actual
+// physical wristband — not from a copy-pasted or leaked link. Any route
+// reachable by an anonymous finder that returns a child's data, logs a
+// scan, or acts "as" the wristband goes through this.
+//
+// A tag with no UID bound yet (tags.uid IS NULL — provisioned but not yet
+// written by the ACR1552U) is let through without a uid check, so the tap
+// flow stays testable before every physical tag has been written. Once a
+// UID is bound, ?uid= becomes mandatory and must match, or the request is
+// rejected — with the same 404 as an unknown tag_id, never a distinct
+// error, so a mismatch can't be used to fingerprint a real token.
+async function verifyTagUid(req, res, next) {
+  try {
+    const { tagId } = req.params;
+    const tagRes = await pool.query(`SELECT * FROM tags WHERE tag_id = $1`, [tagId]);
+    const tag = tagRes.rows[0];
+    if (!tag) return res.status(404).json({ error: 'Unknown tag' });
+
+    if (tag.uid) {
+      const providedUid = normalizeUid(req.query.uid || (req.body && req.body.uid));
+      if (!providedUid || providedUid !== tag.uid) {
+        return res.status(404).json({ error: 'Unknown tag' });
+      }
+    }
+    req.tag = tag;
+    next();
+  } catch (err) { res.status(500).json({ error: err.message }); }
+}
+
 // ---------- Helpers ----------
-function genTagId(n) { return `OT-${String(n).padStart(4, '0')}`; }
+// genTagToken/normalizeUid/TAG_STATUSES live in lib/tagUtils.js, shared
+// with scripts/reset-tags.js so a maintenance script can never drift from
+// how the live server generates or compares tag identifiers.
 function genStaffId() { return 'ST-' + crypto.randomBytes(3).toString('hex').toUpperCase(); }
-function normalizeUid(uid) { return (uid || '').replace(/[^0-9A-Fa-f]/g, '').toUpperCase(); }
 function genSchoolId() { return 'SCH-' + crypto.randomBytes(3).toString('hex').toUpperCase(); }
 function genAdminId() { return 'ADM-' + crypto.randomBytes(3).toString('hex').toUpperCase(); }
 function hashPassword(password) {
@@ -345,22 +384,93 @@ app.get('/api/admin/me', requireAdmin, (req, res) => {
 });
 
 // ---------- Bulk tag provisioning ----------
+// tag_ids are now long random tokens (lib/tagUtils.genTagToken), not a
+// counter — so unlike the old OT-0001/OT-0002/... scheme, generating N of
+// them can't just take the next N integers. Collisions are astronomically
+// unlikely at 80 bits of entropy, but insert one at a time and retry on a
+// (practically impossible) unique-constraint hit rather than assume it away.
 app.post('/api/admin/provision', requireSuperAdmin, async (req, res) => {
   const count = parseInt(req.body.count, 10) || 0;
   if (count <= 0 || count > 5000) return res.status(400).json({ error: 'Invalid count' });
+  const { school_id, batch } = req.body;
+  if (school_id) {
+    const schoolRes = await pool.query(`SELECT * FROM schools WHERE school_id = $1`, [school_id]);
+    if (!schoolRes.rows[0]) return res.status(400).json({ error: 'Unknown school_id' });
+  }
 
-  const countRes = await pool.query(`SELECT COUNT(*) AS c FROM tags`);
-  const existing = parseInt(countRes.rows[0].c, 10);
   const created = [];
-
   await withTransaction(async (client) => {
-    for (let i = existing + 1; i <= existing + count; i++) {
-      const tagId = genTagId(i);
-      await client.query(`INSERT INTO tags (tag_id, status) VALUES ($1, 'unclaimed')`, [tagId]);
-      created.push(tagId);
+    for (let i = 0; i < count; i++) {
+      let inserted = false;
+      for (let attempt = 0; attempt < 5 && !inserted; attempt++) {
+        const tagId = genTagToken();
+        try {
+          await client.query(
+            `INSERT INTO tags (tag_id, status, school_id, batch) VALUES ($1, 'unwritten', $2, $3)`,
+            [tagId, school_id || null, batch || null]
+          );
+          created.push(tagId);
+          inserted = true;
+        } catch (err) {
+          if (err.code !== '23505') throw err; // unique_violation — retry with a fresh token
+        }
+      }
+      if (!inserted) throw new Error('Could not generate a unique tag token after 5 attempts');
     }
   });
   res.json({ created: created.length, tag_ids: created });
+});
+
+// ---------- Tag registry (super_admin only) ----------
+// Filterable list of every physical tag — its lifecycle status, which
+// school/batch it was assigned to, and who wrote its chip and when. This
+// is intentionally NOT reachable by a school_admin: it's fleet/inventory
+// data (which blank tags exist, which are lost), not a specific child's
+// safety-card info, and a school admin has no legitimate need to browse
+// tags outside their own already-registered students.
+app.get('/api/admin/tags', requireSuperAdmin, async (req, res) => {
+  const { school_id, batch, status } = req.query;
+  const conditions = [];
+  const values = [];
+  if (school_id) { values.push(school_id); conditions.push(`school_id = $${values.length}`); }
+  if (batch) { values.push(batch); conditions.push(`batch = $${values.length}`); }
+  if (status) {
+    if (!TAG_STATUSES.includes(status)) return res.status(400).json({ error: `status must be one of: ${TAG_STATUSES.join(', ')}` });
+    values.push(status); conditions.push(`status = $${values.length}`);
+  }
+  const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+  const result = await pool.query(
+    `SELECT tag_id, uid, status, school_id, batch, written_by, written_at, created_at
+     FROM tags ${where} ORDER BY created_at DESC LIMIT 2000`,
+    values
+  );
+  res.json({ count: result.rows.length, tags: result.rows });
+});
+
+app.patch('/api/admin/tags/:tagId', requireSuperAdmin, async (req, res) => {
+  const { tagId } = req.params;
+  const { status, school_id, batch } = req.body;
+  const tagRes = await pool.query(`SELECT * FROM tags WHERE tag_id = $1`, [tagId]);
+  if (!tagRes.rows[0]) return res.status(404).json({ error: 'Unknown tag' });
+
+  if (status !== undefined && !TAG_STATUSES.includes(status)) {
+    return res.status(400).json({ error: `status must be one of: ${TAG_STATUSES.join(', ')}` });
+  }
+  if (school_id) {
+    const schoolRes = await pool.query(`SELECT * FROM schools WHERE school_id = $1`, [school_id]);
+    if (!schoolRes.rows[0]) return res.status(400).json({ error: 'Unknown school_id' });
+  }
+
+  const result = await pool.query(
+    `UPDATE tags SET
+       status = COALESCE($1, status),
+       school_id = CASE WHEN $2::text IS NOT NULL THEN $2 ELSE school_id END,
+       batch = CASE WHEN $3::text IS NOT NULL THEN $3 ELSE batch END
+     WHERE tag_id = $4
+     RETURNING tag_id, uid, status, school_id, batch, written_by, written_at, created_at`,
+    [status || null, school_id || null, batch || null, tagId]
+  );
+  res.json({ success: true, tag: result.rows[0] });
 });
 
 // A shared secret for the tag-writer scripts (write-tags.js, prepare-tag.js)
@@ -374,6 +484,11 @@ if (!process.env.TAG_WRITE_KEY) {
 }
 
 // ---------- UID registration ----------
+// Called by the ACR1552U tag-writer tool (prepare-tag.js) once per physical
+// chip. Bumps a freshly provisioned tag from 'unwritten' to 'assigned' —
+// but only from 'unwritten', so re-running the writer against an already
+// 'active' tag (e.g. re-flashing a damaged wristband for a child who's
+// already registered) can't silently downgrade its status.
 app.post('/api/tag/:tagId/set-uid', rateLimit(30, 15), async (req, res) => {
   if (!timingSafeStringEqual(req.body.key, TAG_WRITE_KEY)) return res.status(401).json({ error: 'Invalid or missing write key' });
   const { tagId } = req.params;
@@ -382,9 +497,15 @@ app.post('/api/tag/:tagId/set-uid', rateLimit(30, 15), async (req, res) => {
   const tagRes = await pool.query(`SELECT * FROM tags WHERE tag_id = $1`, [tagId]);
   if (!tagRes.rows[0]) return res.status(404).json({ error: 'Unknown tag' });
 
+  const writtenBy = typeof req.body.writtenBy === 'string' ? req.body.writtenBy.slice(0, 200) : null;
   await withTransaction(async (client) => {
     await client.query(`UPDATE tags SET uid = NULL WHERE uid = $1 AND tag_id != $2`, [uid, tagId]);
-    await client.query(`UPDATE tags SET uid = $1 WHERE tag_id = $2`, [uid, tagId]);
+    await client.query(
+      `UPDATE tags SET uid = $1, written_by = $2, written_at = NOW(),
+         status = CASE WHEN status = 'unwritten' THEN 'assigned' ELSE status END
+       WHERE tag_id = $3`,
+      [uid, writtenBy, tagId]
+    );
   });
   res.json({ success: true });
 });
@@ -396,22 +517,26 @@ app.get('/api/tag/by-uid/:uid', async (req, res) => {
   res.json({ tag_id: result.rows[0].tag_id });
 });
 
-app.get('/api/tag/:tagId', async (req, res) => {
-  const tagRes = await pool.query(`SELECT * FROM tags WHERE tag_id = $1`, [req.params.tagId]);
-  const tag = tagRes.rows[0];
-  if (!tag) return res.status(404).json({ error: 'Unknown tag' });
+// Public — this is what the tap page loads first to decide whether to show
+// the registration form or the safety card. Only returns what the browser
+// actually needs to make that decision; the raw tags row (which includes
+// the chip's uid) never goes to an anonymous caller.
+app.get('/api/tag/:tagId', rateLimit(60, 15), verifyTagUid, async (req, res) => {
   const profileRes = await pool.query(`SELECT * FROM profiles WHERE tag_id = $1`, [req.params.tagId]);
   const profile = profileRes.rows[0];
-  res.json({ tag, hasProfile: !!profile, locked: profile ? !!profile.locked : false });
+  res.json({
+    tag_id: req.tag.tag_id, status: req.tag.status,
+    hasProfile: !!profile, locked: profile ? !!profile.locked : false
+  });
 });
 
 // ---------- First-time registration ----------
 // Rate-limited: without this, an unlocked-but-not-yet-resaved profile (see
 // the editToken check below) could be hammered with repeated writes.
-app.post('/api/profile/:tagId/register', rateLimit(20, 15), async (req, res) => {
+// verifyTagUid also covers the tag-existence check the old code did with
+// its own query, so req.tag replaces that lookup.
+app.post('/api/profile/:tagId/register', rateLimit(20, 15), verifyTagUid, async (req, res) => {
   const { tagId } = req.params;
-  const tagRes = await pool.query(`SELECT * FROM tags WHERE tag_id = $1`, [tagId]);
-  if (!tagRes.rows[0]) return res.status(404).json({ error: 'Unknown tag' });
 
   const existingRes = await pool.query(`SELECT * FROM profiles WHERE tag_id = $1`, [tagId]);
   const existing = existingRes.rows[0];
@@ -467,7 +592,7 @@ app.post('/api/profile/:tagId/register', rateLimit(20, 15), async (req, res) => 
       JSON.stringify(emergency_contacts), JSON.stringify(health_info || {}), parent_phone, parent_email || null, now]);
   }
 
-  await pool.query(`UPDATE tags SET status='claimed' WHERE tag_id=$1`, [tagId]);
+  await pool.query(`UPDATE tags SET status='active' WHERE tag_id=$1`, [tagId]);
   res.json({ success: true, locked: true });
 });
 
@@ -509,7 +634,12 @@ app.post('/api/profile/:tagId/verify-otp', rateLimit(10, 15), async (req, res) =
 // design, it's what the public tap page shows anyone holding the
 // wristband. It must never return parent contact info, raw emergency
 // contact details, or anything beyond a name/photo/class/health-summary.
-app.get('/api/profile/:tagId', async (req, res) => {
+// Rate-limited and UID-verified: this is the exact route sequential tag_ids
+// used to make scrapable (walk OT-0001, OT-0002, ... and read every
+// child's name/photo/class/health-summary with no auth at all). Random
+// tokens close the enumeration itself; the rate limit and UID check are
+// defense in depth on top of that.
+app.get('/api/profile/:tagId', rateLimit(60, 15), verifyTagUid, async (req, res) => {
   const profileRes = await pool.query(`SELECT * FROM profiles WHERE tag_id = $1`, [req.params.tagId]);
   const profile = profileRes.rows[0];
   if (!profile) return res.status(404).json({ error: 'Not found' });
@@ -541,7 +671,7 @@ app.get('/api/admin/profile/:tagId/full', requireAdmin, async (req, res) => {
   res.json({ ...profile, emergency_contacts: contacts, health_info: health });
 });
 
-app.post('/api/scan/:tagId', rateLimit(20, 15), async (req, res) => {
+app.post('/api/scan/:tagId', rateLimit(20, 15), verifyTagUid, async (req, res) => {
   const { tagId } = req.params;
   const { lat, lng, role, client_timestamp } = req.body;
   const clientTs = client_timestamp && !isNaN(Date.parse(client_timestamp)) ? client_timestamp : null;
@@ -574,7 +704,7 @@ function normalizePhoneForDial(raw) {
   return /^\+?[0-9]{7,15}$/.test(cleaned) ? cleaned : null;
 }
 
-app.post('/api/call-guardian/:tagId', rateLimit(10, 15), async (req, res) => {
+app.post('/api/call-guardian/:tagId', rateLimit(10, 15), verifyTagUid, async (req, res) => {
   const { tagId } = req.params;
   const callerPhone = normalizePhoneForDial(req.body.caller_phone);
   if (!callerPhone) return res.status(400).json({ error: 'A valid caller_phone is required' });

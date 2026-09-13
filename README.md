@@ -30,8 +30,20 @@ with a loud warning in the logs).
 ```
 curl -X POST YOUR_URL/api/admin/provision -H "Content-Type: application/json" -d "{\"count\":1800}"
 ```
-Returns tag_ids OT-0001...OT-1800 — write these URLs to your NFC tags with
+Optionally scope a batch to a school up front with `"school_id"` and
+`"batch"` in the body — both are visible later in `GET /api/admin/tags`
+(super_admin only) for filtering.
+
+tag_ids are long random tokens (`OT-XXXX-XXXX-XXXX-XXXX-XXXX`, not a
+counter) — write the resulting URL (`?tag=<token>`) to your NFC tags with
 the ACR1552U using the separate `tag-writer` project (`prepare-tag.js`).
+NTAG213/215 chips can mirror their own hardware UID into that URL as
+`&uid=...`; once you've called `/api/tag/:tagId/set-uid` to bind a chip's
+UID to a tag_id (which `prepare-tag.js` does for you), the server requires
+that mirror to match on every tap — a copied/leaked link with no physical
+chip attached no longer works. See `lib/tagUtils.js` for the token format
+and `scripts/reset-tags.js` for wiping + re-provisioning an existing
+(test) deployment.
 
 ## What's built
 - Multi-school system: real `schools` table (not free text), so a school
@@ -48,8 +60,10 @@ the ACR1552U using the separate `tag-writer` project (`prepare-tag.js`).
   phone GPS + timestamp — zero hardware/battery cost on the wristband
 - Dashboard: filterable by school/class/name, merged IN/OUT rows per day
 - Security: scrypt password hashing, parameterized SQL throughout, rate
-  limiting on login/OTP endpoints, HTML-escaping on all rendered
-  user-controlled data (tested against a real XSS payload)
+  limiting on login/OTP/tap endpoints, HTML-escaping on all rendered
+  user-controlled data (tested against a real XSS payload), unguessable
+  random tag tokens (no sequential IDs to enumerate), and an NTAG UID
+  mirror check on the public tap routes once a chip is bound
 - Real email sending via Gmail SMTP (falls back to console-logging if
   `EMAIL_USER`/`EMAIL_APP_PASSWORD` aren't set — useful for local dev)
 

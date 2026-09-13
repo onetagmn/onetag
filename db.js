@@ -28,7 +28,7 @@ async function initSchema() {
     CREATE TABLE IF NOT EXISTS tags (
       tag_id TEXT PRIMARY KEY,
       uid TEXT UNIQUE,
-      status TEXT NOT NULL DEFAULT 'unclaimed',
+      status TEXT NOT NULL DEFAULT 'unwritten',
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     );
 
@@ -37,6 +37,27 @@ async function initSchema() {
       name TEXT NOT NULL,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     );
+
+    -- Registry columns: which school/batch a physical tag was handed to,
+    -- and who wrote its chip and when. All nullable — a freshly provisioned
+    -- tag has none of this until it's assigned and written. super_admin-only
+    -- (see requireSuperAdmin on the /api/admin/tags* routes in server.js).
+    -- Must come after "schools" exists, since school_id references it.
+    ALTER TABLE tags ADD COLUMN IF NOT EXISTS school_id TEXT REFERENCES schools(school_id);
+    ALTER TABLE tags ADD COLUMN IF NOT EXISTS batch TEXT;
+    ALTER TABLE tags ADD COLUMN IF NOT EXISTS written_by TEXT;
+    ALTER TABLE tags ADD COLUMN IF NOT EXISTS written_at TIMESTAMP;
+
+    -- Normalize the old 2-value status ('unclaimed'/'claimed') to the real
+    -- 5-state lifecycle before locking it down with a CHECK constraint —
+    -- an old 'unclaimed' tag had no UID bound either way, so it maps to
+    -- 'unwritten'; an old 'claimed' tag already had a registered profile,
+    -- so it maps to 'active'. Both UPDATEs are no-ops once run once.
+    UPDATE tags SET status = 'unwritten' WHERE status = 'unclaimed';
+    UPDATE tags SET status = 'active' WHERE status = 'claimed';
+    ALTER TABLE tags DROP CONSTRAINT IF EXISTS tags_status_check;
+    ALTER TABLE tags ADD CONSTRAINT tags_status_check
+      CHECK (status IN ('unwritten', 'assigned', 'active', 'lost', 'retired'));
 
     CREATE TABLE IF NOT EXISTS profiles (
       tag_id TEXT PRIMARY KEY REFERENCES tags(tag_id),

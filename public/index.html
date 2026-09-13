@@ -147,6 +147,16 @@
 <script>
 const params = new URLSearchParams(window.location.search);
 const tagId = params.get('tag');
+// NTAG213/215 chips can mirror their own hardware UID into the tag's
+// stored URL on every tap, appended here as ?uid=. Once a tag has a UID
+// bound server-side (via the ACR1552U write step), the server requires
+// this to match — so a copy-pasted or leaked link, with no chip attached,
+// no longer works. A tag not yet written just ignores this.
+const uid = params.get('uid');
+function withUid(url) {
+  if (!uid) return url;
+  return url + (url.includes('?') ? '&' : '?') + 'uid=' + encodeURIComponent(uid);
+}
 const app = document.getElementById('app');
 
 function el(html) {
@@ -168,7 +178,7 @@ function esc(val) {
 function logScan(role = 'public') {
   if (!tagId) return;
   const send = (lat, lng) => {
-    fetch(`/api/scan/${tagId}`, {
+    fetch(withUid(`/api/scan/${tagId}`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ lat, lng, role })
@@ -291,7 +301,7 @@ async function init() {
   }
   logScan('public');
 
-  const res = await fetch(`/api/tag/${tagId}`);
+  const res = await fetch(withUid(`/api/tag/${tagId}`));
   if (!res.ok) {
     app.innerHTML = `<div class="card"><h2>${t('unknownTagTitle')}</h2><p>${t('unknownTagBody')}</p></div>`;
     return;
@@ -409,7 +419,8 @@ function renderRegisterForm(editToken = null) {
       },
       parent_phone: f.parent_phone.value,
       parent_email: f.parent_email.value,
-      editToken: editToken || undefined
+      editToken: editToken || undefined,
+      uid: uid || undefined
     };
 
     const msg = card.querySelector('#regMsg');
@@ -428,7 +439,7 @@ function renderRegisterForm(editToken = null) {
 
 // ---------------- Public profile view ----------------
 async function renderPublicProfile() {
-  const res = await fetch(`/api/profile/${tagId}`);
+  const res = await fetch(withUid(`/api/profile/${tagId}`));
   const p = await res.json();
   app.innerHTML = '';
   const initials = (p.child_name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -507,7 +518,7 @@ async function renderPublicProfile() {
     try {
       const res = await fetch(`/api/call-guardian/${tagId}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ caller_phone: callerPhone })
+        body: JSON.stringify({ caller_phone: callerPhone, uid: uid || undefined })
       });
       const out = await res.json();
       if (res.ok && out.success) {
