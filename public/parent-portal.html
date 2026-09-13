@@ -10,34 +10,44 @@
 <meta name="robots" content="noindex, nofollow">
 <style>
   :root {
-    --ink: #0E2A32; --steppe: #17458F; --sun: #F7A81B; --paper: #FAF8F4;
-    --card: #FFFFFF; --line: #DCE4E6; --danger: #C1442C; --ok: #59BA47; --radius: 14px;
+    --signal: #0B5FFF; --signal-deep: #0A3FBF; --paper: #EEF2FB;
+    --ink: #0B1C33; --muted: #4A5A78;
+    --card: #FFFFFF; --line: #DCE4F0; --danger: #C1442C; --ok: #16A34A; --out: #B45309; --radius: 14px;
   }
   * { box-sizing: border-box; }
   body {
     margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background: var(--paper); color: var(--ink); min-height: 100vh;
   }
-  .topbar { background: var(--steppe); color: white; padding: 18px 20px; font-weight: 700; }
+  .topbar {
+    background: var(--signal); color: white; padding: 16px 20px; font-weight: 700;
+    display: flex; align-items: center; gap: 10px; font-size: 16px;
+  }
+  .topbar svg { width: 26px; height: 26px; flex: none; }
   .wrap { max-width: 480px; margin: 0 auto; padding: 24px 18px; }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; margin-bottom: 16px; }
-  h2 { font-size: 16px; margin: 0 0 12px; color: var(--steppe); }
-  label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 5px; }
+  h2 { font-size: 16px; margin: 0 0 12px; color: var(--signal); }
+  label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 5px; color: var(--muted); }
   input { width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 9px; font-size: 15px; }
-  .btn { width: 100%; padding: 13px; border: none; border-radius: 10px; background: var(--steppe); color: white; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 14px; }
+  input:focus { outline: none; border-color: var(--signal); }
+  .btn { width: 100%; padding: 13px; border: none; border-radius: 10px; background: var(--signal); color: white; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 14px; }
+  .btn:hover { background: var(--signal-deep); }
   .msg { padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-top: 12px; }
   .msg.error { background: #FBE9E5; color: var(--danger); }
-  .msg.ok { background: #E4F3EB; color: var(--ok); }
+  .msg.ok { background: #E1EBFF; color: var(--signal-deep); }
   .child-name { font-size: 17px; font-weight: 800; }
   .log-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
   .log-row:last-child { border-bottom: none; }
   .tag-in { color: var(--ok); font-weight: 700; }
-  .tag-out { color: var(--sun); font-weight: 700; }
-  .empty { color: #6B7A7D; font-size: 13px; }
+  .tag-out { color: var(--out); font-weight: 700; }
+  .empty { color: #6B7A99; font-size: 13px; }
 </style>
 </head>
 <body>
-  <div class="topbar">OneTag — Parent Portal</div>
+  <div class="topbar">
+    <svg viewBox="0 0 512 512"><path fill="#fff" d="M240.59,431.93C127.07,267.37 106,250.48 106,190C106,107.16 173.16,40 256,40C338.84,40 406,107.16 406,190C406,250.48 384.93,267.37 271.41,431.93C264.0,442.69 248.03,442.69 240.59,431.93Z"/><rect x="200" y="172" rx="12" ry="12" width="32" height="50" fill="#0B5FFF"/><path fill="none" stroke="#0B5FFF" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" d="M256,163 L256,213 M256,213 Q246,240 232,266 M256,213 Q276,238 286,264 M256,172 Q238,190 224,205 M256,172 Q278,188 292,200"/><circle cx="256" cy="138" r="23" fill="#0B5FFF"/><g fill="none" stroke="#fff" stroke-width="13" stroke-linecap="round"><path d="M 411.7 89.9 A 26 26 0 0 1 430.1 108.3"/><path d="M 416.9 70.6 A 46 46 0 0 1 449.4 103.1"/><path d="M 422.1 51.25 A 66 66 0 0 1 468.75 97.9"/></g><circle cx="405" cy="115" r="15" fill="#fff"/></svg>
+    OneTag Parent Portal
+  </div>
   <div class="wrap" id="app">
     <div class="card">
       <h2>View your child's activity</h2>
@@ -125,11 +135,11 @@ async function loadHistory(token, isAutoLogin) {
   app.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;flex-wrap:wrap;">
       <div>
-        <label style="font-size:12.5px;font-weight:600;color:#6B7A7D;margin-right:6px;">Filter by date</label>
+        <label style="font-size:12.5px;font-weight:600;color:#6B7A99;margin-right:6px;">Filter by date</label>
         <input id="historyDateFilter" type="date" style="padding:7px 9px;border:1px solid var(--line);border-radius:8px;font-size:13px;">
-        <span id="clearDateFilter" style="font-size:12px;color:var(--steppe);cursor:pointer;text-decoration:underline;margin-left:6px;display:none;">Clear</span>
+        <span id="clearDateFilter" style="font-size:12px;color:var(--signal);cursor:pointer;text-decoration:underline;margin-left:6px;display:none;">Clear</span>
       </div>
-      <span id="logoutLink" style="font-size:12.5px;color:#6B7A7D;cursor:pointer;text-decoration:underline;">Not you? Switch phone number</span>
+      <span id="logoutLink" style="font-size:12.5px;color:#6B7A99;cursor:pointer;text-decoration:underline;">Not you? Switch phone number</span>
     </div>
     <div id="childrenList"></div>
   `;
