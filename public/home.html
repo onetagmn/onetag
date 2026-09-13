@@ -26,7 +26,10 @@
 
 <style>
   :root {
-    --blue: #0B5FFF; --blue-dark: #0847C7; --sky: #DCEEFF; --green: #32C36C;
+    /* Brand color sampled directly from the actual logo artwork
+       (public/assets/logo-mark.png, solid pixel color #098277) — the site
+       previously ran on a generic blue unrelated to the logo's own color. */
+    --teal: #098277; --teal-dark: #076B62; --sky: #E1F3F0; --green: #32C36C;
     --white: #FFFFFF; --bg-light: #F7F9FC; --ink: #1E293B; --muted: #64748B;
     --line: #E4E9F0; --radius: 16px;
     /* Primary accent — gold, not blue. Blue-on-blue over the scroll-story's
@@ -65,11 +68,11 @@
   .btn-primary:hover { background: var(--accent-hover); }
   .btn-primary:disabled { opacity: 0.6; cursor: default; }
   .btn-ghost { background: transparent; color: var(--ink); border: 1.5px solid var(--line); }
-  .btn-ghost:hover { border-color: var(--blue); color: var(--blue); }
+  .btn-ghost:hover { border-color: var(--teal); color: var(--teal); }
   .btn-sm { padding: 8px 14px; font-size: 13px; }
   .lang-bar { display: flex; gap: 6px; }
   .lang-btn { padding: 5px 13px; border-radius: 20px; border: 1px solid var(--line); background: #fff; color: var(--muted); font-size: 12.5px; font-weight: 700; cursor: pointer; }
-  .lang-btn.active { background: var(--sky); color: var(--blue); border-color: var(--sky); }
+  .lang-btn.active { background: var(--sky); color: var(--teal); border-color: var(--sky); }
 
   /* ---------- SCROLL STORY HERO ---------- */
   /* Once you've scrolled through all 9 photos, the pinned photo (.story-sticky,
@@ -96,7 +99,7 @@
      selector (section) regardless of media query or source order, so this
      wins in both the mobile and desktop cases without needing to touch
      that other rule, which other sections still rely on. */
-  .scroll-story { position: relative; height: 910vh; padding: 0; background: linear-gradient(to bottom, #0E2338 0%, #0E2338 85%, var(--bg-light) 100%); }
+  .scroll-story { position: relative; height: 312vh; padding: 0; background: linear-gradient(to bottom, #0E2338 0%, #0E2338 85%, var(--bg-light) 100%); }
   .story-sticky { position: sticky; top: 0; height: 100vh; overflow: hidden; }
   .story-stage-photo {
     position: absolute; inset: 0; opacity: 0; z-index: 1;
@@ -132,7 +135,7 @@
   /* ---------- HUD LABEL REVEAL (Scene 2) ---------- */
   .hud-svg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; }
   .hud-svg-line {
-    stroke: #0B5FFF; stroke-width: 0.25; fill: none;
+    stroke: #098277; stroke-width: 0.25; fill: none;
     stroke-dasharray: 40; stroke-dashoffset: 40;
     transition: stroke-dashoffset 0.5s ease;
   }
@@ -147,9 +150,9 @@
   }
   .hud-label.revealed { opacity: 1; }
   .hud-text {
-    background: rgba(11,95,255,0.92); color: #fff; font-size: 12.5px; font-weight: 700;
+    background: rgba(9,130,119,0.92); color: #fff; font-size: 12.5px; font-weight: 700;
     padding: 5px 12px; border-radius: 20px; white-space: nowrap; display: inline-block;
-    box-shadow: 0 4px 14px rgba(11,95,255,0.4);
+    box-shadow: 0 4px 14px rgba(9,130,119,0.4);
   }
   .story-overlay {
     /* Was a cool navy gradient that never dropped below 15% opacity —
@@ -235,10 +238,10 @@
   .reveal-row { display: flex; justify-content: space-between; padding: 9px 0; border-top: 1px solid var(--line); font-size: 13px; }
   .reveal-row span:first-child { color: var(--muted); }
   .reveal-row span:last-child { font-weight: 600; }
-  .reveal-call { margin-top: 16px; background: var(--blue); color: #fff; text-align: center; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 700; }
+  .reveal-call { margin-top: 16px; background: var(--teal); color: #fff; text-align: center; padding: 12px; border-radius: 10px; font-size: 14px; font-weight: 700; }
   .reveal-close { display: block; text-align: center; margin-top: 14px; font-size: 12px; color: var(--muted); cursor: pointer; }
 
-  .eyebrow-sm { color: var(--blue); font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; text-align: center; margin-bottom: 12px; }
+  .eyebrow-sm { color: var(--teal); font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; text-align: center; margin-bottom: 12px; }
   .section-title { font-size: clamp(26px, 3.6vw, 38px); text-align: center; color: var(--ink); max-width: 680px; margin: 0 auto 16px; line-height: 1.2; }
   .section-sub { text-align: center; color: var(--muted); font-size: 16px; max-width: 560px; margin: 0 auto 56px; font-weight: 400; }
   .bg-light { background: var(--bg-light); }
@@ -276,20 +279,34 @@
   .gps-result .small { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
   .gps-timer { font-family: 'Inter', monospace; font-size: 15px; font-weight: 700; color: var(--muted); margin-bottom: 14px; min-height: 20px; }
   .gps-footer-note { margin-top: 20px; font-size: 13.5px; color: var(--muted); max-width: 460px; margin-left: auto; margin-right: auto; }
-  .gps-real-photo { max-width: 280px; margin: 32px auto 0; border-radius: 18px; overflow: hidden; box-shadow: 0 24px 50px -20px rgba(11,95,255,0.3); }
+  .gps-real-photo { max-width: 280px; margin: 32px auto 0; border-radius: 18px; overflow: hidden; box-shadow: 0 24px 50px -20px rgba(9,130,119,0.3); }
   .gps-real-photo img { width: 100%; display: block; }
   .gps-real-caption { margin-top: 10px; font-size: 12.5px; color: var(--muted); }
+
+  /* ---------- 3D TAG VIEWER ---------- */
+  .tag3d-layout { display: grid; grid-template-columns: 1.1fr 1fr; gap: 44px; align-items: center; }
+  .tag3d-viewer { position: relative; aspect-ratio: 4/3; border-radius: var(--radius); overflow: hidden; background: linear-gradient(160deg, #0E2338, #163650); }
+  .tag3d-viewer canvas { display: block; width: 100% !important; height: 100% !important; cursor: grab; touch-action: none; }
+  .tag3d-viewer canvas:active { cursor: grabbing; }
+  .tag3d-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #9fb3c4; font-size: 14px; transition: opacity 0.3s ease; background: linear-gradient(160deg, #0E2338, #163650); }
+  .tag3d-loading.hide { opacity: 0; pointer-events: none; }
+  .tag3d-hint { position: absolute; bottom: 14px; left: 0; right: 0; text-align: center; color: rgba(255,255,255,0.55); font-size: 12.5px; pointer-events: none; }
+  .tag3d-info h3 { font-size: 20px; font-weight: 700; margin-bottom: 16px; }
+  .tag3d-info ul { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+  .tag3d-info li { font-size: 15px; color: var(--ink); line-height: 1.5; padding-left: 26px; position: relative; font-weight: 400; }
+  .tag3d-info li::before { content: '✓'; position: absolute; left: 0; color: var(--green); font-weight: 800; }
+  @media (max-width: 860px) { .tag3d-layout { grid-template-columns: 1fr; } }
 
   /* ---------- STATS ---------- */
   .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 32px; }
   .stat-box { text-align: center; }
-  .stat-num { font-size: clamp(30px, 4.4vw, 44px); font-weight: 800; color: var(--blue); line-height: 1; }
+  .stat-num { font-size: clamp(30px, 4.4vw, 44px); font-weight: 800; color: var(--teal); line-height: 1; }
   .stat-label { margin-top: 10px; font-size: 13.5px; color: var(--muted); line-height: 1.5; max-width: 220px; margin-left: auto; margin-right: auto; }
   .stats-footer-note { text-align: center; font-size: 15px; color: var(--ink); font-weight: 600; max-width: 560px; margin: 0 auto; line-height: 1.6; }
 
   .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
   .icon-card { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 28px 24px; }
-  .icon-badge { width: 52px; height: 52px; border-radius: 14px; background: var(--sky); display: flex; align-items: center; justify-content: center; margin-bottom: 16px; color: var(--blue); flex-shrink: 0; }
+  .icon-badge { width: 52px; height: 52px; border-radius: 14px; background: var(--sky); display: flex; align-items: center; justify-content: center; margin-bottom: 16px; color: var(--teal); flex-shrink: 0; }
   .icon-badge svg, .icon-badge img { width: 30px; height: 30px; }
   .panel-icon svg, .panel-icon img { width: 26px; height: 26px; }
   .contact-method .icon-badge svg, .contact-method .icon-badge img { width: 20px; height: 20px; }
@@ -298,14 +315,17 @@
 
   .timeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; position: relative; }
   .timeline::before { content: ''; position: absolute; top: 21px; left: 12.5%; right: 12.5%; height: 2px; background: var(--line); }
-  .timeline-step { text-align: center; position: relative; }
-  .timeline-num { width: 44px; height: 44px; border-radius: 50%; background: var(--blue); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; margin: 0 auto 16px; position: relative; z-index: 1; }
+  .timeline-step { text-align: center; position: relative; cursor: pointer; border-radius: 12px; padding: 10px; transition: transform 0.2s ease, background 0.2s ease; }
+  .timeline-step:hover { transform: translateY(-3px); background: rgba(9,130,119,0.06); }
+  .timeline-step:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+  .how-map-cta { text-align: center; margin-top: 40px; }
+  .timeline-num { width: 44px; height: 44px; border-radius: 50%; background: var(--teal); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; margin: 0 auto 16px; position: relative; z-index: 1; }
   .timeline-step h3 { font-size: 15.5px; font-weight: 700; margin-bottom: 6px; }
   .timeline-step p { font-size: 13px; color: var(--muted); font-weight: 400; line-height: 1.5; }
 
   .tabs-nav { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 40px; }
   .tab-btn { padding: 10px 18px; border-radius: 10px; border: 1px solid var(--line); background: #fff; font-size: 14px; font-weight: 600; color: var(--muted); cursor: pointer; }
-  .tab-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .tab-btn.active { background: var(--teal); color: #fff; border-color: var(--teal); }
   .tab-panel { display: none; }
   .tab-panel.active { display: block; }
   .tab-content { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 36px; max-width: 720px; margin: 0 auto; }
@@ -386,7 +406,7 @@
     .story-caption { bottom: 110px; }
   }
   @media (max-width: 560px) {
-    .scroll-story { height: 740vh; }
+    .scroll-story { height: 260vh; }
     .post-story-ctas-inner { flex-direction: column; align-items: center; }
     .story-caption { bottom: 140px; }
     .grid-3 { grid-template-columns: 1fr; }
@@ -451,6 +471,29 @@
   <div class="wrap post-story-ctas-inner">
     <a href="#contact" class="btn btn-primary" data-i18n="hero_cta_primary">Get OneTag for your school</a>
     <a href="#gps-demo" class="btn btn-ghost" data-i18n="hero_cta_secondary">See how fast it works</a>
+  </div>
+</section>
+
+<section id="tag-3d" class="reveal-on-scroll" data-block="section_tag_3d">
+  <div class="wrap">
+    <div class="eyebrow-sm" data-i18n="tag3d_eyebrow">The wristband itself</div>
+    <h2 class="section-title" data-i18n="tag3d_title">Drag to look around</h2>
+    <p class="section-sub" data-i18n="tag3d_sub">The actual OneTag design — rotate it yourself.</p>
+    <div class="tag3d-layout">
+      <div class="tag3d-viewer" id="tag3dViewer">
+        <div class="tag3d-loading" id="tag3dLoading" data-i18n="tag3d_loading">Loading model…</div>
+        <div class="tag3d-hint" data-i18n="tag3d_hint">Drag to rotate · scroll to zoom</div>
+      </div>
+      <div class="tag3d-info">
+        <h3 data-i18n="tag3d_info_title">What's saved on it</h3>
+        <ul>
+          <li data-i18n="tag3d_info_1">Name, photo, class, and school</li>
+          <li data-i18n="tag3d_info_2">Blood type, allergies, and medical notes</li>
+          <li data-i18n="tag3d_info_3">Emergency contacts — never shown directly to a finder</li>
+          <li data-i18n="tag3d_info_4">A unique, unguessable ID tied to this exact physical wristband</li>
+        </ul>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -534,15 +577,27 @@
   <div class="wrap">
     <div class="eyebrow-sm" data-i18n="how_eyebrow">How it works</div>
     <h2 class="section-title" data-i18n="how_title">From wristband to reunited, in four steps</h2>
-    <p class="section-sub">&nbsp;</p>
+    <p class="section-sub" data-i18n="how_sub">Tap any step below for more detail.</p>
     <div class="timeline">
-      <div class="timeline-step" data-block="how_1"><div class="timeline-num">1</div><h3 data-i18n="how_1_title">Wear</h3><p data-i18n="how_1_p">The child wears the wristband, registered once by the school.</p></div>
-      <div class="timeline-step" data-block="how_2"><div class="timeline-num">2</div><h3 data-i18n="how_2_title">Tap</h3><p data-i18n="how_2_p">Anyone with a phone taps the wristband — no app required.</p></div>
-      <div class="timeline-step" data-block="how_3"><div class="timeline-num">3</div><h3 data-i18n="how_3_title">Info appears</h3><p data-i18n="how_3_p">Name, school, and emergency details appear in the child's language.</p></div>
-      <div class="timeline-step" data-block="how_4"><div class="timeline-num">4</div><h3 data-i18n="how_4_title">Everyone's notified</h3><p data-i18n="how_4_p">Guardians and school staff can see exactly what happened, and when.</p></div>
+      <div class="timeline-step" data-block="how_1" data-step="1" role="button" tabindex="0"><div class="timeline-num">1</div><h3 data-i18n="how_1_title">Wear</h3><p data-i18n="how_1_p">The child wears the wristband, registered once by the school.</p></div>
+      <div class="timeline-step" data-block="how_2" data-step="2" role="button" tabindex="0"><div class="timeline-num">2</div><h3 data-i18n="how_2_title">Tap</h3><p data-i18n="how_2_p">Anyone with a phone taps the wristband — no app required.</p></div>
+      <div class="timeline-step" data-block="how_3" data-step="3" role="button" tabindex="0"><div class="timeline-num">3</div><h3 data-i18n="how_3_title">Info appears</h3><p data-i18n="how_3_p">Name, school, and emergency details appear in the child's language.</p></div>
+      <div class="timeline-step" data-block="how_4" data-step="4" role="button" tabindex="0"><div class="timeline-num">4</div><h3 data-i18n="how_4_title">Everyone's notified</h3><p data-i18n="how_4_p">Guardians and school staff can see exactly what happened, and when.</p></div>
+    </div>
+    <div class="how-map-cta">
+      <a href="#gps-demo" class="btn btn-ghost btn-sm" data-i18n="how_map_cta">See the live location map ↓</a>
     </div>
   </div>
 </section>
+
+<div class="reveal-overlay" id="stepModalOverlay">
+  <div class="reveal-card">
+    <div class="reveal-badge" id="stepModalBadge">Step 1</div>
+    <h3 id="stepModalTitle"></h3>
+    <p class="sub" id="stepModalBody" style="font-weight:400; color:var(--ink); line-height:1.6; margin-top:2px;"></p>
+    <div class="reveal-close" id="stepModalClose" data-i18n="reveal_close">Close</div>
+  </div>
+</div>
 
 <section id="benefits" class="bg-light reveal-on-scroll" data-block="section_benefits">
   <div class="wrap">
@@ -714,6 +769,14 @@
 </footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<!-- Three.js r128 — pinned to the last version that still ships classic
+     (non-module) UMD example scripts, so STLLoader/OrbitControls load as
+     plain script tags like everything else on this page, no bundler or
+     import map needed. Used for the "drag to look around" 3D wristband
+     viewer further down. -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script>
 (async function () {
   const ENABLED_LANGUAGES = ['mn', 'en', 'jp']; // add 'zh' here to show Chinese too
@@ -745,6 +808,11 @@
       hero_h1: "Safe every school day. Peace of mind for parents. Found in seconds.",
       hero_sub: "OneTag is a wristband that logs safe arrival and departure at school automatically — and instantly shows real-time location and emergency details to anyone who finds your child, anywhere else.",
       hero_cta_primary: "Get OneTag for your school", hero_cta_secondary: "See how fast it works",
+      tag3d_eyebrow: "The wristband itself", tag3d_title: "Drag to look around",
+      tag3d_sub: "The actual OneTag design — rotate it yourself.", tag3d_loading: "Loading model…", tag3d_hint: "Drag to rotate · scroll to zoom",
+      tag3d_info_title: "What's saved on it",
+      tag3d_info_1: "Name, photo, class, and school", tag3d_info_2: "Blood type, allergies, and medical notes",
+      tag3d_info_3: "Emergency contacts — never shown directly to a finder", tag3d_info_4: "A unique, unguessable ID tied to this exact physical wristband",
       story_close_product: "One wristband. Every school day.",
       panel_lost_title: "If they're ever lost",
       panel_lost_p: "Anyone who finds them taps the wristband and instantly sees a name, photo, blood type, allergies, and medical notes — plus one button to call you. Your number stays private, always.",
@@ -784,6 +852,7 @@
       how_2_title: "Tap", how_2_p: "Anyone with a phone taps the wristband — no app required.",
       how_3_title: "Info appears", how_3_p: "Name, school, and emergency details appear in the child's language.",
       how_4_title: "Everyone's notified", how_4_p: "Guardians and school staff can see exactly what happened, and when.",
+      how_sub: "Tap any step below for more detail.", how_map_cta: "See the live location map ↓",
       benefits_eyebrow: "Benefits", benefits_title: "Built for everyone around the child",
       tab_parents: "Parents", tab_schools: "Schools", tab_teachers: "Teachers", tab_admin: "Administrators",
       tab_parents_1: "See exactly when your child arrived at and left school — automatically.",
@@ -851,6 +920,11 @@
       hero_h1: "Сургуулийн өдөр бүр аюулгүй. Эцэг эхэд санаа зовохгүй байдал. Секундын дотор олдоно.",
       hero_sub: "OneTag бол сургуульд ирсэн, явсныг автоматаар бүртгэдэг бугуйвч — мөн хаана ч олдсон хүүхдийг олсон хэн бүхэнд бодит цагийн байршил, яаралтай тусламжийн мэдээллийг шууд харуулдаг.",
       hero_cta_primary: "Сургуульдаа OneTag авах", hero_cta_secondary: "Хэр хурдан ажилладгийг үзэх",
+      tag3d_eyebrow: "Бугуйвч өөрөө", tag3d_title: "Чирж эргүүлж үзээрэй",
+      tag3d_sub: "OneTag-ийн жинхэнэ загвар — өөрөө эргүүлж үзээрэй.", tag3d_loading: "Загвар ачаалж байна…", tag3d_hint: "Эргүүлэхийн тулд чирнэ · томруулахын тулд гүйлгэнэ",
+      tag3d_info_title: "Үүнд юу хадгалагддаг вэ",
+      tag3d_info_1: "Нэр, зураг, анги, сургууль", tag3d_info_2: "Цусны бүлэг, харшил, эмнэлгийн тэмдэглэл",
+      tag3d_info_3: "Яаралтай холбоо барих хүмүүс — олсон хүнд шууд харагдахгүй", tag3d_info_4: "Яг энэ физик бугуйвчтай холбоотой, таамаглашгүй давтагдашгүй ID",
       story_close_product: "Нэг бугуйвч. Сургуулийн өдөр бүр.",
       panel_lost_title: "Хэрэв тэднийг олдохгүй бол",
       panel_lost_p: "Тэднийг олсон хэн ч бугуйвчийг товшиход нэр, зураг, цусны бүлэг, харшил, эрүүл мэндийн тэмдэглэл, мөн танд залгах нэг товчлуур шууд харагдана. Таны дугаар үргэлж нууц хэвээр байна.",
@@ -890,6 +964,7 @@
       how_2_title: "Товших", how_2_p: "Утастай хэн ч бугуйвчийг товшино — апп хэрэггүй.",
       how_3_title: "Мэдээлэл гарч ирнэ", how_3_p: "Нэр, сургууль, яаралтай тусламжийн мэдээлэл хүүхдийн хэлээр гарч ирнэ.",
       how_4_title: "Бүгд мэдэгдэнэ", how_4_p: "Асран хамгаалагч, сургуулийн ажилтан юу болсныг, хэзээ болсныг харна.",
+      how_sub: "Дэлгэрэнгүй мэдээлэл авахын тулд доорх алхам бүр дээр товшино уу.", how_map_cta: "Бодит цагийн байршлын газрын зургийг үзэх ↓",
       benefits_eyebrow: "Ашиг тус", benefits_title: "Хүүхдийг тойрсон хүн бүрт зориулав",
       tab_parents: "Эцэг эх", tab_schools: "Сургууль", tab_teachers: "Багш", tab_admin: "Админ",
       tab_parents_1: "Хүүхэд тань сургуульд хэзээ ирж, явсныг автоматаар харна.",
@@ -957,6 +1032,11 @@
       hero_h1: "每个上学日都安全。家长安心无忧。几秒内即可找到。",
       hero_sub: "OneTag 是一款手环，自动记录到校与离校的安全状态 — 并能即时向发现孩子的任何人显示实时位置和紧急信息。",
       hero_cta_primary: "为您的学校获取 OneTag", hero_cta_secondary: "查看其运作速度",
+      tag3d_eyebrow: "手环本身", tag3d_title: "拖动查看",
+      tag3d_sub: "OneTag 的真实设计 — 亲自旋转查看。", tag3d_loading: "正在加载模型…", tag3d_hint: "拖动旋转 · 滚动缩放",
+      tag3d_info_title: "上面保存了什么",
+      tag3d_info_1: "姓名、照片、班级和学校", tag3d_info_2: "血型、过敏和医疗备注",
+      tag3d_info_3: "紧急联系人 — 绝不直接显示给发现者", tag3d_info_4: "与这个实际手环唯一对应、无法猜测的编号",
       story_close_product: "一个手环，陪伴每个上学日。",
       panel_lost_title: "如果孩子走失",
       panel_lost_p: "发现孩子的任何人触碰手环，即可立即看到姓名、照片、血型、过敏信息和医疗记录 — 以及一个联系您的按钮。您的号码始终保密。",
@@ -996,6 +1076,7 @@
       how_2_title: "触碰", how_2_p: "任何有手机的人都能触碰手环 — 无需应用。",
       how_3_title: "资料显示", how_3_p: "姓名、学校和紧急信息以孩子的语言显示。",
       how_4_title: "各方均获通知", how_4_p: "监护人和学校职员可清楚了解发生了什么，以及具体时间。",
+      how_sub: "点击下方任意步骤查看详情。", how_map_cta: "查看实时定位地图 ↓",
       benefits_eyebrow: "适用人群", benefits_title: "为孩子身边的每个人而设计",
       tab_parents: "家长", tab_schools: "学校", tab_teachers: "教师", tab_admin: "管理员",
       tab_parents_1: "自动查看孩子到校和离校的准确时间。",
@@ -1063,6 +1144,11 @@
       hero_h1: "毎日安心して登校。保護者にも安心を。数秒で居場所がわかります。",
       hero_sub: "OneTagは登校・下校を自動で記録するリストバンドです。万が一お子さまが離れた場所で見つかった場合も、発見した方にリアルタイムの位置情報と緊急時の情報を即座に表示します。",
       hero_cta_primary: "学校にOneTagを導入する", hero_cta_secondary: "その速さを見てみる",
+      tag3d_eyebrow: "リストバンドそのもの", tag3d_title: "ドラッグして見てみましょう",
+      tag3d_sub: "OneTagの実際のデザイン — ご自身で回転させてご覧ください。", tag3d_loading: "モデルを読み込み中…", tag3d_hint: "ドラッグで回転 ・ スクロールでズーム",
+      tag3d_info_title: "保存されている情報",
+      tag3d_info_1: "名前・写真・学年・学校", tag3d_info_2: "血液型・アレルギー・医療メモ",
+      tag3d_info_3: "緊急連絡先 — 発見者に直接表示されることはありません", tag3d_info_4: "この物理的なリストバンドに紐づく、推測不可能な一意のID",
       story_close_product: "一つのリストバンドで、毎日の学校生活を。",
       panel_lost_title: "もし迷子になったら",
       panel_lost_p: "発見した方がリストバンドをタップすると、名前・写真・血液型・アレルギー・医療メモがすぐに表示され、保護者への通話ボタンも利用できます。電話番号は常に非公開です。",
@@ -1102,6 +1188,7 @@
       how_2_title: "タップ", how_2_p: "スマートフォンを持つ誰でもリストバンドにタップできます — アプリは不要です。",
       how_3_title: "情報を表示", how_3_p: "名前・学校・緊急時の情報が、お子さまの言語で表示されます。",
       how_4_title: "全員に通知", how_4_p: "保護者と学校スタッフは、何が起きたのか、いつ起きたのかを正確に確認できます。",
+      how_sub: "各ステップをタップすると詳細が表示されます。", how_map_cta: "リアルタイム位置情報マップを見る ↓",
       benefits_eyebrow: "ご利用の方へ", benefits_title: "子どもを取り巻くすべての人のために",
       tab_parents: "保護者", tab_schools: "学校", tab_teachers: "教員", tab_admin: "管理者",
       tab_parents_1: "お子さまが登校・下校した時刻を自動的に、正確に確認できます。",
@@ -1189,16 +1276,16 @@
   // returned, or this hardcoded copy of the original 9 if the fetch above
   // failed (offline, slow, or the feature isn't deployed yet) — the story
   // must always render something, never a blank/broken hero.
+  // Trimmed from the original 9 scenes to 4 — the strongest beats only
+  // (hook, action, what's saved, payoff) — per the "shorter, more compact"
+  // hero request. This is only the FALLBACK used when the admin dashboard
+  // (admin-content.html > Story photos) hasn't set its own scene list yet;
+  // once it has, that list wins and can be edited without touching code.
   const FALLBACK_SCENES = [
     { image_url: '/assets/scene4-aerial.jpg', scene_type: 'photo', caption: { en: "Safe every school day. Found in seconds, wherever they are.", mn: "Сургуулийн өдөр бүр аюулгүй. Секундын дотор олдоно, хаана ч байсан.", jp: "毎日安心して登校。数秒で居場所がわかります。" } },
-    { image_url: '/assets/scene5-crane.jpg', scene_type: 'photo', caption: { en: "Another school morning begins.", mn: "Сургуулийн өглөө дахин эхэлж байна.", jp: "また学校の朝が始まります。" } },
     { image_url: '/assets/scene7-tap-morning.jpg', scene_type: 'photo', caption: { en: "Tap at the school gate every morning...", mn: "Өглөө бүр сургуулийн хаалганд товшино...", jp: "毎朝、校門でタップ…" } },
-    { image_url: '/assets/scene8-dashboard.jpg', scene_type: 'photo', caption: { en: "The school knows the instant they're in.", mn: "Сургууль тэднийг ирсэн даруйд нь мэднэ.", jp: "登校した瞬間、学校はすぐに把握します。" } },
-    { image_url: '/assets/scene9-tap-dusk.jpg', scene_type: 'photo', caption: { en: "...and every afternoon.", mn: "...орой бүр мөн адил.", jp: "…そして毎日下校時にも。" } },
-    { image_url: '/assets/scene10-phone-notif.jpg', scene_type: 'photo', caption: { en: "Left safely. Parents know instantly.", mn: "Аюулгүй явлаа. Эцэг эх шууд мэднэ.", jp: "無事に下校。保護者はすぐに知ることができます。" } },
-    { image_url: '/assets/scene12-map.jpg', scene_type: 'photo', caption: { en: "In an emergency, one tap finds them in seconds — real-time GPS.", mn: "Онц үед нэг товшилтоор секундын дотор олно — бодит цагийн GPS.", jp: "緊急時も、ワンタップで数秒以内に位置を特定 — リアルタイムGPS。" } },
     { image_url: '/assets/scene2-hud-v3.jpg', scene_type: 'registration_hud', caption: { en: "Everything that matters, saved in seconds.", mn: "Хэрэгтэй бүх мэдээлэл секундын дотор хадгалагдана.", jp: "大切な情報を、数秒で記録。" } },
-    { image_url: '/assets/scene1-product.jpg', scene_type: 'photo', caption: { en: "One wristband. Every school day.", mn: "Нэг бугуйвч. Сургуулийн өдөр бүр.", jp: "一つのリストバンドで、毎日の学校生活を。" } }
+    { image_url: '/assets/scene12-map.jpg', scene_type: 'photo', caption: { en: "In an emergency, one tap finds them in seconds — real-time GPS.", mn: "Онц үед нэг товшилтоор секундын дотор олно — бодит цагийн GPS.", jp: "緊急時も、ワンタップで数秒以内に位置を特定 — リアルタイムGPS。" } }
   ];
   const storyScenes = (siteOverrides.scenes && siteOverrides.scenes.length) ? siteOverrides.scenes : FALLBACK_SCENES;
 
@@ -1262,11 +1349,15 @@
 
   // Story container height scales with however many scenes there are now
   // (roughly one viewport-height of scroll per scene, same ratio the
-  // original fixed-9-stage version used), overriding the static 910vh /
-  // 740vh in the stylesheet — those stay in place only as a fallback for
+  // original fixed-9-stage version used), overriding the static 312vh /
+  // 260vh in the stylesheet — those stay in place only as a fallback for
   // the instant before this runs.
+  // Reduced from 101/82 — with fewer scenes now (4, not 9), each one can
+  // afford less scroll distance and still read clearly, making the whole
+  // hero noticeably snappier/more compact rather than just shorter by
+  // virtue of having fewer photos.
   const isMobileWidth = window.matchMedia('(max-width: 560px)').matches;
-  const vhPerScene = isMobileWidth ? 82 : 101;
+  const vhPerScene = isMobileWidth ? 65 : 78;
   document.getElementById('scrollStory').style.height = (storyScenes.length * vhPerScene) + 'vh';
 
   // Preload the opening and closing photos — whichever those are now — the
@@ -1371,6 +1462,138 @@
   revealClose.addEventListener('click', () => revealOverlay.classList.remove('active'));
   revealOverlay.addEventListener('click', (e) => { if (e.target === revealOverlay) revealOverlay.classList.remove('active'); });
 
+  // ---- "How it works" step detail modals ----
+  // Extended explanations for each of the 4 timeline steps, shown when a
+  // visitor taps one — kept separate from the short on-page copy (how_N_p)
+  // so the timeline itself stays compact while more detail is still one
+  // tap away. No photos yet for these — text-only until real ones exist.
+  const STEP_DETAILS = {
+    1: {
+      en: "A school admin registers the child once: name, class, blood type, allergies, medical notes, and emergency contacts. After that, the child just wears the wristband — no charging, no pairing, nothing else to set up.",
+      mn: "Сургуулийн админ хүүхдийг нэг удаа бүртгэнэ: нэр, анги, цусны бүлэг, харшил, эрүүл мэндийн тэмдэглэл, яаралтай холбоо барих хүмүүс. Үүний дараа хүүхэд зүгээр л бугуйвчаа өмсөнө — цэнэглэх, холбох шаардлагагүй.",
+      zh: "学校管理员为孩子注册一次：姓名、班级、血型、过敏史、健康备注和紧急联系人。之后孩子只需佩戴手环——无需充电，无需配对，无需其他设置。",
+      jp: "学校の管理者がお子さまを一度だけ登録します：名前、学年、血液型、アレルギー、健康メモ、緊急連絡先。その後はリストバンドを装着するだけ — 充電もペアリングも、その他の設定も一切不要です。"
+    },
+    2: {
+      en: "Any NFC-capable phone — Android or iPhone — reads the wristband with a simple tap, the same motion as a contactless payment. The person tapping doesn't need the OneTag app; it just opens in their normal browser.",
+      mn: "NFC дэмждэг ямар ч утас — Android эсвэл iPhone — бугуйвчийг ердийн товшилтоор уншина, харилцан холбоо утасны төлбөр хийхтэй адил. Товшиж буй хүнд OneTag апп хэрэггүй — энгийн хөтчөөр л нээгдэнэ.",
+      zh: "任何支持 NFC 的手机——安卓或 iPhone——只需轻轻一碰即可读取手环，与非接触式支付的动作相同。触碰的人无需安装 OneTag 应用，普通浏览器即可打开。",
+      jp: "NFC対応のスマートフォン（Android・iPhoneいずれも）であれば、非接触決済と同じ動作でリストバンドをタップするだけで読み取れます。タップする方はOneTagアプリを持っている必要はなく、通常のブラウザで開きます。"
+    },
+    3: {
+      en: "A safety card opens instantly: the child's name, photo, class, and essential health details, shown in the child's own language. Full parent contact info is never shown directly — a finder connects through OneTag's Call Guardian instead.",
+      mn: "Аюулгүй байдлын карт шууд нээгдэнэ: хүүхдийн нэр, зураг, анги, зайлшгүй эрүүл мэндийн мэдээлэл хүүхдийн эх хэлээр харагдана. Эцэг эхийн бүрэн холбоо барих мэдээлэл шууд харагдахгүй — олсон хүн OneTag-ийн Call Guardian-аар дамжин холбогдоно.",
+      zh: "安全卡会立即打开：孩子的姓名、照片、班级和必要的健康信息，以孩子的语言显示。家长的完整联系方式绝不会直接显示——发现者通过 OneTag 的\"联系监护人\"功能连接。",
+      jp: "安全カードがすぐに表示されます：お子さまの名前、写真、学年、必須の健康情報が、お子さまの言語で表示されます。保護者の詳しい連絡先が直接表示されることはなく、発見者はOneTagの「保護者に電話」機能を通じて連絡します。"
+    },
+    4: {
+      en: "Every tap is logged with a time and location. Parents check their child's arrival and departure from any phone browser with a one-time code — no app to install. School staff see the same activity, live, on one dashboard.",
+      mn: "Товшилт бүр цаг хугацаа, байршилтайгаа бүртгэгдэнэ. Эцэг эх хүүхдийнхээ ирсэн, явсныг ямар ч утасны хөтчөөр нэг удаагийн кодоор шалгана — апп татах шаардлагагүй. Сургуулийн ажилтнууд ижил үйл ажиллагааг нэг самбараас бодит цагт харна.",
+      zh: "每次触碰都会记录时间和地点。家长只需一次性验证码，通过任何手机浏览器即可查看孩子的到校和离校情况——无需安装应用。学校职员在同一仪表盘上实时查看相同的活动记录。",
+      jp: "タップするたびに時刻と位置情報が記録されます。保護者はワンタイムコードだけで、どのスマートフォンのブラウザからでもお子さまの登下校を確認できます — アプリのインストールは不要です。学校スタッフも同じ活動状況を、一つのダッシュボードでリアルタイムに確認できます。"
+    }
+  };
+  const stepModalOverlay = document.getElementById('stepModalOverlay');
+  const stepModalBadge = document.getElementById('stepModalBadge');
+  const stepModalTitle = document.getElementById('stepModalTitle');
+  const stepModalBody = document.getElementById('stepModalBody');
+  const stepModalClose = document.getElementById('stepModalClose');
+  document.querySelectorAll('.timeline-step[data-step]').forEach(el => {
+    function openStepModal() {
+      const step = el.dataset.step;
+      const dict = currentDict();
+      const title = dict['how_' + step + '_title'] || ('Step ' + step);
+      stepModalBadge.textContent = dict.how_eyebrow || 'How it works';
+      stepModalTitle.textContent = title;
+      const detail = STEP_DETAILS[step];
+      stepModalBody.textContent = (detail && (detail[window.__currentLang] || detail.en)) || '';
+      stepModalOverlay.classList.add('active');
+    }
+    el.addEventListener('click', openStepModal);
+    el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openStepModal(); } });
+  });
+  stepModalClose.addEventListener('click', () => stepModalOverlay.classList.remove('active'));
+  stepModalOverlay.addEventListener('click', (e) => { if (e.target === stepModalOverlay) stepModalOverlay.classList.remove('active'); });
+
+  // ---- 3D tag viewer (drag/scroll to look at the actual wristband model) ----
+  // The STL is a BINARY file with no part metadata — a single fused mesh,
+  // not separate solids for the rotary wheel vs. the main body. So this
+  // renders as one color for now; true two-tone (yellow wheel / blue body)
+  // needs either a real photo texture or the parts exported as separate
+  // STL files from the CAD tool — not something derivable from this file
+  // alone.
+  (function initTag3D() {
+    const container = document.getElementById('tag3dViewer');
+    const loadingEl = document.getElementById('tag3dLoading');
+    if (!container || typeof THREE === 'undefined') return;
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.insertBefore(renderer.domElement, container.firstChild);
+
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x223344, 1.15));
+    const keyLight = new THREE.DirectionalLight(0xffffff, 0.9);
+    keyLight.position.set(3, 5, 4);
+    scene.add(keyLight);
+    const rimLight = new THREE.DirectionalLight(0x6fa8ff, 0.45);
+    rimLight.position.set(-4, -2, -3);
+    scene.add(rimLight);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.enablePan = false;
+    controls.minDistance = 1.2;
+    controls.maxDistance = 6;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 1.6;
+
+    const loader = new THREE.STLLoader();
+    loader.load('/assets/onetag-model.stl', (geometry) => {
+      geometry.computeBoundingBox();
+      geometry.computeVertexNormals();
+      const center = new THREE.Vector3();
+      geometry.boundingBox.getCenter(center);
+      geometry.translate(-center.x, -center.y, -center.z);
+
+      const size = new THREE.Vector3();
+      geometry.boundingBox.getSize(size);
+      const maxDim = Math.max(size.x, size.y, size.z) || 1;
+      const scale = 2 / maxDim;
+      const material = new THREE.MeshStandardMaterial({ color: 0x2F6FED, metalness: 0.15, roughness: 0.45 });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.scale.setScalar(scale);
+      scene.add(mesh);
+
+      camera.position.set(0, 0.6, 2.6);
+      controls.target.set(0, 0, 0);
+      controls.update();
+      loadingEl.classList.add('hide');
+    }, undefined, (err) => {
+      loadingEl.textContent = 'Could not load the 3D model.';
+      console.error('STL load failed:', err);
+    });
+
+    function onResize() {
+      const w = container.clientWidth, h = container.clientHeight;
+      if (!w || !h) return;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    }
+    window.addEventListener('resize', onResize);
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  })();
+
   // ---- Interactive GPS speed demo ----
   // Uses the visitor's REAL location via the browser's geolocation API —
   // same as the actual product does when a wristband is tapped. The timer
@@ -1430,7 +1653,7 @@
             maxZoom: 19
           }).addTo(gpsMap);
           gpsMarker = L.marker([lat, lng]).addTo(gpsMap);
-          gpsCircle = L.circle([lat, lng], { radius: accuracy, color: '#0B5FFF', fillColor: '#0B5FFF', fillOpacity: 0.15, weight: 1.5 }).addTo(gpsMap);
+          gpsCircle = L.circle([lat, lng], { radius: accuracy, color: '#098277', fillColor: '#098277', fillOpacity: 0.15, weight: 1.5 }).addTo(gpsMap);
         } else {
           gpsMap.setView([lat, lng], 15);
           gpsMarker.setLatLng([lat, lng]);
