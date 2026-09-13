@@ -37,6 +37,23 @@ async function sendEmail(to, subject, text) {
 }
 
 async function sendOtp({ target, targetType, purpose, refId }) {
+  // If a still-valid code was already issued for this exact
+  // target+purpose+refId, reuse it instead of generating and emailing a
+  // new one. Without this, clicking "send code" more than once (a slow
+  // inbox, an accidental double-click) fired a brand new email every
+  // time — several codes in flight at once, with no way to tell which
+  // one is "the" current code. Now at most one code is ever live per
+  // 10-minute window, no matter how many times it's requested.
+  const existing = await pool.query(`
+    SELECT * FROM otp_codes
+    WHERE target = $1 AND purpose = $2 AND ref_id = $3 AND used = 0 AND expires_at > NOW()
+    ORDER BY id DESC LIMIT 1
+  `, [target, purpose, refId]);
+  if (existing.rows[0]) {
+    const minutesLeft = Math.ceil((new Date(existing.rows[0].expires_at) - new Date()) / 60000);
+    return { sent: true, expiresInMinutes: minutesLeft, reused: true };
+  }
+
   const code = generateCode();
   const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000);
 
